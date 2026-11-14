@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { DIRECTIONS, findDirection, type Direction } from './catalog/directions.js';
+import { OVERLAYS, findOverlay } from './catalog/overlays.js';
 import { CONFLICT_RULES, HARMONY_RULES } from './catalog/rules.js';
 import { STEPS, findStep } from './catalog/steps.js';
 import type { Option, Step, Tunable } from './catalog/types.js';
@@ -47,6 +48,11 @@ export interface Project {
   params: DesignParams;
   decisions: Record<string, Decision>;
   content: SiteContent;
+  /**
+   * The Overlays that are switched on, by identifier, in the Catalog's order. Absent when none is on, so that a project saved
+   * before Overlays existed opens without a change.
+   */
+  overlays?: string[];
 }
 
 const hueTurn = (h: number, by: number): number => (((h + by) % 360) + 360) % 360;
@@ -293,6 +299,25 @@ export function revert(project: Project, stepId: string): Project {
   if (follows) params = { ...params, [follows.key]: hueTurn(params[follows.from], follows.turn) };
   const decisions = Object.fromEntries(Object.entries(project.decisions).filter(([id]) => id !== stepId));
   return rederive(project, { ...project, params, decisions }, stepId);
+}
+
+/** The Overlays that are switched on, in the Catalog's order. */
+export function overlaysOf(project: Project): string[] {
+  return project.overlays ?? [];
+}
+
+/** Switch one Overlay on or off. The design itself does not change. */
+export function setOverlay(project: Project, overlayId: string, on: boolean): Project {
+  if (!findOverlay(overlayId)) throw new Error('The Catalog has no such Overlay.');
+  const wanted = new Set(overlaysOf(project));
+  if (wanted.has(overlayId) === on) return project;
+  if (on) wanted.add(overlayId);
+  else wanted.delete(overlayId);
+  const overlays = OVERLAYS.map((overlay) => overlay.id).filter((id) => wanted.has(id));
+  const next: Project = { ...project };
+  if (overlays.length > 0) next.overlays = overlays;
+  else delete next.overlays;
+  return next;
 }
 
 export const REASON_MAX = 280;
@@ -662,6 +687,7 @@ const projectSchema = z.object({
   params: paramsSchema,
   decisions: z.record(z.string().max(60), decisionSchema),
   content: contentSchema,
+  overlays: z.array(z.string().max(40)).max(40).optional(),
 });
 
 export type ParseResult =
@@ -671,7 +697,7 @@ export type ParseResult =
 // Every message is fixed text. A message never repeats content from the file.
 const NOT_A_PROJECT = 'This is not a Refraction project file.';
 const NEWER_VERSION = 'A newer version of the Studio made this file, and this version cannot read it.';
-const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content'] as const;
+const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content', 'overlays'] as const;
 /** What each part of a project file holds, in plain words, for the message that refuses a damaged file (finding U2-21). The words are fixed; nothing from the file is repeated. */
 const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   name: 'the project name',
@@ -682,6 +708,7 @@ const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   params: 'the design values',
   decisions: 'the Decisions',
   content: 'the sample text',
+  overlays: 'the Overlays',
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -804,7 +831,12 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   if (relabelled > 0) notes.push(relabelled === 1 ? 'One Decision was recorded as a picked Option, but its design values match no Option of this version of the Catalog. Its values were kept and it is now marked as hand-set.' : `${relabelled} Decisions were recorded as picked Options, but their design values match no Option of this version of the Catalog. Their values were kept and they are now marked as hand-set.`);
   if (corrected > 0) notes.push(corrected === 1 ? 'One Decision in the file named a choice that the file’s own design values do not show. The Studio follows the design values, so it changed that Decision to match them.' : `${corrected} Decisions in the file named choices that the file’s own design values do not show. The Studio follows the design values, so it changed those Decisions to match them.`);
   if (shortened > 0) notes.push(shortened === 1 ? `One written reason was longer than ${REASON_MAX} characters. It was shortened to fit.` : `${shortened} written reasons were longer than ${REASON_MAX} characters. They were shortened to fit.`);
-  const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content };
+  // Overlays: those of the file that this Catalog has, each once, in the Catalog's order.
+  const listed = data.overlays ?? [];
+  const overlays = OVERLAYS.map((overlay) => overlay.id).filter((id) => listed.includes(id));
+  const unknown = new Set(listed.filter((id) => !findOverlay(id))).size;
+  if (unknown > 0) notes.push(unknown === 1 ? 'One Overlay in the file is unknown to this version of the Studio. It was left out.' : `${unknown} Overlays in the file are unknown to this version of the Studio. They were left out.`);
+  const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}) };
   return { project, notes };
 }
 

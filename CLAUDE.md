@@ -59,9 +59,9 @@ The tool is for the owner alone. Do not add accounts, payments, analytics, or ma
 
 Active voice. One term per concept (see the table). Plain words; explain each technical term at first use. The owner learns by understanding every step, contingency, and purpose, so state what a thing is, why it exists, and what can go wrong with it. Metaphors help; the governing metaphor is the eye exam (Studio) and the fitting (Fitter).
 
-## Stack (versions verified 2026-11-13; re-verify before upgrading)
+## Stack (versions verified 2026-11-13; Playwright and Vite as merged by the owner on 2026-11-14; re-verify before upgrading)
 
-TypeScript 6.0 (D16) · React 19.3 · Vite 8.3 · native HTML controls (D22) · Zustand 5 · Zod 4 · own color math (D17) · Vitest 5 · Playwright 1.63 (D28, pending the owner) · axe-core 4.14. Node 22. A version is pinned only 7 days or more after its release (D27).
+TypeScript 6.0 (D16) · React 19.3 · Vite 8.3 · native HTML controls (D22) · Zustand 5 · Zod 4 · own color math (D17) · Vitest 5 · Playwright 1.65 (D53; the owner merged the update on 2026-11-14) · axe-core 4.14. Node 22. A version is pinned only 7 days or more after its release (D27).
 
 ## Layout
 

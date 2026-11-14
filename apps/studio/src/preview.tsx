@@ -9,6 +9,8 @@ export interface MockupOptions {
   focus: MockupFocus;
   /** A still preview skips the entrance animation. Every preview is still except the one that demonstrates motion. */
   still: boolean;
+  /** The Overlays that the preview draws. Only the Overlays screen and the Summary pass them; the cards of a Step do not. */
+  overlays?: readonly string[];
 }
 
 export interface MockupResult {
@@ -43,7 +45,8 @@ export function tokensFor(params: DesignParams, profile: A11yProfile): Derived {
 /** Build the Mockup document for a set of design parameters. Links inside a preview are inert (they lead nowhere). */
 export function mockupHtml(project: Project, params: DesignParams, options: MockupOptions): MockupResult {
   const shown = options.wireframe ? wireframeParams(params) : params;
-  const key = JSON.stringify([shown, project.a11y, project.content, options.focus, options.still]);
+  const overlays = options.overlays ?? [];
+  const key = JSON.stringify([shown, project.a11y, project.content, options.focus, options.still, overlays]);
   const known = built.get(key);
   if (known) {
     // Used again: move it to the young end.
@@ -54,7 +57,7 @@ export function mockupHtml(project: Project, params: DesignParams, options: Mock
   const tokens = tokensFor(shown, project.a11y);
   const fonts: FontId[] = [shown.fontHeading, shown.fontBody];
   if (shown.numerals === 'mono') fonts.push('jetbrains-mono');
-  const html = renderSmallBusiness({ params: shown, tokens: tokens.css, content: project.content, focus: options.focus, still: options.still, fontFaceCss: fontFaceCss(fonts), links: 'inert' });
+  const html = renderSmallBusiness({ params: shown, tokens: tokens.css, content: project.content, focus: options.focus, still: options.still, overlays, fontFaceCss: fontFaceCss(fonts), links: 'inert' });
   const result: MockupResult = { html, issues: tokens.issues, pairs: tokens.pairs };
   built.set(key, result);
   if (built.size > BUILT_MAX) built.delete(built.keys().next().value as string);

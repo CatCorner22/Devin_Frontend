@@ -25,3 +25,14 @@ Two chapters, each with a data file, came first. Research helpers (AI assistants
 
 - **[01 · Perception and cognition](01-perception-and-cognition.md)**, with its records in `kb-perception-cognition.json`.
 - **[02 · Aesthetics, satisfaction, and intuitiveness](02-aesthetics-satisfaction-intuitiveness.md)**, with its records in `kb-aesthetics-satisfaction.json`.
+
+## Research of 2026-11-14 (four data files; not in the source format)
+
+Four AI assistants wrote 76 records on 2026-11-14, one research task each (decision D52); nobody has reviewed them. Nearly every study was seen only as a search summary: the network blocked most research sites. The overview, with one table per file and the count of how each file's sources were seen, is **[03 · Research of 2026-11-14](03-research-of-2026-11-14.md)**.
+
+- `kb-language-reading.json`: 20 records on reading (sentences, familiar words, headings, line length, letter size, error messages, reading speed). Tags: reading, language.
+- `kb-mathematics.json`: 20 records on the arithmetic of design (size scales, spacing, balance, color arithmetic, the contrast formula, pointing and choice). Tags: mathematics, measurement.
+- `kb-eye-and-beauty.json`: 20 records on where people look and what they prefer, and on what brain studies do not show. Tags: eye-tracking, preference.
+- `kb-japanese-design.json`: 16 records on Japanese design (the ideas behind the minimal look, where the popular lists come from, the counter-evidence of dense Japanese web pages). Tags: look, japanese-design.
+
+Ingested: 2026-11-14.

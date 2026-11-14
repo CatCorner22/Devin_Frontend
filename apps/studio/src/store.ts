@@ -1,7 +1,7 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
   DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findStep, firstOpenStepId, generateDirections, keep, matchingOptionId,
-  nextStepId, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setReason, startPlain, tune,
+  nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, startPlain, tune,
   type A11yProfile, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
@@ -12,8 +12,8 @@ import {
 
 export type Device = 'phone' | 'tablet' | 'desktop';
 export const DEVICE_WIDTH: Record<Device, number> = { phone: 375, tablet: 768, desktop: 1280 };
-export type View = 'directions' | 'steps' | 'summary' | 'licences';
-const VIEWS: readonly View[] = ['directions', 'steps', 'summary', 'licences'];
+export type View = 'directions' | 'steps' | 'overlays' | 'summary' | 'licences';
+const VIEWS: readonly View[] = ['directions', 'steps', 'overlays', 'summary', 'licences'];
 
 /** The card that stands for the design as it is, when no Catalog Option matches it. */
 export const CURRENT = 'current';
@@ -99,6 +99,8 @@ export interface StudioState {
   requestPlainStart(): void;
   moreDirections(): void;
   setProfile(profile: A11yProfile): void;
+  /** Switch one Overlay on or off for this project. */
+  toggleOverlay(overlayId: string, on: boolean): void;
   rename(name: string): void;
   /** Try once more to save, after a save failed (for example when the owner has made room in storage). */
   saveAgain(): void;
@@ -181,7 +183,8 @@ function readHash(): { view: View; stepId?: string } | null {
 }
 
 const hashFor = (view: View, stepId: string): string => (view === 'steps' ? `#${stepId}` : `#${view}`);
-const hasWork = (project: Project): boolean => project.direction !== null || Object.keys(project.decisions).length > 0;
+/** Switched-on Overlays are work too: a project that holds nothing else is still asked about, and kept, before it is replaced (code review of 2026-11-14). */
+const hasWork = (project: Project): boolean => project.direction !== null || Object.keys(project.decisions).length > 0 || overlaysOf(project).length > 0;
 /** The names that the Studio itself gives a project. A project under another name holds something the owner typed. */
 const OWN_NAMES = ['My first project', 'My project'];
 /**
@@ -476,7 +479,8 @@ export const useStudio = create<StudioState>((set, get) => {
   const advance = (): void => {
     const following = nextStepId(get().stepId);
     if (following) enter('steps', following);
-    else enter('summary', get().stepId);
+    // After the last Step come the Overlays, then the Summary.
+    else enter('overlays', get().stepId);
   };
 
   const refocus = (): void => set({ focusTick: get().focusTick + 1 });
@@ -900,6 +904,10 @@ export const useStudio = create<StudioState>((set, get) => {
       commit({ ...get().project, a11y: profile });
     },
 
+    toggleOverlay(overlayId, on) {
+      commit(setOverlay(get().project, overlayId, on));
+    },
+
     rename(name) {
       commit({ ...get().project, name: name.slice(0, 120) }, 'name');
     },
@@ -981,9 +989,14 @@ export const useStudio = create<StudioState>((set, get) => {
       const touched = STEPS.filter((st) => differs(now.decisions[st.id], previous.decisions[st.id]) || differs(ownedValues(st, now.params), ownedValues(st, previous.params)));
       const wholeProject = now.direction !== previous.direction || touched.length > 3;
       const first = touched[0];
-      // A change that touched no Step: the name, or the Contrast checks setting. Saying "your earlier project is back" for a
-      // changed name would overstate what Undo did.
-      const small = !wholeProject && !first ? (now.name !== previous.name ? `Undone: the project’s name is “${plainName(previous.name)}” again.` : now.a11y !== previous.a11y ? 'Undone: the Contrast checks setting is back to how it was.' : null) : null;
+      // A change that touched no Step: the name, the Contrast checks setting, or the Overlays. Saying "your earlier project is
+      // back" for a changed name or for one Overlay would overstate what Undo did.
+      const small = !wholeProject && !first
+        ? now.name !== previous.name ? `Undone: the project’s name is “${plainName(previous.name)}” again.`
+          : now.a11y !== previous.a11y ? 'Undone: the Contrast checks setting is back to how it was.'
+            : differs(overlaysOf(now), overlaysOf(previous)) ? 'Undone: the Overlays are back to how they were.'
+              : null
+        : null;
       const text = small
         ?? (wholeProject || !first
         ? `Undone: your earlier project is back, the one that started from ${directionName(previous, get().generated)}.`

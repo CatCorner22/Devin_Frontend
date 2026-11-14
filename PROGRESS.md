@@ -2,9 +2,32 @@
 
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
+## Start here (written 2026-11-14 for the next session)
+
+**The one-minute picture.** The Studio lets the owner pick a starting look (38 Directions, each in several Skins), refine it over 23 Steps, switch on Overlays, and read the result back on a Summary with five research rules. It saves reliably. It does not yet export anything to build from (milestone M6) and has no Fitter (M7). Milestone M4 is open and waits for one thing that only the owner can do: the trial in `docs/trial-guide.md`.
+
+**Where the work is.** One branch holds everything: `claude/brave-mayer-sawqz9` (the main line; no pull request is open). The private page is https://claude.ai/artifact/PexMgowEAEAHZ9vpHw3uXc; its version number is in `WAYPOINTS.md`.
+
+**First commands of a new session.**
+1. `npm ci --ignore-scripts` (about 5 seconds).
+2. `npm run check` (type check, lint, boundary rule, unit tests; under a minute).
+3. Before any browser test on this kind of machine: `export PW_CHROMIUM=/opt/pw-browsers/chromium`. The installed browser is older than the pinned Playwright, and the tests find it through that variable. Never run `playwright install`.
+4. `npm run e2e` (builds the page, then all browser tests; 15 to 25 minutes). Run it in the background and do not rebuild the page while it runs.
+
+**Rules that changed how the work is done (all in `CLAUDE.md`).** After any change to code: `npm run check`. After any change to a screen, the Mockup, or saving: also `npm run e2e`. No commit of code until every check passes. Never weaken a test.
+
+**Traps that cost time in this session.**
+- `npm run visual:update` rewrites every stored picture. Afterwards restore the existing ones (`git ls-files -m apps/studio/e2e/baselines | grep png | xargs -r git checkout --`) and confirm that `styles.json` only gained entries.
+- A new text on screen must pass the plain-words rule (`packages/core/src/catalog/words.ts`): no trade word outside round brackets, and none of the vague phrases (for example "research helper"). The unit tests now cover Skins, Overlays, and research rules; the browser walk covers every screen.
+- The grade "measured" needs a source that was read in full. Nearly all research was seen as search summaries, so new records are "convention" or "expert opinion".
+- A new screen changes the path: tests that walk from the last Step to the Summary pass through the Overlays.
+- Four links in the top bar do not fit a 320-pixel window side by side; the row wraps.
+
+**What the next session should do first.** Read "Next" and "Waiting on the owner" below. If the owner has sent the ten trial answers, turn each named problem into a row in `redteam/FINDINGS.md` and repair the serious ones; M4 then closes on the owner's word and M5 starts with the Brief (the owner's own words in every preview).
+
 ## Current milestone: M4 (Step screen). Not complete.
 
-**Why M4 is not complete.** Its exit test has three parts: the owner uses the Studio on the private page; a keyboard-only pass; the owner picks the Studio's own look. The keyboard pass now runs as an automated test. The owner's trial has not happened. The second red-team review ran on 2026-11-13 (decision D34): it found 3 blockers, all fixed and tested the same day, and 12 major findings, of which 1 is still open (U2-08 Options that look alike) and 3 are fixed in part (U2-04, U2-06, T2-03). The third review ran the same day (decision D41), on those fixes and on the plain-words rewrite: 2 blockers, both fixed and tested; 14 major findings, 12 fixed and 2 fixed in part (U3-02, U3-05). Nobody has reviewed the fixes of the third review; hard rule 12 asks for that at the M4 gate.
+**Why M4 is not complete.** Its exit test has three parts: the owner uses the Studio on the private page; a keyboard-only pass; the owner picks the Studio's own look. The keyboard pass runs as an automated test. The owner's trial has not happened; `docs/trial-guide.md` walks the owner through it in about 25 minutes and asks ten questions. The three major ease-of-use findings that stood in the way were repaired on 2026-11-14 (U2-06 and U3-05 fixed; U2-08 fixed in part, with the rest stated on screen in words). Overlays and research rules belong to M5 in the plan; the owner asked for them early (decision D52), and they were built before M4's exit test.
 
 **Milestone status, stated plainly.**
 
@@ -12,15 +35,15 @@ A fresh session reads this file to learn where the project stands. Update it aft
 |---|---|
 | M0 | Exit test met after correction on 2026-11-13: the results file now matches the measured data; the scorecard is applied and marked as judged by a model. |
 | M1 | Met late. CI was red when M2 work began (finding M-02). No session setup script (decision D32). |
-| M2 | Met: 163 unit tests (2026-11-14); the core imports no React and no browser API. |
+| M2 | Met: 184 unit tests (2026-11-14); the core imports no React and no browser API. |
 | M3 | Exit test met in CI since 2026-11-13 (pixel-difference tests, stored-picture gate). One part still open: nobody has confirmed that the private page shows the embedded pictures. |
 | M4 | In progress. |
 
 ## What exists
 
-- **Core** (`packages/core`): 23 Steps (6 Layout, 17 Look and feel), 35 Directions and a Direction generator, 12 conflict rules and 11 harmony rules as Catalog records, token derivation with 29 measured contrast pairs, the Mockup for Template 1 (one page), saved-project format version 2 with a migration from version 1.
-- **Studio** (`apps/studio`): Directions, Steps, Summary, and Licences screens; storage that reads both saved copies and never overwrites what it cannot read; Undo; confirmations before work is replaced.
-- **Checks in CI:** type check, lint, boundary rule, 163 unit tests, licence-notices check, 236 browser tests (86 on the Studio; 150 on the Mockup: 23 on the Options of each Step, 9 on paint-only Steps, 1 on target sizes, 6 on window widths, headline size, and the telephone number, 57 stored-picture comparisons, 1 comparison of measured styles, 2 checks that a changed look is noticed, and 1 measurement of drawn colors), bundle-size budget, dependency audit. After each Studio browser test, a check fails the test if the page met an error. CI's time limit is 25 minutes; the browser tests take about eight minutes on a developer machine.
+- **Core** (`packages/core`): 23 Steps (6 Layout, 17 Look and feel), 38 Directions in four groups and a Direction generator, 13 Skins, 6 Overlays, 5 research rules, 12 conflict rules and 11 harmony rules as Catalog records, token derivation with 29 measured contrast pairs, the Mockup for Template 1 (one page), saved-project format version 2 with a migration from version 1.
+- **Studio** (`apps/studio`): Directions, Steps, Overlays, Summary, and Licences screens; storage that reads both saved copies and never overwrites what it cannot read; Undo; confirmations before work is replaced.
+- **Checks in CI:** type check, lint, boundary rule, 184 unit tests, licence-notices check, 263 browser tests (on the Studio and on the Mockup; among them one stored-picture comparison per Direction and page part), bundle-size budget, dependency audit. After each Studio browser test, a check fails the test if the page met an error.
 - **Red team:** first review on 2026-11-13: 137 findings (6 blockers, 55 major, 56 minor, 20 notes). Every finding has a status in `redteam/FINDINGS.md`. `redteam/tools/plant-defects.py` plants 39 defects; the unit suite catches 38.
 - **Private page:** https://claude.ai/artifact/PexMgowEAEAHZ9vpHw3uXc (the version number is in `WAYPOINTS.md`).
 - **Literal names (2026-11-13).** Every Step, Option, and slider in the Catalog now carries a name that says what a person sees (for example "Ring and whisper" became "Thin outline with a faint shadow"; "Accent color" became "Main color"). The "Contrast checks" choices read "Off", "Warn me", "Fix for me". Identifiers did not change, so saved projects open as before. No red-team review covered this change (D33).
@@ -45,22 +68,30 @@ A fresh session reads this file to learn where the project stands. Update it aft
 - **Speed (2026-11-14).** The builder timed every kind of action with the browser's own counters (`docs/knowledge/sources/studio-action-delay-measurements.md`). One action was slow: a change of the preview width (152 ms until drawn). It now answers after 48 ms; the work for the card pictures (80 to 110 ms in one stretch) still follows. Every other action is drawn within 24 to 72 ms. Memory stayed level over six walks through all Steps.
 - **Seventeen more Directions (2026-11-14, decision D51).** On the owner's request, in three sets: Motel Neon, Ocean Drive, Mall Sunset, Quiet Orbit, Steady Steps; Malibu Sunset, Miami Beach Deco, Vegas Modern, Smoky Mountain Autumn, Childhood Nostalgia; Long Conversation, Before Dawn, Mountain Rhinestone, Field Manual, Blue Hour Chapel, Woody Creek Winter, Desert Fever. Eight honor a person or a book (Motel Neon, Blue Hour Chapel, Long Conversation, Before Dawn, Mountain Rhinestone, Field Manual, Woody Creek Winter, Desert Fever); no Direction carries such a name. Each is the builder's own composition from existing Options; no source was consulted, and no person has reviewed one. With "Warn me", none of the 17 starts with a contrast warning or a conflict. One reviewer (not three; D51) looked at the first five only; the last twelve had no reviewer, only the automatic tests and one look by the builder. The layout test found one real defect through "Miami Beach Deco" (a service box 5 pixels too wide at 1024 pixels with every slider at its highest); repaired in `fac22be`.
 - **This machine's browser is older than the merged Playwright.** The browser tests take the installed browser's path from the variable `PW_CHROMIUM` here; CI installs its own and sets nothing. The stored pictures of the 17 new Directions were made with the older browser; CI compares them with the newer one.
+- **Ease-of-use repairs and the saving table (2026-11-14, commit `d217d5e`).** Close-up card pictures on four Steps and notes in words on six (a pixel comparison found 39 card pairs that looked alike; 12 remain, each stated in words); the bar over the cards holds only the main button; one name for each thing; the 35 Directions of that day in four groups. `docs/reference/saving-table.md` lists every situation of a tab against every event, each cell with its test; writing it showed one real fault (a tab that opened while another tab saved), now repaired.
+- **Skins (2026-11-14, decision D52).** A Skin is the same Direction in other colors, with or without a color fade in the headline. 13 Skins; each Direction lists the 2 to 5 that cause no clash and no failing color pair that its own colors pass. A Skin is chosen on the Direction's card when a project starts.
+- **Overlays (2026-11-14, decisions D52 and D53).** Six small helpers over the page: tooltip, "Are you sure?" question, notice after an action, error message beside a field, loading placeholder, main button that stays in view on a phone. A screen of their own between the Steps and the Summary; the preview draws each switched-on Overlay open, as a still picture without script. A project stores them as an optional list; a project without Overlays is stored exactly as before.
+- **Research (2026-11-14, decision D52).** Four AI assistants wrote 76 records in four files (`docs/knowledge/kb-language-reading.json`, `kb-mathematics.json`, `kb-eye-and-beauty.json`, `kb-japanese-design.json`; overview in `docs/knowledge/03-research-of-2026-11-14.md`). The network blocked most research sites: nearly every study was seen only as a search summary, and nobody has reviewed the records. About 1.2 million tokens, measured.
+- **Research rules (2026-11-14, decision D53).** Five findings turned into numbers that the Studio measures on the open design, shown on the Summary as "Holds" or "Does not hold" with the number, the reason, what a person must still check, and the sources: reading text size, the step between text sizes (both follow the owner's choices), and line length, line height, and the height of buttons (all three fixed by the sample website; the Summary says so). None is graded "measured". Four hold on every Direction and Skin (a unit test checks it); "Control Room" departs from the text-size rule on purpose. A sixth rule, on the number of strong colors, was taken out again: its measure could give one answer only.
+- **Code review of this unit (2026-11-14).** Three reviewers and one skeptic who tried to refute each finding: 19 findings, all confirmed, 17 distinct (2 major, 10 minor, 5 notes); 666,551 tokens, measured. The two major ones were truthfulness defects: a research rule said "Holds" for links that it did not measure, and a fade Skin on five Directions faded into another color than its text named. All 17 are repaired or answered; `redteam/FINDINGS.md` has one row each, and the reviewers' texts are in `redteam/reports/2026-11-14-e-code-review.json`.
+- **Japanese design (2026-11-14, decisions D52 and D53).** Three Directions ("Ink and Seal", "Unbleached and Indigo", "Plain Label") and two Skins ("Indigo dye", "Vermilion seal"), each citing the research records it draws on. The records describe a tradition, not experiments; every number in these looks is the builder's translation.
+- **Records brought up to date (2026-11-14).** The stack line in `CLAUDE.md` names Playwright 1.65; decision D28 is replaced by D53; `PLAN.md` is version 2 with the states of Skins, Overlays, and research rules set to "built"; the guarantees reference is version 1.4 with 49 guarantees.
 
 ## Next
 
-1. The owner tries the Studio and answers the open questions below.
-2. Fix the open major finding of the second review (U2-08; finish U2-06 and T2-03) and the two major findings of the third review that are fixed in part (U3-02, U3-05); then have the reviewers check the fixes (hard rule 12). M4 cannot close before that.
-3. M5: import the knowledge base into the Catalog (teaching text, craft layer, floors); Stage 1 (Brief, the owner's real content) and Stage 4 (Behavior) Steps; an inner page for Template 1; group the 13 accents; use `data/exemplar-tokens.json` and `data/sleek-recipes.json` for values that a record supports.
-4. M6: export bundle. M7: the Fitter.
+1. **The owner tries the Studio** with `docs/trial-guide.md` and sends the ten answers. M4 closes on the owner's word (hard rule 1).
+2. **Repair what the trial and the reviews of 2026-11-14 name as serious** (see "Code review of this unit" above and `redteam/FINDINGS.md`).
+3. **M5**, in this order: the Brief (the owner's product, audience, and real content, so that every preview shows the owner's words); the craft layer and the floors from the knowledge base; the rest of the behavior Steps; an inner page for Template 1. A Skin's name stored in the project, and a change of Skin inside a project, belong here too.
+4. **M6**: the export bundle (the Prescription). **M7**: the Fitter.
 
 ## Waiting on the owner
 
 1. Do the pictures appear on the private page? (M3's last open part.)
-2. Approve or reject: D24 (links and focus ring stay at 3:1 even when Contrast checks are Off), D28 (Playwright 1.63.0), D29 (browser storage, not IndexedDB), D30 (own type-size formula), D31 ("keep" replaces "skip: take the default"), D32 (no setup script).
+2. Approve or reject: D24 (links and focus ring stay at 3:1 even when Contrast checks are Off), D29 (browser storage, not IndexedDB), D30 (own type-size formula), D31 ("keep" replaces "skip: take the default"), D32 (no setup script).
 3. Approve changes to the defined-terms table in `CLAUDE.md`: an Option is "one of several choices" (not "3-4"); the accessibility Floor is optional per project (D13); add "Direction"; a Decision's reason is optional.
 4. Two bundled typefaces reserve their names (Playfair Display, Source Serif 4): keep, replace, or ask the copyright holders. See `docs/research/10-font-reserved-names.md`.
 5. The default for Contrast checks is "Advise" (shown as "Warn me"). The owner's own source assessment says "default to AA". Keep "Advise"?
-6. You merged six of Dependabot's pull requests on 2026-11-14 (numbers 1, 2, 4, 5, 6, 7; among them Playwright 1.65.0 and Vite 8.3.7). CI passes with them. Two records now lag behind: decision D28 (Playwright 1.63.0) and the stack line in `CLAUDE.md`; decision D27's 7-day wait was not checked for these versions. Say whether I should bring the records up to date.
+6. (Done on 2026-11-14 with your approval of the plan: decision D28 and the stack line in `CLAUDE.md` now match the versions you merged. Still true: decision D27's 7-day wait was not checked for those six versions.)
 7. Dependabot's "cooldown" setting would enforce the 7-day wait by itself (finding S2-06). The builder could not verify its spelling (the network blocks docs.github.com) and did not add it.
 8. The Drive backup of waypoint W4 was not sent: the file is larger than the connector accepts in one call. Split it, skip it, or rely on GitHub?
 9. The third review's reviewers used about 595,000 tokens; the plan's estimate was 300,000 to 450,000.
@@ -71,8 +102,18 @@ A fresh session reads this file to learn where the project stands. Update it aft
 14. Costs of this unit of work, measured: the code review used about 1.84 million tokens; the retest round about 0.74 million (the builder's estimate was 0.5 million).
 15. Decision D50 holds four choices of the builder that are open to your veto: a pick of another Option removes the reason you wrote (the Studio says so and offers it back); opening a file never adds to a Decision's rejected Options; opening brings a value that no slider can set into reach; keeping a card that follows the main color counts as a pick.
 16. Cost of round 3: 334,110 tokens measured for the part after the machine restarted; the part before was not recorded (the builder's estimate for the whole round: about 0.75 million).
+17. Decision D53 holds the builder's choices in building Skins, Overlays, research rules, and the Japanese-design looks; each is open to your veto: the Overlays have a screen of their own between the Steps and the Summary; five research rules, none graded "measured"; "Control Room" may keep 15-pixel text; the names "Ink and Seal", "Unbleached and Indigo", "Plain Label", "Indigo dye", "Vermilion seal".
+18. Two words are in use on screen and are not in the defined-terms table of `CLAUDE.md`: "Direction" and "research rule". Say whether to add them.
+19. To raise the research from "seen as a search summary" to "read", the session's network settings would have to allow the research sites that were blocked (among them pmc.ncbi.nlm.nih.gov, www.nngroup.com, plato.stanford.edu, www.w3.org, en.wikipedia.org). Say whether you want that.
+20. Cost of this unit of work, measured where a counter exists: the four research assistants used about 1.2 million tokens. The code review used 666,551 tokens. The three red-team reviewers and the judge for the round-3 repairs had not yet run when this line was written.
 
 ## Known gaps (every plan item that is absent or partial)
+
+- **Skins.** A project does not store the name of its Skin, and a Skin can be chosen only when a project starts. The two new Skins ("Indigo dye", "Vermilion seal") are offered by the three new Directions only.
+- **Overlays.** The preview shows what each Overlay looks like, open, as a still picture. How an Overlay opens, closes, and behaves with a keyboard or a screen reader is not shown and not specified yet; that belongs to the export (M6). The six are a first set.
+- **Research rules.** Each rule measures a value of the design, not the built website. Nobody read the studies behind them. Three of the five measure values that the sample website fixes (line length, line height, the height of buttons), so they hold for every design today; the Summary says so, and they exist to catch a later Template or a changed value. Text links inside the sample website are 24 pixels tall, not 44; the rule about buttons says so.
+- **Research records.** 76 new records, unreviewed; every figure in them comes from a search summary unless its source is marked "read in full". The records list what could not be verified.
+- **Top bar on a 320-pixel window.** Its four links wrap onto two rows.
 
 - A slider step on the Step "Main color" still costs about 56 milliseconds of main-thread work (it was about 73). The two previews that change must be redrawn, and each carries its fonts inside it.
 - The contrast checks do not measure the fine grain texture, and the tests do not yet tie the drawn colors of boxes, the top bar, and the highlighter stroke to the measured ones.
@@ -94,9 +135,9 @@ A fresh session reads this file to learn where the project stands. Update it aft
 - The dependency audit shows 9 moderate advisories, all one advisory in a package inside the lint tools; nothing ships to the browser.
 - Drive backups (D26): the upload has failed on every attempt so far (connector errors).
 - **One unexplained test failure.** The browser test "dresses the Studio in the project’s design when asked, and remembers the choice" failed once in 5 local runs on 2026-11-13 (the checkbox read as unchecked after a reload). The Studio writes the preference at once and reads it first at start; no cause was found. The test is unchanged. If it fails again, investigate before anything else.
-- **Second review, still open (major):** some Option cards look alike at card size, for example the three "Text contrast" cards (U2-08).
+- **Second review, U2-08, fixed in part:** 12 pairs of cards still differ only in the large preview; each such Step says so in words on the card.
 - **Second review, still open (minor, selected):** no leave-page warning while saving is paused (S2-03); the local test file shares its browser storage with every other local HTML file, so use it for testing only (S2-05); "Warn me" does not measure a headline filled with a gradient (T2-03). The full list is in `redteam/FINDINGS.md`.
-- **Third review, still open (selected):** two things still have two names on screen (the Step "Background at the top of the page" asks about "the first screen"; the card for the current values has three names) (U3-05); the values that sliders announce to a screen reader are bare numbers (U3-11); two tabs that keep a copy at the same moment could lose one, which the reviewer inferred and did not reproduce (S3-06); the drawn-color measurement runs in Chromium only (T3-01).
+- **Third review, still open (selected):** the values that sliders announce to a screen reader are bare numbers (U3-11); two tabs that keep a copy at the same moment could lose one, which the reviewer inferred and did not reproduce (S3-06); the drawn-color measurement runs in Chromium only (T3-01).
 - **After round 3 (2026-11-14).** The repairs for F-16 to F-25 have no retest by a judge. The entry of its own that a closing page writes needs room in storage; with none, two pages that close in the same instant can still lose one change. A downloaded kept copy is named by its place in the list (`refraction-kept-copy-1.json`), not by its project; a project name without Latin letters gives the file name `project.refraction.json`. The message after a download says that the file "was handed to your browser"; the Studio cannot know whether the browser saved it. The first opening of the Studio holds the page for 50 to 120 ms once or twice.
 - **After the new Directions (2026-11-14).** "Steady Steps" shows a look for a program app on the sample website only; a true app Mockup is a later Template. Twelve of the 17 new Directions had no reviewer. Whether each look matches what the owner had in mind is for the owner to judge.
 
@@ -110,5 +151,5 @@ A fresh session reads this file to learn where the project stands. Update it aft
 ## Environment notes
 
 - Cloud environment "engine". Allowed hosts added on 2026-11-13: `www.netguru.com`, `dev.to`, `docs.gitlab.com`, `www.sitepoint.com`, `stitch.withgoogle.com`, `linear.app`, `stripe.com`, `vercel.com`, `rauno.me`. `WebFetch` cannot resolve these; `curl` through the session proxy can.
-- A new session runs `npm ci --ignore-scripts` first. The browser for tests is pre-installed and matches Playwright 1.63.0.
+- A new session runs `npm ci --ignore-scripts` first. The pre-installed browser matches Playwright 1.63.0; the project pins 1.65.0 since 2026-11-14, so local browser tests need `export PW_CHROMIUM=/opt/pw-browsers/chromium` (see "Start here").
 - The owner's source files live in Google Drive, folder "Claude".

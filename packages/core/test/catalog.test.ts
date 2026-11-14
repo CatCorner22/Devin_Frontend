@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONFLICT_RULES, CONFLICT_TESTS, DEFAULT_PARAMS, DIRECTION_GROUPS, DIRECTIONS, EVIDENCE_GRADES, FONTS, HARMONY_FIXES, HARMONY_RULES, NOT_CHECKED, PAIRS, PARAM_KEYS, RULES, SOURCE_BASES, STEPS,
-  SKINS, assertKnownParams, closerOptions, conflicts, createProject, deriveTokens, findSkin, skinParams, skinsOf, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
+  MOCKUP_OVERLAYS, OVERLAYS, RESEARCH_RULES, SKINS, SMALL_BUSINESS_CSS, assertKnownParams, findOverlay, researchReport, closerOptions, conflicts, createProject, deriveTokens, findSkin, skinParams, skinsOf, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
   CITED_NAMES, tradeWordsOutsideBrackets, vaguePhrasesIn,
   type DesignParams, type SourceRef,
 } from '../src/index.js';
@@ -115,6 +115,9 @@ describe('Catalog: plain words, and one name for one thing (decision D38, findin
     add('the plain start', describeDesign(DEFAULT_PARAMS));
     for (const pair of PAIRS) add(`contrast pair ${pair.id}`, pair.pair);
     for (const line of NOT_CHECKED) add('what the contrast checks do not cover', line);
+    for (const skin of SKINS) add(`skin ${skin.id}`, skin.name, skin.what);
+    for (const overlay of OVERLAYS) add(`overlay ${overlay.id}`, overlay.name, overlay.what, overlay.chooseWhen, overlay.risk);
+    for (const d of DIRECTIONS) for (const result of researchReport(d.params, deriveTokens(d.params, 'advise').css)) add(`research rule ${result.rule.id}`, result.rule.name, result.rule.why, result.rule.notChecked, result.found);
     return out;
   }
 
@@ -149,7 +152,10 @@ describe('Catalog: plain words, and one name for one thing (decision D38, findin
   });
 
   it('never points at something the reader cannot see, and gives no thing a second name, source lines included', () => {
-    const everything = [...allStrings(STEPS), ...allStrings(DIRECTIONS.map(({ params: _params, ...rest }) => rest)), ...allStrings(RULES), ...Object.values(FONTS).map((font) => font.character)];
+    const everything = [
+      ...allStrings(STEPS), ...allStrings(DIRECTIONS.map(({ params: _params, ...rest }) => rest)), ...allStrings(RULES), ...Object.values(FONTS).map((font) => font.character),
+      ...allStrings(SKINS), ...allStrings(OVERLAYS), ...allStrings(RESEARCH_RULES.map(({ measure: _measure, ...rest }) => rest)),
+    ];
     for (const text of everything) expect(vaguePhrasesIn(text), text).toEqual([]);
   });
 
@@ -242,15 +248,17 @@ describe('Catalog: one variable per Step', () => {
 });
 
 describe('Catalog: Directions', () => {
-  it('has 35 curated Directions, each a complete, valid, conflict-free design with record fields', () => {
-    expect(DIRECTIONS).toHaveLength(35);
-    expect(new Set(DIRECTIONS.map((d) => d.id)).size).toBe(35);
-    expect(new Set(DIRECTIONS.map((d) => d.name)).size).toBe(35);
+  it('has 38 curated Directions, each a complete, valid, conflict-free design with record fields', () => {
+    expect(DIRECTIONS).toHaveLength(38);
+    expect(new Set(DIRECTIONS.map((d) => d.id)).size).toBe(38);
+    expect(new Set(DIRECTIONS.map((d) => d.name)).size).toBe(38);
     for (const d of DIRECTIONS) {
       expect(() => assertKnownParams(d.params), d.id).not.toThrow();
       expect(Object.keys(d.params).sort(), d.id).toEqual([...PARAM_KEYS].sort());
       for (const text of [d.name, d.mood, d.bestFor, d.risk]) expect(text.trim().length, d.id).toBeGreaterThan(8);
       d.sources.forEach((source, i) => checkSource(source, `${d.id} source ${i + 1}`));
+      // A source line that points into a research file names a record that the file really holds.
+      for (const source of d.sources) if (source.record?.endsWith('.json')) expectNamedRecord(source, d.id);
       expect(EVIDENCE_GRADES, d.id).toContain(d.evidence);
       expect(isDate(d.reviewed), `${d.id}: review date`).toBe(true);
       expect(conflicts({ ...createProject(), params: d.params }), `${d.id} has a conflict`).toEqual([]);
@@ -433,6 +441,25 @@ describe('Skins: pre-built colors for a Direction', () => {
     }
   });
 
+  it('offers a color fade only where the headline can really end in the Skin’s second color (code review of 2026-11-14)', () => {
+    // A Direction that paints with one color in another way (quiet, tinted, or a block of color) cannot carry a second color:
+    // its headline fade would end 52 degrees on from the main color, not in the color that the Skin's text names.
+    let fades = 0;
+    for (const d of DIRECTIONS) {
+      for (const skin of skinsOf(d).filter((s) => s.accent2Hue !== null)) {
+        const p = skinParams(d, skin);
+        expect(p.colorStrategy, `${d.id}/${skin.id}: a fade needs a page with two colors`).toBe('duo');
+        expect(p.accent2Hue, `${d.id}/${skin.id}: the fade ends in the Skin's second color`).toBe(skin.accent2Hue);
+        expect(p.displayTreatment, `${d.id}/${skin.id}`).toBe('accent-gradient');
+        fades += 1;
+      }
+    }
+    expect(fades).toBeGreaterThan(20);
+    // A one-color Skin on a one-color page stays one-colored.
+    const daylight = DIRECTIONS.find((d) => d.id === 'soft-daylight')!;
+    expect(skinParams(daylight, findSkin('ember')!).colorStrategy).toBe('single-accent');
+  });
+
   it('keeps a two-color Direction two-colored, and gives a one-color page a second color only where the page has room for one', () => {
     const goth = DIRECTIONS.find((d) => d.id === 'galactic-goth')!;
     const gothOcean = skinParams(goth, findSkin('ocean')!);
@@ -441,5 +468,133 @@ describe('Skins: pre-built colors for a Direction', () => {
     expect(gothOcean.accent2Hue).toBe((245 + (18 - 302) + 360) % 360);
     const cobalt = DIRECTIONS.find((d) => d.id === 'cobalt-wash')!;
     expect(skinParams(cobalt, findSkin('sunset')!).colorStrategy).toBe(cobalt.params.colorStrategy);
+  });
+});
+
+/** The title of every record in one file of the knowledge base. The Studio prints a curved apostrophe; a record may hold a straight one. */
+const plainQuotes = (text: string): string => text.replace(/’/g, "'");
+const recordTitles = new Map<string, Set<string>>();
+function titlesIn(file: string): Set<string> {
+  let titles = recordTitles.get(file);
+  if (!titles) {
+    const parsed = JSON.parse(readFileSync(repoPath(file), 'utf8')) as { entries: { principle: string }[] };
+    titles = new Set(parsed.entries.map((entry) => plainQuotes(entry.principle)));
+    recordTitles.set(file, titles);
+  }
+  return titles;
+}
+/** A source line that names a record must name one that its file really holds, word for word. */
+function expectNamedRecord(source: SourceRef, where: string): void {
+  const named = /The record “([^”]+)”/.exec(source.text)?.[1];
+  expect(named, `${where}: the source line names no record`).toBeTruthy();
+  expect(titlesIn(source.record!).has(plainQuotes(named!)), `${where}: ${source.record} holds no record “${named}”`).toBe(true);
+}
+
+describe('Overlays: small helpers over the page (decision D52, hard rule 5)', () => {
+  it('has six Overlays, each a complete record with a source, an evidence grade, and a review date', () => {
+    expect(OVERLAYS).toHaveLength(6);
+    expect(new Set(OVERLAYS.map((o) => o.id)).size).toBe(OVERLAYS.length);
+    expect(new Set(OVERLAYS.map((o) => o.name)).size).toBe(OVERLAYS.length);
+    for (const overlay of OVERLAYS) {
+      expect(overlay.id, overlay.id).toMatch(/^[a-z][a-z-]*$/);
+      for (const text of [overlay.what, overlay.chooseWhen, overlay.risk]) expect(text.trim().length, overlay.id).toBeGreaterThan(40);
+      expect(EVIDENCE_GRADES, overlay.id).toContain(overlay.evidence);
+      expect(isDate(overlay.reviewed), `${overlay.id}: review date`).toBe(true);
+      expect(overlay.sources.length, overlay.id).toBeGreaterThan(0);
+      for (const source of overlay.sources) checkSource(source, `overlay ${overlay.id}`);
+      // The same rule as for a Step: the grade "measured" needs a source that was read in full.
+      if (overlay.evidence === 'measured') expect(overlay.sources.some((s) => s.basis === 'read'), overlay.id).toBe(true);
+      expect(findOverlay(overlay.id)).toBe(overlay);
+    }
+    expect(findOverlay('no-such-overlay')).toBeUndefined();
+  });
+
+  it('names, in each source line, a record that the knowledge base really holds', () => {
+    for (const overlay of OVERLAYS) for (const source of overlay.sources) expectNamedRecord(source, `overlay ${overlay.id}`);
+  });
+
+  it('draws exactly the Overlays of the Catalog in the Mockup, in the same order', () => {
+    expect([...MOCKUP_OVERLAYS]).toEqual(OVERLAYS.map((o) => o.id));
+  });
+});
+
+describe('Research rules: findings turned into numbers that a design can be measured against (decision D52, hard rule 5)', () => {
+  const report = (params: DesignParams) => researchReport(params, deriveTokens(params, 'advise').css);
+
+  it('has five research rules, each a complete record with sources, an evidence grade, and a review date', () => {
+    expect(RESEARCH_RULES).toHaveLength(5);
+    expect(new Set(RESEARCH_RULES.map((r) => r.id)).size).toBe(RESEARCH_RULES.length);
+    for (const rule of RESEARCH_RULES) {
+      for (const text of [rule.name, rule.why, rule.notChecked]) expect(text.trim().length, rule.id).toBeGreaterThan(30);
+      expect(EVIDENCE_GRADES, rule.id).toContain(rule.evidence);
+      expect(isDate(rule.reviewed), `${rule.id}: review date`).toBe(true);
+      expect(rule.sources.length, rule.id).toBeGreaterThan(0);
+      for (const source of rule.sources) {
+        checkSource(source, `research rule ${rule.id}`);
+        expectNamedRecord(source, `research rule ${rule.id}`);
+      }
+      // Nobody read the studies behind these records, so no rule may carry the grade "measured" without a source read in full.
+      if (rule.evidence === 'measured') expect(rule.sources.some((s) => s.basis === 'read'), rule.id).toBe(true);
+    }
+  });
+
+  it('measures a real number for every rule on every Direction: no rule answers from a value that is missing', () => {
+    for (const d of DIRECTIONS) {
+      for (const result of report(d.params)) {
+        expect(result.found, `${d.id}/${result.rule.id}`).not.toMatch(/NaN|undefined|Infinity/);
+        expect(result.found, `${d.id}/${result.rule.id}`).toMatch(/\b\d+(\.\d+)? (pixels|character widths|text heights)\b/);
+      }
+    }
+  });
+
+  it('holds every binding rule on every Direction and on every Skin of every Direction', () => {
+    for (const d of DIRECTIONS) {
+      for (const params of [d.params, ...skinsOf(d).map((skin) => skinParams(d, skin))]) {
+        for (const result of report(params).filter((r) => r.rule.binding)) expect(result.holds, `${d.id}: ${result.rule.name}. ${result.found}`).toBe(true);
+      }
+    }
+  });
+
+  it('names the Directions that depart from a rule that does not bind, so that a new departure is a decision and not an accident', () => {
+    const departures = DIRECTIONS.flatMap((d) => report(d.params).filter((r) => !r.holds).map((r) => `${d.id}: ${r.rule.id}`));
+    // "Control Room" is a dense working screen; its text-size Option says of itself "Small for older eyes on a public site".
+    expect(departures).toEqual(['control-room: reading-size']);
+  });
+
+  it('says "does not hold", with the number, when a design breaks a rule', () => {
+    const by = (params: DesignParams, id: string) => report(params).find((r) => r.rule.id === id)!;
+    expect(by({ ...DEFAULT_PARAMS, baseSize: 15 }, 'reading-size')).toMatchObject({ holds: false, found: 'Reading text is 15 pixels tall.' });
+    expect(by({ ...DEFAULT_PARAMS, baseSize: 16 }, 'reading-size').holds).toBe(true);
+    // The step between sizes is measured on the sizes that the design really works out, not on the ratio it asks for. With
+    // small reading text the two smallest sizes meet their lower limits and end up closer than a tenth (finding "core 4").
+    expect(by({ ...DEFAULT_PARAMS, baseSize: 14, scaleRatio: 1.25 }, 'size-step')).toMatchObject({ holds: false, found: 'The two closest text sizes are 13 and 14 pixels: the larger is 7.69 percent larger.' });
+    expect(by({ ...DEFAULT_PARAMS, baseSize: 13, scaleRatio: 1.25 }, 'size-step')).toMatchObject({ holds: false, found: 'The two closest text sizes are 13 and 13 pixels: the larger is 0 percent larger.' });
+    expect(by({ ...DEFAULT_PARAMS, baseSize: 17, scaleRatio: 1.05 }, 'size-step').holds).toBe(false);
+    expect(by({ ...DEFAULT_PARAMS, baseSize: 17, scaleRatio: 1.25 }, 'size-step').holds).toBe(true);
+    // The measures read the design's worked-out values, so a Template that changed them would be caught.
+    const css = deriveTokens(DEFAULT_PARAMS, 'advise').css;
+    const withCss = (change: Record<string, string>, id: string) => researchReport(DEFAULT_PARAMS, { ...css, ...change }).find((r) => r.rule.id === id)!;
+    expect(withCss({ '--measure': '95ch' }, 'line-length').holds).toBe(false);
+    expect(withCss({ '--measure': '95ch' }, 'line-length').found).toContain('at most 95 character widths wide');
+    expect(withCss({ '--leading-body': '1.3' }, 'line-height').holds).toBe(false);
+    expect(withCss({ '--leading-body': '2' }, 'line-height').holds).toBe(false);
+    expect(withCss({ '--target-min': '24px' }, 'target-size')).toMatchObject({ holds: false, found: 'Buttons, menu links, and form fields are at least 24 pixels tall.' });
+    expect(withCss({ '--target-min': '2.75rem' }, 'target-size')).toMatchObject({ holds: true, found: 'Buttons, menu links, and form fields are at least 44 pixels tall.' });
+    // A value that is missing never passes.
+    expect(withCss({ '--target-min': '' }, 'target-size').holds).toBe(false);
+    expect(withCss({ '--measure': '' }, 'line-length').holds).toBe(false);
+    expect(withCss({ '--text-sm': '' }, 'size-step').holds).toBe(false);
+  });
+
+  it('says which rules a design can change and which the Template fixes, and names in words what a fixed rule leaves out', () => {
+    expect(RESEARCH_RULES.filter((r) => r.setBy === 'design').map((r) => r.id)).toEqual(['reading-size', 'size-step']);
+    // A rule that a design can change really changes its answer with the design: it is a measure, not a constant.
+    for (const id of ['reading-size', 'size-step']) {
+      const answers = new Set([13, 14, 17, 20].map((baseSize) => report({ ...DEFAULT_PARAMS, baseSize }).find((r) => r.rule.id === id)!.holds));
+      expect(answers.size, id).toBe(2);
+    }
+    // The Mockup's text links are smaller than its buttons; the rule about buttons says so (finding "core 1").
+    expect(SMALL_BUSINESS_CSS).toMatch(/\.actions \.link, \.service \.more, address \.phone, \.nav-actions \.phone \{[^}]*min-height: 1\.5rem/);
+    expect(RESEARCH_RULES.find((r) => r.id === 'target-size')!.notChecked).toContain('Text links inside the page (for example “About repairs”) are 24 pixels tall');
   });
 });

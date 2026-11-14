@@ -41,6 +41,10 @@ export const SKINS: readonly Skin[] = [
   { id: 'violet', name: 'Violet', what: 'A blue-purple, with grays that lean slightly purple.', accentHue: 288, accent2Hue: null, neutralHue: 285, displayTreatment: 'solid' },
   { id: 'gold', name: 'Gold', what: 'A warm yellow-brown, with grays that lean slightly yellow.', accentHue: 82, accent2Hue: null, neutralHue: 78, displayTreatment: 'solid' },
   { id: 'graphite', name: 'Graphite', what: 'Almost no color: a near-black main color and a soft fade from top to bottom in the headline.', accentHue: 255, accent2Hue: null, neutralHue: 255, accentChroma: 0.02, displayTreatment: 'ink-gradient' },
+  // Two skins from the study of Japanese design (decision D52). The names say what a person sees. No screen value of a
+  // "traditional" color exists (the research record says so), so these are the Studio's own values inside each color family.
+  { id: 'indigo', name: 'Indigo dye', what: 'A deep, quiet blue, like cloth dyed with indigo, with grays that lean slightly warm.', accentHue: 250, accent2Hue: null, neutralHue: 85, accentChroma: 0.09, displayTreatment: 'solid' },
+  { id: 'vermilion', name: 'Vermilion seal', what: 'The orange-red of a seal stamped on a letter, with grays that lean slightly warm.', accentHue: 35, accent2Hue: null, neutralHue: 85, displayTreatment: 'solid' },
 ];
 
 const SKIN_TABLE = new Map<string, Skin>(SKINS.map((skin) => [skin.id, skin]));

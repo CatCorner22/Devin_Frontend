@@ -1,8 +1,8 @@
-# Trial guide: 20 minutes with the Studio
+# Trial guide: 25 minutes with the Studio
 
-**What this is.** Milestone M4 ends when you, the owner, have used the Studio yourself. No reviewer and no test can stand in for that: you are the only person who can say whether a screen confused you or whether a look pleased you. This page walks you through one trial and asks eight questions. Your answers are the record that closes M4.
+**What this is.** Milestone M4 ends when you, the owner, have used the Studio yourself. No reviewer and no test can stand in for that: you are the only person who can say whether a screen confused you or whether a look pleased you. This page walks you through one trial and asks ten questions. Your answers are the record that closes M4.
 
-**What you need.** The private page (its address is in `PROGRESS.md`), about 20 minutes, and a place to type your answers. A phone for part 5 if you have one at hand.
+**What you need.** The private page (its address is in `PROGRESS.md`), about 25 minutes, and a place to type your answers. A phone for part 6 if you have one at hand.
 
 **How to answer.** One sentence per question is enough. "Nothing" is a valid answer. Do not be polite: a harsh answer now saves a week later.
 
@@ -12,11 +12,12 @@
 
 1. Open the private page. Read the first screen without clicking.
 2. Look through the four groups of Directions.
-3. Pick the Direction you like best and press its "Start from …" button.
+3. Under one Direction's picture, press two of the small color chips. Each chip is a Skin: the same Direction in other colors. Watch the picture change.
+4. Pick the Direction and the Skin you like best and press its "Start from …" button.
 
 **Question 1.** Did you understand what the Studio wanted from you before you clicked anything? If not, which sentence lost you?
 
-**Question 2.** Which Direction did you pick, and was one missing that you wished for?
+**Question 2.** Which Direction and which Skin did you pick, and was one missing that you wished for?
 
 ## Part 2: three Steps (6 minutes)
 
@@ -37,26 +38,39 @@
 
 **Question 5.** Did the Studio ever do something you did not expect, or fail to say what it had done?
 
-## Part 4: the Summary (4 minutes)
+## Part 4: the Overlays (3 minutes)
 
-1. Open "3. Summary" in the top bar.
+An Overlay is a small helper that appears over the page: a tooltip, an "Are you sure?" question, a notice after an action.
+
+1. Open "3. Overlays" in the top bar.
+2. Read two of the six Overlays, each with its "Switch it on when" and "What can go wrong".
+3. Tick the ones your website needs. Watch the preview draw each one open, in your design.
+
+**Question 6.** Did you understand what each Overlay is and when to switch it on? Is an Overlay missing that your website needs?
+
+## Part 5: the Summary (5 minutes)
+
+1. Open "4. Summary" in the top bar.
 2. Read "Every Step and its value".
-3. Press "Download the project file". Find the file in your Downloads folder.
-4. Under the heading "The Studio’s own look", tick "Dress the Studio itself in this design’s colors, letter styles, and corner shapes" and look at the Studio. Untick it if you prefer the plain look. (What you leave is your answer to the third part of M4's exit test.)
+3. Read "Research rules". Open one rule and read why it exists and what you must still check yourself.
+4. Press "Download the project file". Find the file in your Downloads folder.
+5. Under the heading "The Studio’s own look", tick "Dress the Studio itself in this design’s colors, letter styles, and corner shapes" and look at the Studio. Untick it if you prefer the plain look. (What you leave is your answer to the third part of M4's exit test.)
 
-**Question 6.** Does the Summary say what you decided, in words you would use yourself? Which line would you change?
+**Question 7.** Does the Summary say what you decided, in words you would use yourself? Which line would you change?
 
-**Question 7.** Which look do you want for the Studio itself: its plain look, or your project's design?
+**Question 8.** Do the research rules tell you something useful, or do they read as noise? Which rule would you drop?
 
-## Part 5: a phone, if you have one (4 minutes)
+**Question 9.** Which look do you want for the Studio itself: its plain look, or your project's design?
+
+## Part 6: a phone, if you have one (4 minutes)
 
 1. Open the private page on a phone, or make the browser window very narrow.
 2. Start from a Direction, walk two Steps, and open the Summary.
 
-**Question 8.** What was hard to read, hard to press, or cut off on the small screen?
+**Question 10.** What was hard to read, hard to press, or cut off on the small screen?
 
 ## After the trial
 
-Send your eight answers in a message. Each answer that names a problem becomes a row in `redteam/FINDINGS.md` with its source marked "the owner's trial". When the problems that you call serious are repaired and you say so, M4 is complete and M5 may start (hard rule 1).
+Send your ten answers in a message. Each answer that names a problem becomes a row in `redteam/FINDINGS.md` with its source marked "the owner's trial". When the problems that you call serious are repaired and you say so, M4 is complete and M5 may start (hard rule 1).
 
 **What this trial does not cover.** It does not check the Studio with two tabs open, with a full browser storage, or with a damaged project file; attackers and tests cover those. It does not check whether a design is good for your customers; only your customers can show that.

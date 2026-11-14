@@ -1,5 +1,5 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, STEPS, activeTunables, conflicts, findSkin, findStep, matchingOptionId, nearestSliderValue, nextSliderValue, resolvePatch, skinParams, skinsOf, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, findOverlay, findSkin, findStep, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinParams, skinsOf, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -174,7 +174,8 @@ function TopBar(): React.JSX.Element {
       <nav className="top-nav" aria-label="Parts of the Studio">
         <a href="#directions" aria-current={s.view === 'directions' ? 'page' : undefined}>1. Directions</a>
         <a href={`#${s.stepId}`} aria-current={s.view === 'steps' ? 'page' : undefined}>2. Steps</a>
-        <a href="#summary" aria-current={s.view === 'summary' ? 'page' : undefined}>3. Summary</a>
+        <a href="#overlays" aria-current={s.view === 'overlays' ? 'page' : undefined}>3. Overlays</a>
+        <a href="#summary" aria-current={s.view === 'summary' ? 'page' : undefined}>4. Summary</a>
       </nav>
       <div className="profile">
         <label htmlFor="a11y-profile">Contrast checks</label>
@@ -448,7 +449,8 @@ function Rail(): React.JSX.Element {
   const decided = STEPS.filter((st) => s.project.decisions[st.id]).length;
   return (
     <nav className="rail" aria-label="All Steps (use the arrow keys to move through this list)" onKeyDown={onKeyDown}>
-      <a className="rail-direction" href="#directions" tabIndex={tab(s.view !== 'steps')}>
+      {/* One link of the list takes the Tab key: the current Step, the Overlays link on the Overlays screen, or else this one. */}
+      <a className="rail-direction" href="#directions" tabIndex={tab(s.view !== 'steps' && s.view !== 'overlays')}>
         <span>Started from</span>
         <strong>{directionName(s.project, s.generated)}</strong>
       </a>
@@ -475,6 +477,7 @@ function Rail(): React.JSX.Element {
           </ol>
         </section>
       ))}
+      <a className="rail-summary" href="#overlays" aria-current={s.view === 'overlays' ? 'page' : undefined} tabIndex={tab(s.view === 'overlays')}>Overlays: small helpers over the page</a>
       <a className="rail-summary" href="#summary" tabIndex={-1}>Summary and project file</a>
     </nav>
   );
@@ -802,6 +805,80 @@ function StepsView(): React.JSX.Element {
   );
 }
 
+/** The Step on which the owner changes the value that a research rule measures; a rule that the Template fixes has none. */
+const stepThatOwns = (key: keyof DesignParams): Step | undefined => STEPS.find((step) => step.owns.includes(key));
+const RESEARCH_STEP: Record<string, Step | undefined> = {
+  'reading-size': stepThatOwns('baseSize'),
+  'size-step': stepThatOwns('scaleRatio'),
+  'strong-colors': stepThatOwns('colorStrategy'),
+};
+
+// ───────── Overlays ─────────
+
+/**
+ * The Overlays screen: one switch per Overlay. An Overlay is a small helper that appears over the page (a tooltip, an
+ * "Are you sure?" question); it is a behavior, not a look, so it works with any Direction. The preview draws each
+ * switched-on Overlay open, as a picture: a Mockup has no script, so nothing in it opens or closes.
+ */
+function OverlaysView(): React.JSX.Element {
+  const s = useStudio();
+  const heading = useHeadingFocus();
+  const on = useMemo(() => overlaysOf(s.project), [s.project]);
+  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on]);
+  return (
+    <div className="work">
+      <Rail />
+      <main className="stage" id="main" tabIndex={-1}>
+        <div className="step-head">
+          <p className="eyebrow">After the Steps · Overlays</p>
+          <h1 id="overlays-title" ref={heading} tabIndex={-1}>Which small helpers does the website need?</h1>
+          <p className="teach">An Overlay is a small helper that appears over the page when a visitor needs it: an explanation beside a word, a question before something is deleted, a message after a form is sent. An Overlay takes the colors and shapes of your design. Switch on only what the website needs: each one is one more thing to build and to test.</p>
+        </div>
+        <div className="preview-bar">
+          <div className="segmented" role="group" aria-label="Width of the large preview">
+            {DEVICES.map((d) => <button key={d.id} type="button" aria-pressed={s.device === d.id} onClick={() => s.setDevice(d.id)}>{d.label}</button>)}
+          </div>
+          <span className="showing" aria-live="polite">{on.length === 0 ? 'No Overlay is switched on.' : on.length === 1 ? '1 Overlay is switched on. The preview shows it open.' : `${on.length} Overlays are switched on. The preview shows each one open.`}</span>
+        </div>
+        <div className="preview-wrap">
+          <button type="button" className="skip-preview" onClick={() => document.querySelector<HTMLElement>('.overlay-list input')?.focus()}>
+            Jump past the preview to the Overlays
+          </button>
+          <LargePreview html={html.html} width={DEVICE_WIDTH[s.device]} title="Large preview: each switched-on Overlay, shown open, in your design" />
+        </div>
+        <p className="hint">The preview is a picture. Nothing in it opens, closes, or moves; the built website does that.</p>
+      </main>
+      <aside className="options" aria-label="The Overlays">
+        <fieldset className="overlay-list">
+          <legend>Overlays</legend>
+          <p className="hint">Tick an Overlay to switch it on. Each change is saved, and Undo in the top bar takes it back.</p>
+          {OVERLAYS.map((overlay) => (
+            <div key={overlay.id} className="overlay" data-on={on.includes(overlay.id) || undefined}>
+              <label className="check">
+                <input id={`overlay-${overlay.id}`} type="checkbox" checked={on.includes(overlay.id)} onChange={(e) => s.toggleOverlay(overlay.id, e.target.checked)} />
+                <span>{overlay.name}</span>
+              </label>
+              <p>{overlay.what}</p>
+              <p><strong>Switch it on when:</strong> {overlay.chooseWhen}</p>
+              <p><strong>What can go wrong:</strong> {overlay.risk}</p>
+              <details className="source">
+                <summary>Where this guidance comes from</summary>
+                <p><strong>How strong the guidance is:</strong> {EVIDENCE_LABEL[overlay.evidence]}. Reviewed on {overlay.reviewed}.</p>
+                <ul>
+                  {overlay.sources.map((source) => <li key={source.text}>{source.text} <em>({BASIS_LABEL[source.basis]})</em></li>)}
+                </ul>
+              </details>
+            </div>
+          ))}
+        </fieldset>
+        <div className="actions sticky">
+          <a className="btn primary" href="#summary">Continue to the Summary</a>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 // ───────── Summary ─────────
 
 /** The time at which a copy was kept, on the reader's own clock, or an empty text when the time is unknown. */
@@ -834,8 +911,10 @@ function SummaryView(): React.JSX.Element {
   const [showText, setShowText] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const text = useMemo(() => JSON.stringify(s.project, null, 2), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'top', still: true }), [s.project]);
+  const overlaysOn = useMemo(() => overlaysOf(s.project), [s.project]);
+  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'top', still: true, overlays: overlaysOn }), [s.project, overlaysOn]);
   const clashes = useMemo(() => conflicts(s.project), [s.project]);
+  const research = useMemo(() => researchReport(s.project.params, tokensFor(s.project.params, s.project.a11y).css), [s.project.params, s.project.a11y]);
   const decided = STEPS.filter((st) => s.project.decisions[st.id]).length;
   const [keptTick, setKeptTick] = useState(0);
   // The kept copy that the owner is about to remove, by a name that stays the same when the list is read again. Holding the
@@ -959,6 +1038,43 @@ function SummaryView(): React.JSX.Element {
               );
             })}
           </ol>
+        </section>
+        <section aria-labelledby="overlays-heading">
+          <h2 id="overlays-heading">Overlays</h2>
+          {overlaysOn.length === 0 ? (
+            <p>No Overlay is switched on. <a href="#overlays">Choose Overlays</a></p>
+          ) : (
+            <>
+              <ul className="overlay-summary">
+                {overlaysOn.map((id) => <li key={id}>{findOverlay(id)?.name}</li>)}
+              </ul>
+              <p><a href="#overlays">Change the Overlays</a></p>
+            </>
+          )}
+        </section>
+        <section aria-labelledby="research-heading">
+          <h2 id="research-heading">Research rules</h2>
+          <p className="hint">A research rule turns a finding from research into a number that the Studio measures on your design. Each rule is advice, with its strength stated; none of them changes your design. Open a rule to read why it exists and what you must still check yourself.</p>
+          <ul className="research-list">
+            {research.map((result) => {
+              const step = RESEARCH_STEP[result.rule.id];
+              return (
+                <li key={result.rule.id} data-holds={result.holds}>
+                  <details className="source">
+                    <summary><strong>{result.holds ? 'Holds' : 'Does not hold'}:</strong> {result.rule.name}. <span className="found">{result.found}</span></summary>
+                    <p><strong>Why the rule exists:</strong> {result.rule.why}</p>
+                    <p><strong>What the Studio does not check:</strong> {result.rule.notChecked}</p>
+                    {step && <p>You change this on the Step <a href={`#${step.id}`}>“{step.name}”</a>.</p>}
+                    {result.rule.setBy === 'template' && <p><strong>Set by the sample website, not by your choices:</strong> no Step changes this value, so the rule holds for every design today. It is listed so that a later change of the sample website cannot break it unseen.</p>}
+                    <p><strong>How strong the guidance is:</strong> {EVIDENCE_LABEL[result.rule.evidence]}. Reviewed on {result.rule.reviewed}.</p>
+                    <ul>
+                      {result.rule.sources.map((source) => <li key={source.text}>{source.text} <em>({BASIS_LABEL[source.basis]})</em></li>)}
+                    </ul>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
         </section>
         {(clashes.length > 0 || html.issues.length > 0) && (
           <section className="notes" aria-labelledby="notes-heading">
@@ -1089,7 +1205,7 @@ export function App(): React.JSX.Element {
         <div className="banner" role="alert"><p>This page is not allowed to show the embedded pictures of the sample website, so they will be blank. Tell Claude: “the previews are blocked.”</p></div>
       )}
       <ScreenBoundary key={view}>
-        {!ready ? <main className="loading" id="main" tabIndex={-1}><p>Opening your project…</p></main> : view === 'directions' ? <DirectionsView /> : view === 'summary' ? <SummaryView /> : view === 'licences' ? <LicencesView /> : <StepsView />}
+        {!ready ? <main className="loading" id="main" tabIndex={-1}><p>Opening your project…</p></main> : view === 'directions' ? <DirectionsView /> : view === 'overlays' ? <OverlaysView /> : view === 'summary' ? <SummaryView /> : view === 'licences' ? <LicencesView /> : <StepsView />}
       </ScreenBoundary>
       <ConfirmDialog />
     </div>

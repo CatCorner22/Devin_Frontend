@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_PARAMS, DIRECTIONS, MOCKUP_FOCUSES, SAMPLE_CONTENT, SMALL_BUSINESS_CSS, STEPS,
+  DEFAULT_PARAMS, DIRECTIONS, MOCKUP_FOCUSES, MOCKUP_OVERLAYS, OVERLAYS, SAMPLE_CONTENT, SMALL_BUSINESS_CSS, STEPS,
   deriveTokens, escapeHtml, renderSmallBusiness, resolvePatch,
   type DesignParams, type MockupInput, type SiteContent,
 } from '../src/index.js';
@@ -185,5 +185,66 @@ describe('Mockup: structure that the checks rely on', () => {
   it('labels the sample content as a sample', () => {
     expect(SAMPLE_CONTENT.footerNote).toMatch(/sample/i);
     expect(render()).toContain(escapeHtml(SAMPLE_CONTENT.footerNote));
+  });
+});
+
+describe('Mockup: Overlays (decision D52)', () => {
+  const body = (html: string): string => withoutStyle(html);
+  const stages = (html: string): number => (body(html).match(/class="ov-stage"/g) ?? []).length;
+
+  it('draws no Overlay, and marks none on the page, when none is switched on', () => {
+    for (const html of [render(), render(DEFAULT_PARAMS, { overlays: [] })]) {
+      expect(stages(html)).toBe(0);
+      expect(body(html)).not.toContain('data-overlays=');
+      expect(body(html)).toContain('No Overlay is switched on.');
+    }
+  });
+
+  it('draws each switched-on Overlay once, under its Catalog name, in the Catalog order', () => {
+    for (const overlay of OVERLAYS) {
+      const html = body(render(DEFAULT_PARAMS, { overlays: [overlay.id], focus: 'overlays' }));
+      expect(stages(html), overlay.id).toBe(1);
+      expect(html, overlay.id).toContain(`<p class="ov-name">${overlay.name}</p>`);
+      expect(html, overlay.id).toContain(`data-overlays="${overlay.id}"`);
+    }
+    // Asked for in another order, and twice: the page still draws each once, in the order of the Catalog.
+    const all = body(render(DEFAULT_PARAMS, { overlays: [...MOCKUP_OVERLAYS].reverse().concat('tooltip'), focus: 'overlays' }));
+    expect(stages(all)).toBe(OVERLAYS.length);
+    expect(all).toContain(`data-overlays="${MOCKUP_OVERLAYS.join(' ')}"`);
+    const places = OVERLAYS.map((o) => all.indexOf(`<p class="ov-name">${o.name}</p>`));
+    expect([...places].sort((a, b) => a - b)).toEqual(places);
+    expect(places.every((at) => at >= 0)).toBe(true);
+  });
+
+  it('refuses an Overlay that is not in its list, before anything reaches the markup', () => {
+    for (const bad of ['"><script>alert(1)</script>', 'Tooltip', '', 'tooltip confirm']) {
+      expect(() => render(DEFAULT_PARAMS, { overlays: [bad] }), JSON.stringify(bad)).toThrow('An Overlay is not in its list.');
+    }
+  });
+
+  it('keeps the pictures free of script, of live links, and of anything a visitor could send', () => {
+    const part = (html: string): string => /<section class="block overlay-demo"[\s\S]*?<\/section>/.exec(html)?.[0] ?? '';
+    const demo = part(body(render(DEFAULT_PARAMS, { overlays: [...MOCKUP_OVERLAYS], focus: 'overlays', links: 'inert' })));
+    expect(demo.length).toBeGreaterThan(500);
+    expect(demo).not.toMatch(/<script|<a |<button|<form|href=|\son[a-z]+=|javascript:/i);
+    // The one owner text in a picture, the main button's label, arrives escaped.
+    const { content, payloads } = hostileContent();
+    const hostile = body(renderSmallBusiness({ params: DEFAULT_PARAMS, tokens: deriveTokens(DEFAULT_PARAMS, 'advise').css, content, overlays: [...MOCKUP_OVERLAYS], focus: 'overlays', links: 'inert' }));
+    for (const payload of payloads) expect(hostile).not.toContain(payload);
+    expect(part(hostile)).toContain(escapeHtml(content.primaryAction));
+    expect(part(hostile)).not.toMatch(/<script|<a |<img/i);
+  });
+
+  it('shows the main button that stays in view only on a narrow screen, and only where the page is shown whole', () => {
+    // The whole selector, word for word: without its three exclusions the bar would also show over the close-up pictures and
+    // beside its own picture on the Overlays screen (code review of 2026-11-14, finding "tests 2").
+    const rule = '@media (max-width: 599px) {\n  body[data-overlays~="sticky-call"]:not([data-focus="overlays"]):not([data-focus="buttons"]):not([data-focus="box"]) .sticky-call { display: grid; position: sticky; bottom: 0; z-index: 3; }\n}';
+    expect(SMALL_BUSINESS_CSS).toContain(rule);
+    // The bar is hidden by a rule that comes after the rule it shares with its picture, and before the one rule that shows it.
+    const shared = SMALL_BUSINESS_CSS.indexOf('.ov-bar, .sticky-call { display: grid;');
+    const hidden = SMALL_BUSINESS_CSS.indexOf('\n.sticky-call { display: none; }');
+    expect(shared).toBeGreaterThan(0);
+    expect(hidden).toBeGreaterThan(shared);
+    expect(SMALL_BUSINESS_CSS.indexOf(rule)).toBeGreaterThan(hidden);
   });
 });

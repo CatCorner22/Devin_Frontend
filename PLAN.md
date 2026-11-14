@@ -16,7 +16,7 @@
 
 **Who it is for.** You alone. No licensing, accounts, payments, or marketing. The tool earns nothing by itself; it raises the quality of what you sell. Therefore the plan puts a real, sellable project through the tool as early as possible (milestone M8).
 
-**Where it stands today, in one paragraph.** The Studio's choosing half is built: 35 starting looks, 23 decisions, a live preview, reliable saving, and a project file. The Studio does not yet hand you anything you can build from (the Prescription is milestone M6), and the Fitter does not exist (M7). Milestone M4 is open and waits for one thing that only you can do: try the Studio (`docs/trial-guide.md`).
+**Where it stands today, in one paragraph.** The Studio's choosing half is built: 38 starting looks (each in several Skins), 23 decisions, six Overlays, five research rules, a live preview, reliable saving, and a project file. The Studio does not yet hand you anything you can build from (the Prescription is milestone M6), and the Fitter does not exist (M7). Milestone M4 is open and waits for one thing that only you can do: try the Studio (`docs/trial-guide.md`).
 
 **Your standing wish (2026-11-14).** Simple, effective, useful features; no giant heap of slop. Every part of this plan is held to that: each feature in its smallest useful form, and a plain statement of what was left out.
 
@@ -24,13 +24,13 @@
 
 | Eye care | Refraction | State |
 |---|---|---|
-| You try on a few finished frames first | A **Direction**: a complete starting look | built (35) |
-| The same frame in another color | A **Skin**: pre-built colors and color fades for a Direction | being built |
+| You try on a few finished frames first | A **Direction**: a complete starting look | built (38) |
+| The same frame in another color | A **Skin**: pre-built colors and color fades for a Direction | built (13 Skins; each Direction offers 2 to 5) |
 | "Which is clearer, 1 or 2?" | Each **Step** shows several **Options** | built (23 Steps) |
 | Each comparison changes one lens only | Each Step changes one design variable; all else stays fixed | built |
 | You read the same letter chart every time | Every Option renders on the same **Mockup** | built with sample content; your own content is M5 |
 | You need no knowledge of optics | Each Step teaches its concept in plain words | built |
-| Coatings and extras: anti-glare, a case | An **Overlay**: a small helper over the page (a tooltip, an "Are you sure?" question) | being built |
+| Coatings and extras: anti-glare, a case | An **Overlay**: a small helper over the page (a tooltip, an "Are you sure?" question) | built (first set of six) |
 | No lens that harms you is offered | Contrast checks warn or repair, as you choose | built |
 | The written prescription | The **Prescription**: a Markdown prompt plus token files | not built (M6) |
 | The optician fits the glasses and has you read the chart again | The **Fitter** renders the build, measures it, and repairs | not built (M7) |
@@ -63,10 +63,10 @@ A rule graded C or D is shown as opinion or folklore, never as science.
 | # | Screen | What you do there | State |
 |---|---|---|---|
 | 1 | Directions | Pick a complete starting look from four groups (light and calm; dark and dramatic; warm and nostalgic; bold and playful), or let the Studio compose six more at random, or start plain | built |
-| 1a | Skin | On a Direction's card, pick one of its pre-built skins: other colors, with or without a color fade in the headline | being built |
+| 1a | Skin | On a Direction's card, pick one of its pre-built skins: other colors, with or without a color fade in the headline | built; a Skin is chosen when a project starts, and the project does not yet store the Skin's name |
 | 2 | Steps | 23 Steps in two stages (6 for layout, in gray; 17 for look and feel). On each: compare cards, pick one, fine-tune with sliders, ask for small variations, write a reason, decide later, undo, or put the Step back | built |
-| 3 | Overlays | Switch small helpers on or off; the preview draws each one open, in your design | being built |
-| 4 | Summary | Read every Decision back; see the contrast notes and the research rules; download or open a project file; manage kept copies | built, except the research rules |
+| 3 | Overlays | Switch small helpers on or off; the preview draws each one open, in your design | built |
+| 4 | Summary | Read every Decision back; see the contrast notes and the research rules; download or open a project file; manage kept copies | built |
 | 5 | Export | Receive the Prescription | not built (M6) |
 
 ### 4.2 Rules that hold at every Step
@@ -87,9 +87,9 @@ A rule graded C or D is shown as opinion or folklore, never as science.
 | 1. Brief | your product, audience, primary job, and real content; brand tensions as either/or picks | not built (M5, first item: your own words in every preview) |
 | 2. Structure | menu · first screen · list of services · page width · what stands out first · spacing | built |
 | 3. Feel | letter style · heading style · text size · number style · tint of the grays · main color · amount of color · light or dark · text contrast · background of the first screen · corners · box edges and shadows · line thickness · button style · headline color · one special touch · motion | built |
-| 4. Behavior | **Overlays** (first set of six: tooltip, "Are you sure?" question, notice after an action, error message beside a field, loading placeholder, main button that stays in view on a phone) | being built |
+| 4. Behavior | **Overlays** (first set of six: tooltip, "Are you sure?" question, notice after an action, error message beside a field, loading placeholder, main button that stays in view on a phone) | built |
 |  | the rest of behavior: motion curves, focus style, empty and error states, voice and tone | not built (M5) |
-| 5. Checks | contrast notes (built); **research rules** (being built); the list of what no machine checked (built for contrast) | partly built |
+| 5. Checks | contrast notes (built); **research rules** (built: five rules, each measured on your design and shown as "Holds" or "Does not hold"); the list of what no machine checked (built for contrast) | partly built |
 | 6. Read-back and export | read-back on the Summary (built); export (M6) | partly built |
 
 ### 4.4 The Prescription (export bundle), in three layers (M6)
@@ -107,7 +107,7 @@ Files: `PRESCRIPTION.md`, `DESIGN.md`, `tokens.json`, `tokens.css`, a shadcn the
 - `/fit-suggest`: Claude proposes new Options as Catalog records; the Studio imports them only if they pass the schema and the checks.
 
 ### 4.6 Protection against your own sameness (M12)
-A **taste ledger** records the Decisions of every past project. When a new project repeats a past combination, the Studio says so and offers the nearest unused alternatives. The random Directions (built) and the Skins (being built) already widen the range.
+A **taste ledger** records the Decisions of every past project. When a new project repeats a past combination, the Studio says so and offers the nearest unused alternatives. The random Directions (built) and the Skins (built) already widen the range.
 
 ## 5. Templates (Mockup families) and their order
 

@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { CITED_NAMES, DIRECTIONS, FONTS, STEPS, applyDirection, createProject, findSkin, pick, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
+import { CITED_NAMES, DIRECTIONS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, createProject, deriveTokens, findSkin, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -258,7 +258,7 @@ describe('Studio: first screen', () => {
   it('opens on the Directions with working, sandboxed pictures, no errors, and no outside request', async () => {
     const { context, page, errors, requests } = await open();
     await page.waitForSelector('.direction iframe');
-    expect(await page.locator('.direction').count()).toBe(35);
+    expect(await page.locator('.direction').count()).toBe(38);
     const sandboxes = await page.locator('iframe').evaluateAll((frames) => frames.map((f) => f.getAttribute('sandbox')));
     // An empty sandbox attribute applies every restriction: no scripts, no same-origin access, no forms, no popups.
     expect(sandboxes.length).toBeGreaterThan(0);
@@ -278,14 +278,14 @@ describe('Studio: first screen', () => {
   it('keeps generated Directions while the person moves around, and describes each one in a sentence', async () => {
     const { context, page } = await open();
     await page.getByRole('button', { name: 'Show me six more Directions' }).click();
-    await expect.poll(() => page.locator('.direction').count()).toBe(41);
+    await expect.poll(() => page.locator('.direction').count()).toBe(DIRECTIONS.length + 6);
     const moods = await page.locator('.direction .mood').allInnerTexts();
-    for (const mood of moods.slice(35)) expect(mood).toMatch(/^A (light|dark) page .+\.$/);
+    for (const mood of moods.slice(38)) expect(mood).toMatch(/^A (light|dark) page .+\.$/);
     await page.locator('.top-nav a', { hasText: 'Summary' }).click();
     await page.waitForSelector('.summary');
     await page.locator('.top-nav a', { hasText: 'Directions' }).click();
     await page.waitForSelector('.direction');
-    expect(await page.locator('.direction').count()).toBe(41);
+    expect(await page.locator('.direction').count()).toBe(DIRECTIONS.length + 6);
     await context.close();
   });
 });
@@ -305,6 +305,9 @@ describe('Studio: the Step flow keeps the design the person chose', () => {
       expect(await page.locator('.option[data-in-use]').count(), step.id).toBe(1);
       await page.locator('.actions.sticky .primary').click();
     }
+    // After the last Step come the Overlays; their main button leads to the Summary.
+    await page.waitForSelector('.overlay-list');
+    await page.locator('.actions.sticky .primary').click();
     await page.waitForSelector('.summary');
     await settle(page);
     const project = (await stored(page))!;
@@ -1985,6 +1988,202 @@ describe('Studio: skins, the same look in other colors (decision D52)', () => {
   });
 });
 
+describe('Studio: Overlays, small helpers over the page (decision D52)', () => {
+  const box = (page: Page, id: string) => page.locator(`#overlay-${id}`);
+  const preview = (page: Page) => page.frameLocator('.large-preview iframe');
+  /** The names of the Overlays that a person can see in the preview. Text that is in the page and hidden does not count (code review of 2026-11-14, finding "tests 1"). */
+  const drawn = (page: Page): Promise<string[]> => preview(page).locator('.ov-name:visible').allTextContents();
+
+  it('comes after the last Step and before the Summary, and lists every Overlay of the Catalog with its three texts and its sources', async () => {
+    const { context, page, errors, requests } = await open({ hash: `#${STEPS.at(-1)!.id}`, storage: { [LOCAL_KEY]: envelope(worked('Has work')) } });
+    await waitForStep(page, STEPS.at(-1)!.name);
+    await page.locator('.actions.sticky .btn.primary').click();
+    await page.waitForSelector('.overlay-list');
+    expect(new URL(page.url()).hash).toBe('#overlays');
+    expect(await page.locator('.top-nav a[aria-current="page"]').innerText()).toBe('3. Overlays');
+    // Keyboard focus moved to the new screen's heading, as on every other screen.
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('overlays-title');
+    expect(await page.locator('.overlay .check span').allTextContents()).toEqual(OVERLAYS.map((o) => o.name));
+    for (const overlay of OVERLAYS) {
+      const card = page.locator('.overlay', { has: box(page, overlay.id) });
+      const text = await card.innerText();
+      for (const part of [overlay.what, overlay.chooseWhen, overlay.risk]) expect(text, overlay.id).toContain(part);
+      expect(await card.locator('details.source li').count(), overlay.id).toBe(overlay.sources.length);
+      expect(await box(page, overlay.id).isChecked(), overlay.id).toBe(false);
+    }
+    expect(await preview(page).locator('.ov-none').isVisible()).toBe(true);
+    expect(await preview(page).locator('.ov-none').innerText()).toBe('No Overlay is switched on.');
+    await page.getByRole('link', { name: 'Continue to the Summary' }).click();
+    await page.waitForSelector('.summary');
+    expect(await page.locator('section[aria-labelledby="overlays-heading"]').innerText()).toContain('No Overlay is switched on.');
+    // The browser's Back button leads back to the Overlays.
+    await page.goBack();
+    await page.waitForSelector('.overlay-list');
+    expect(errors).toEqual([]);
+    expect(requests).toEqual([]);
+    await context.close();
+  });
+
+  it('draws a switched-on Overlay in the preview, saves it, lists it on the Summary, keeps it through a reload, and lets Undo take it back', async () => {
+    const { context, page } = await open({ hash: '#overlays', storage: { [LOCAL_KEY]: envelope(worked('Has work')) } });
+    await page.waitForSelector('.overlay-list');
+    const before = (await stored(page))!;
+    expect('overlays' in before).toBe(false);
+    // The keyboard switches an Overlay: the space bar on its checkbox.
+    await box(page, 'confirm').focus();
+    await page.keyboard.press('Space');
+    await box(page, 'tooltip').check();
+    await expect.poll(() => drawn(page)).toEqual(['Tooltip', '“Are you sure?” question']);
+    expect(await page.locator('.showing').innerText()).toBe('2 Overlays are switched on. The preview shows each one open.');
+    await settle(page);
+    const saved = (await stored(page))!;
+    expect(saved.overlays).toEqual(['tooltip', 'confirm']);
+    // Nothing else in the project changed: an Overlay is a behavior, not a look.
+    expect({ ...saved, overlays: undefined }).toEqual({ ...before, overlays: undefined });
+    // The preview holds no script and nothing that a click could follow or send.
+    const doc = (await page.locator('.large-preview iframe').getAttribute('srcdoc'))!;
+    expect(doc).not.toMatch(/<script/i);
+    expect(await page.locator('.large-preview iframe').getAttribute('sandbox')).toBe('');
+    await page.reload();
+    await page.waitForSelector('.overlay-list');
+    expect(await box(page, 'tooltip').isChecked()).toBe(true);
+    expect(await box(page, 'confirm').isChecked()).toBe(true);
+    expect(await box(page, 'notice').isChecked()).toBe(false);
+    await page.evaluate(() => { window.location.hash = '#summary'; });
+    await page.waitForSelector('.summary');
+    expect(await page.locator('.overlay-summary li').allTextContents()).toEqual(['Tooltip', '“Are you sure?” question']);
+    await page.locator('section[aria-labelledby="overlays-heading"] a').click();
+    await page.waitForSelector('.overlay-list');
+    // One more change, then Undo: the change goes, the earlier Overlays stay.
+    await box(page, 'loading').check();
+    await expect.poll(() => drawn(page)).toHaveLength(3);
+    await page.getByRole('button', { name: /^Undo/ }).click();
+    await expect.poll(() => drawn(page)).toEqual(['Tooltip', '“Are you sure?” question']);
+    // Undo says what it took back, and no more than that.
+    expect(await page.locator('.banner:not(.hold)').innerText()).toContain('Undone: the Overlays are back to how they were.');
+    // The picture of each Overlay is really on screen, inside the preview's frame.
+    expect(await preview(page).locator('.ov-stage:visible').count()).toBe(2);
+    expect(await box(page, 'loading').isChecked()).toBe(false);
+    await box(page, 'tooltip').uncheck();
+    await box(page, 'confirm').uncheck();
+    await settle(page);
+    // With the last Overlay switched off, the project is as it was before: no empty list stays behind.
+    expect((await stored(page))!).toEqual(before);
+    await context.close();
+  });
+
+  it('shows the main button that stays in view in the Summary’s phone preview only, and never on the cards of a Step', async () => {
+    const project = { ...worked('Has work'), overlays: ['sticky-call'] };
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(project) } });
+    await page.waitForSelector('.summary');
+    const bar = () => preview(page).locator('.sticky-call');
+    await page.getByRole('button', { name: 'Phone', exact: true }).click();
+    await expect.poll(() => bar().isVisible()).toBe(true);
+    // The bar holds the main button at the lower edge of the preview, and the page beneath it still scrolls to its end.
+    const frame = (await page.locator('.large-preview').boundingBox())!;
+    const at = (await bar().boundingBox())!;
+    expect(Math.abs(at.y + at.height - (frame.y + frame.height))).toBeLessThan(6);
+    await page.getByRole('button', { name: 'Desktop', exact: true }).click();
+    await expect.poll(() => bar().isVisible()).toBe(false);
+    await page.evaluate(() => { window.location.hash = '#accent'; });
+    await waitForStep(page, 'Main color');
+    const pictures = await page.locator('iframe').evaluateAll((frames) => frames.map((f) => f.getAttribute('srcdoc') ?? ''));
+    expect(pictures.length).toBeGreaterThan(3);
+    for (const picture of pictures) expect(picture).not.toMatch(/<body [^>]*data-overlays=/);
+    await context.close();
+  });
+
+  it('treats switched-on Overlays as work: a project that holds nothing else is kept as a copy, with Undo offered, when a Direction replaces it', async () => {
+    const { context, page } = await open({ hash: '#overlays' });
+    await page.waitForSelector('.overlay-list');
+    await box(page, 'notice').check();
+    await settle(page);
+    await page.evaluate(() => { window.location.hash = '#directions'; });
+    await page.waitForSelector('.direction');
+    await page.getByRole('button', { name: 'Start from Soft Daylight', exact: true }).click();
+    await page.waitForSelector('.cards');
+    // As for any project without a Decision, the Studio does not ask; it says what it did, offers Undo, and keeps a copy.
+    // Before the repair it replaced such a project without a word and without a kept copy.
+    const notice = page.locator('.banner:not(.hold)');
+    expect(await notice.innerText()).toContain('Started again from “Soft Daylight”.');
+    expect(await notice.getByRole('button', { name: 'Undo' }).count()).toBe(1);
+    await settle(page);
+    const kept = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('refraction.project.backup.')).map((key) => localStorage.getItem(key) ?? ''));
+    expect(kept.some((text) => text.includes('"overlays":["notice"]'))).toBe(true);
+    await context.close();
+  });
+
+  it('gives the Tab key one stop in the list of Steps on the Overlays screen: the link of the Overlays', async () => {
+    const { context, page } = await open({ hash: '#overlays', storage: { [LOCAL_KEY]: envelope(worked('Has work')) } });
+    await page.waitForSelector('.overlay-list');
+    const stops = await page.locator('.rail a').evaluateAll((links) => links.filter((link) => (link as HTMLElement).tabIndex === 0).map((link) => link.textContent));
+    expect(stops).toEqual(['Overlays: small helpers over the page']);
+    await context.close();
+  });
+
+  it('leaves out an Overlay that this version does not know when it opens a saved project, keeps the original, and says so', async () => {
+    const project = { ...worked('From a later version'), overlays: ['confirm', 'spotlight-tour'] };
+    const { context, page } = await open({ hash: '#overlays', storage: { [LOCAL_KEY]: envelope(project) } });
+    await page.waitForSelector('.overlay-list');
+    expect(await page.locator('.banner').first().innerText()).toContain('One Overlay in the file is unknown to this version of the Studio. It was left out.');
+    expect(await box(page, 'confirm').isChecked()).toBe(true);
+    await settle(page);
+    expect((await stored(page))!.overlays).toEqual(['confirm']);
+    // The file as it was is kept as a copy, with the unknown Overlay still in it.
+    const kept = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith('refraction.project.backup.')).map((key) => localStorage.getItem(key) ?? ''));
+    expect(kept.some((text) => text.includes('spotlight-tour'))).toBe(true);
+    await context.close();
+  });
+});
+
+describe('Studio: research rules on the Summary (decision D52)', () => {
+  const rows = (page: Page) => page.locator('.research-list > li');
+  const lines = (page: Page): Promise<string[]> => rows(page).locator('summary').allTextContents();
+
+  it('measures every research rule on the open design and says "Holds" or "Does not hold" with the number, as the core computes it', async () => {
+    const project = worked('Has work');
+    const { context, page, errors } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(project) } });
+    await page.waitForSelector('.research-list');
+    const expected = researchReport(project.params, deriveTokens(project.params, project.a11y).css);
+    expect(expected).toHaveLength(RESEARCH_RULES.length);
+    expect(await lines(page)).toEqual(expected.map((r) => `${r.holds ? 'Holds' : 'Does not hold'}: ${r.rule.name}. ${r.found}`));
+    // Each rule opens to its reason, to what a person must still check, to its strength, and to its sources.
+    for (const [i, result] of expected.entries()) {
+      const row = rows(page).nth(i);
+      await row.locator('summary').click();
+      const text = await row.innerText();
+      for (const part of [result.rule.why, result.rule.notChecked, `Reviewed on ${result.rule.reviewed}`]) expect(text, result.rule.id).toContain(part);
+      expect(await row.locator('details ul li').count(), result.rule.id).toBe(result.rule.sources.length);
+      // A rule whose value the sample website fixes says so, in place of passing for a measurement of the owner's choices.
+      expect(text.includes('no Step changes this value'), result.rule.id).toBe(result.rule.setBy === 'template');
+    }
+    expect(errors).toEqual([]);
+    await context.close();
+  });
+
+  it('says so when a design does not hold a rule, leads to the Step that changes it, and follows the change', async () => {
+    const dense = applyDirection(createProject('Dense screen'), 'control-room');
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(dense) } });
+    await page.waitForSelector('.research-list');
+    const row = rows(page).filter({ hasText: 'Reading text is at least 16 pixels tall' });
+    expect(await row.getAttribute('data-holds')).toBe('false');
+    expect(await row.locator('summary').textContent()).toBe('Does not hold: Reading text is at least 16 pixels tall. Reading text is 15 pixels tall.');
+    // The mark of a rule that does not hold is not color alone: the words say it, and the row has a wider edge.
+    expect(await row.evaluate((el) => getComputedStyle(el).borderLeftWidth)).toBe('4px');
+    await row.locator('summary').click();
+    const sizes = STEPS.find((step) => step.owns.includes('baseSize'))!;
+    await row.getByRole('link', { name: `“${sizes.name}”` }).click();
+    await waitForStep(page, sizes.name);
+    await page.locator('.option', { hasText: 'Medium text, medium headings' }).click();
+    await page.locator('.actions.sticky .btn.primary').click();
+    await page.evaluate(() => { window.location.hash = '#summary'; });
+    await page.waitForSelector('.research-list');
+    expect(await row.locator('summary').textContent()).toBe('Holds: Reading text is at least 16 pixels tall. Reading text is 17 pixels tall.');
+    expect(await rows(page).evaluateAll((items) => items.filter((item) => item.getAttribute('data-holds') === 'false').length)).toBe(0);
+    await context.close();
+  });
+});
+
 describe('Studio: the saving table, cells that had no test (docs/reference/saving-table.md)', () => {
   const state = (page: Page): Promise<string> => page.locator('.save-state').innerText();
   const toBackground = (page: Page): Promise<void> =>
@@ -2193,7 +2392,7 @@ describe('Studio: addresses and the browser’s Back button', () => {
 describe('Studio: its own interface', () => {
   it('has no serious or critical axe finding on any screen, in light and dark', async () => {
     for (const colorScheme of ['light', 'dark'] as const) {
-      for (const hash of ['#directions', '#nav', '#typeface', '#accent', '#motion', '#summary', '#licences']) {
+      for (const hash of ['#directions', '#nav', '#typeface', '#accent', '#motion', '#overlays', '#summary', '#licences']) {
         const { context, page } = await open({ hash });
         await page.emulateMedia({ colorScheme });
         await page.waitForSelector('main');
@@ -2266,7 +2465,7 @@ describe('Studio: its own interface', () => {
 describe('Studio: layout', () => {
   it('holds its height still in narrow and zoomed windows (finding FTU-01)', async () => {
     for (const viewport of [{ width: 720, height: 450 }, { width: 400, height: 860 }, { width: 1099, height: 700 }]) {
-      for (const hash of ['#nav', '#accent', '#summary']) {
+      for (const hash of ['#nav', '#accent', '#overlays', '#summary']) {
         const { context, page } = await open({ hash, viewport });
         await page.waitForSelector('.large-preview iframe');
         const samples: number[] = [];
@@ -2300,7 +2499,7 @@ describe('Studio: layout', () => {
 
   it('never scrolls sideways at 320, 375, and 400 pixels wide', async () => {
     for (const width of [320, 375, 400]) {
-      for (const hash of ['#directions', '#nav', '#accent', '#summary', '#licences']) {
+      for (const hash of ['#directions', '#nav', '#accent', '#overlays', '#summary', '#licences']) {
         const { context, page } = await open({ hash, viewport: { width, height: 800 } });
         await page.waitForSelector('main');
         await page.waitForTimeout(300);
@@ -2348,7 +2547,7 @@ describe('Studio: layout', () => {
 });
 
 describe('Studio: plain words on every screen (decision D38, finding U2-03)', () => {
-  it('shows no trade word outside round brackets and no vague phrase on the Directions, on every Step, and on the Summary, with no error and no outside request', async () => {
+  it('shows no trade word outside round brackets and no vague phrase on the Directions, on every Step, on the Overlays, and on the Summary, with no error and no outside request', async () => {
     const { context, page, errors, requests } = await open({ hash: '#directions', storage: { [LOCAL_KEY]: envelope(JSON.parse(JSON.stringify(worked('Weeks of work')))) } });
     // Names are not descriptions: the name of a font or of a Direction may hold a trade word ("Public Sans", "Cobalt Wash").
     const properNames = [...Object.values(FONTS).map((font) => font.label), ...DIRECTIONS.map((d) => d.name), ...CITED_NAMES];
@@ -2384,6 +2583,10 @@ describe('Studio: plain words on every screen (decision D38, finding U2-03)', ()
     }
     // The check on source lines looked at real lines: every Step lists at least one source.
     expect(sourceLists).toBeGreaterThanOrEqual(STEPS.length);
+    await page.evaluate(() => { window.location.hash = '#overlays'; });
+    await page.waitForSelector('.overlay-list');
+    await check('the Overlays');
+    expect(await page.locator('details.source ul li').count()).toBeGreaterThanOrEqual(OVERLAYS.length);
     await page.evaluate(() => { window.location.hash = '#summary'; });
     await page.waitForSelector('.summary');
     await check('the Summary');

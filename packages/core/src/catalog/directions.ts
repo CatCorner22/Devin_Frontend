@@ -53,10 +53,22 @@ const composedOn = (date: string): { sources: SourceRef[]; evidence: 'expert-opi
 
 const d = (overrides: Partial<DesignParams>): DesignParams => ({ ...DEFAULT_PARAMS, ...overrides });
 
+/**
+ * A Direction drawn from the study of Japanese design (decision D52). Each source line names one record of the research
+ * file. The records describe a tradition, not an experiment, and AI assistants wrote them from search summaries: nobody read
+ * the texts themselves. Every number in such a Direction is the Studio's own translation of an idea into a value.
+ */
+const JAPANESE_STUDY = 'docs/knowledge/kb-japanese-design.json';
+const fromJapaneseStudy = (...titles: string[]): { sources: SourceRef[]; evidence: 'expert-opinion'; reviewed: string } => ({
+  sources: [...titles.map((title): SourceRef => ({ text: `The record “${title}”: a tradition, not an experiment. The numbers in this Direction are the Studio’s own translation.`, basis: 'snippet', record: JAPANESE_STUDY })), ...COMPOSED],
+  evidence: 'expert-opinion',
+  reviewed: '2026-11-14',
+});
+
 export const DIRECTIONS: Direction[] = [
   {
     id: 'graphite-precision',
-    skins: ['lagoon', 'meadow', 'sunset', 'berry', 'gold'],
+    skins: ['berry', 'gold', 'forest', 'ember'],
     group: 'calm',
     name: 'Graphite Precision',
     mood: 'Exact, quiet, engineered. Black, white, and a faint grid of lines.',
@@ -104,7 +116,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'paper-and-ink',
-    skins: ['ocean', 'berry', 'orchid', 'violet', 'gold'],
+    skins: ['ocean', 'berry', 'violet', 'gold', 'indigo'],
     group: 'nostalgic',
     name: 'Paper and Ink',
     mood: 'A well-edited magazine: paper grain, ink, and one red pencil.',
@@ -216,7 +228,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'quiet-luxury',
-    skins: ['ocean', 'lagoon', 'meadow', 'sunset', 'gold'],
+    skins: ['ocean', 'gold', 'forest', 'ember', 'indigo'],
     group: 'calm',
     name: 'Quiet Luxury',
     mood: 'Nearly nothing, perfectly placed. Thin letters with small feet, wide margins, no lines.',
@@ -232,7 +244,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'cobalt-wash',
-    skins: ['lagoon', 'meadow', 'sunset', 'berry', 'gold'],
+    skins: ['berry', 'gold', 'forest', 'ember'],
     group: 'calm',
     name: 'Cobalt Wash',
     mood: 'The whole page breathes one color. Fresh, modern, unmistakable.',
@@ -408,7 +420,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'steady-steps',
-    skins: ['sunset', 'berry', 'orchid', 'gold', 'graphite'],
+    skins: ['berry', 'gold', 'graphite', 'ocean', 'ember'],
     group: 'calm',
     name: 'Steady Steps',
     mood: 'A soft mint page with a calm green-teal, friendly round letters, clear buttons, and plenty of room. Encouraging and easy to return to every day.',
@@ -612,6 +624,68 @@ export const DIRECTIONS: Direction[] = [
       fontHeading: 'bricolage-grotesque', fontBody: 'space-grotesk', headingWeight: 800, headingTracking: -0.04, headingCase: 'sentence', baseSize: 17, scaleRatio: 1.5, numerals: 'proportional',
       neutralHue: 85, neutralChroma: 0.03, accentHue: 45, accentChroma: 0.2, accentLightness: 0.45, accent2Hue: 135, colorStrategy: 'duo', theme: 'light', contrast: 1,
       radius: 4, elevation: 'hard-shadow', borderWeight: 2, signature: 'corner-tag', atmosphere: 'dot-grid', buttonFinish: 'flat', displayTreatment: 'solid', motion: 'expressive',
+    }),
+  },
+  {
+    id: 'ink-and-seal',
+    skins: ['indigo', 'forest', 'graphite'],
+    group: 'calm',
+    name: 'Ink and Seal',
+    mood: 'Warm paper, soft black ink, and a few small orange-red marks, like the seal on a letter. Wide empty margins, thin lines, square corners. Nothing shines and nothing moves.',
+    bestFor: 'Craft, tea, ceramics, architecture, writing: work that should speak quietly and be looked at twice.',
+    risk: 'Quiet can read as empty. A business that nobody knows yet must show its craft in the photographs, and must keep the facts a customer needs (what, where, hours, price) near the top.',
+    ...fromJapaneseStudy(
+      'Ma (間): the interval is a designed element, not leftover area',
+      'Kanso (簡素): plain and uncluttered, with few kinds of thing',
+      'Seijaku (静寂): stillness, with nothing moving unasked',
+      'Traditional Japanese colour names have no single screen value',
+    ),
+    params: d({
+      nav: 'top-inline', hero: 'text-left', sections: 'ledger', contentWidth: 'narrow', emphasis: 'headline', density: 1.35,
+      fontHeading: 'instrument-sans', fontBody: 'instrument-sans', headingWeight: 500, headingTracking: -0.01, headingCase: 'sentence', baseSize: 17, scaleRatio: 1.2, numerals: 'tabular',
+      neutralHue: 85, neutralChroma: 0.012, accentHue: 35, accentChroma: 0.16, accentLightness: 0.5, colorStrategy: 'quiet', theme: 'light', contrast: 0.8,
+      radius: 0, elevation: 'borders', borderWeight: 1, signature: 'none', atmosphere: 'plain', buttonFinish: 'flat', displayTreatment: 'solid', motion: 'none',
+    }),
+  },
+  {
+    id: 'unbleached-indigo',
+    skins: ['vermilion', 'forest', 'berry'],
+    group: 'calm',
+    name: 'Unbleached and Indigo',
+    mood: 'Unbleached cloth and deep blue dye. Words and picture share the first screen unevenly, areas are set apart by a change of tone in place of lines, and the blue marks what a visitor can press.',
+    bestFor: 'Makers, small hotels, clinics, studios: places that want calm without coldness.',
+    risk: 'The blue is deep and quiet, so the button depends on its place and its size to be found. Check that a first-time visitor finds it within a few seconds.',
+    ...fromJapaneseStudy(
+      'Fukinsei (不均斉): balance without mirror symmetry',
+      'Shizen (自然): nothing forced, nothing faked',
+      'Shibui (渋い): quiet at first sight, detailed at second sight',
+      'Traditional Japanese colour names have no single screen value',
+    ),
+    params: d({
+      nav: 'top-inline', hero: 'split-media', sections: 'alternating', contentWidth: 'standard', emphasis: 'headline', density: 1.25,
+      fontHeading: 'dm-sans', fontBody: 'dm-sans', headingWeight: 500, headingTracking: -0.015, headingCase: 'sentence', baseSize: 17, scaleRatio: 1.24, numerals: 'proportional',
+      neutralHue: 90, neutralChroma: 0.02, accentHue: 250, accentChroma: 0.09, accentLightness: 0.4, colorStrategy: 'single-accent', theme: 'light', contrast: 0.85,
+      radius: 2, elevation: 'tonal', borderWeight: 0, signature: 'none', atmosphere: 'plain', buttonFinish: 'flat', displayTreatment: 'solid', motion: 'subtle',
+    }),
+  },
+  {
+    id: 'plain-label',
+    skins: ['indigo', 'forest', 'graphite'],
+    group: 'calm',
+    name: 'Plain Label',
+    mood: 'A near-white ground, plain letters, a black button, and one dark red for small marks and links. No emblem, no badge, no decoration: the goods do the talking.',
+    bestFor: 'Shops with good products and honest prices: food, household goods, stationery, clothing basics.',
+    risk: 'Without strong photographs of the goods the page has nothing to show. Plain is not the same as unfinished: every gap must be exact.',
+    ...fromJapaneseStudy(
+      'Emptiness as a container, and the plain-goods approach in retail',
+      'Kanso (簡素): plain and uncluttered, with few kinds of thing',
+      'Empty space and plainness raise perceived quality only under conditions',
+    ),
+    params: d({
+      nav: 'top-centered', hero: 'text-left', sections: 'grid', contentWidth: 'wide', emphasis: 'action', density: 1.2,
+      fontHeading: 'public-sans', fontBody: 'public-sans', headingWeight: 600, headingTracking: 0, headingCase: 'sentence', baseSize: 16, scaleRatio: 1.24, numerals: 'tabular',
+      neutralHue: 60, neutralChroma: 0.004, accentHue: 20, accentChroma: 0.13, accentLightness: 0.4, colorStrategy: 'quiet', theme: 'light', contrast: 0.9,
+      radius: 0, elevation: 'flat', borderWeight: 1, signature: 'none', atmosphere: 'plain', buttonFinish: 'flat', displayTreatment: 'solid', motion: 'none',
     }),
   },
 ];

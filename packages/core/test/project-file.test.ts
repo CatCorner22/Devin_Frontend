@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_PARAMS, DIRECTIONS, SAMPLE_CONTENT, SCHEMA_VERSION, STEPS,
-  applyDirection, createProject, findStep, keep, matchingOptionId, ownedValues, parseProject, pick, setReason, tune,
+  OVERLAYS, applyDirection, createProject, findStep, keep, matchingOptionId, overlaysOf, ownedValues, parseProject, pick, setOverlay, setReason, tune,
   type Project,
 } from '../src/index.js';
 import { fixture } from './helpers.js';
@@ -316,5 +316,52 @@ describe('saved projects: files from version 1 (finding M-07)', () => {
     expect(Object.keys(DEFAULT_PARAMS)).toHaveLength(31);
     expect(STEPS).toHaveLength(23);
     expect(SCHEMA_VERSION).toBe(2);
+  });
+});
+
+describe('saved projects: Overlays (decision D52)', () => {
+  it('keeps a project without Overlays exactly as it was: no new field, so older files and older tests read the same', () => {
+    const p = busyProject();
+    expect('overlays' in p).toBe(false);
+    expect(overlaysOf(p)).toEqual([]);
+    expect('overlays' in ok(roundTrip(p)).project).toBe(false);
+    // Switching an Overlay on and off again leaves no trace, and switching off what is off returns the same project.
+    expect(setOverlay(setOverlay(p, 'tooltip', true), 'tooltip', false)).toEqual(p);
+    expect(setOverlay(p, 'tooltip', false)).toBe(p);
+    expect(setOverlay(setOverlay(p, 'tooltip', true), 'tooltip', true)).toEqual(setOverlay(p, 'tooltip', true));
+  });
+
+  it('stores the switched-on Overlays in the order of the Catalog, and reads them back', () => {
+    let p = busyProject();
+    for (const id of ['sticky-call', 'tooltip', 'confirm']) p = setOverlay(p, id, true);
+    expect(p.overlays).toEqual(['tooltip', 'confirm', 'sticky-call']);
+    const loaded = ok(roundTrip(p));
+    expect(loaded.project.overlays).toEqual(['tooltip', 'confirm', 'sticky-call']);
+    expect(loaded.notes).toEqual([]);
+    // An identifier that the Catalog does not hold is a mistake in the Studio's own code, so it is refused loudly.
+    expect(() => setOverlay(p, 'no-such-overlay', true)).toThrow('The Catalog has no such Overlay.');
+  });
+
+  it('leaves out an Overlay that this version does not know, repeats included, and says so', () => {
+    const file = roundTrip({ ...busyProject(), overlays: ['confirm', 'from-a-later-version', 'confirm', 'tooltip'] });
+    const loaded = ok(file);
+    expect(loaded.project.overlays).toEqual(['tooltip', 'confirm']);
+    expect(loaded.notes.join(' ')).toContain('One Overlay in the file is unknown to this version of the Studio. It was left out.');
+    // Two unknown Overlays, one of them twice: counted as two, in the sentence for several.
+    const several = ok(roundTrip({ ...busyProject(), overlays: ['later-one', 'tooltip', 'later-two', 'later-one'] }));
+    expect(several.project.overlays).toEqual(['tooltip']);
+    expect(several.notes.join(' ')).toContain('2 Overlays in the file are unknown to this version of the Studio. They were left out.');
+    // Only unknown ones: the field goes, so that the project equals one that never had Overlays.
+    const none = ok(roundTrip({ ...busyProject(), overlays: ['x'] }));
+    expect('overlays' in none.project).toBe(false);
+  });
+
+  it('refuses a file whose Overlay list is not a short list of short words', () => {
+    const wrong: unknown[] = ['tooltip', [1], [{}], Array.from({ length: 41 }, () => 'tooltip'), ['t'.repeat(41)]];
+    for (const bad of wrong) {
+      // The refusal names the part of the file that is at fault, as it does for every other part (finding "core 6").
+      expect(refusal({ ...(roundTrip(busyProject()) as object), overlays: bad }), JSON.stringify(bad).slice(0, 40)).toBe('The file does not match the project format. The problem is in the part that holds the Overlays.');
+    }
+    expect(OVERLAYS.every((o) => o.id.length <= 40)).toBe(true);
   });
 });

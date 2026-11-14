@@ -89,7 +89,12 @@ export const SAMPLE_CONTENT: SiteContent = {
 };
 
 /** The region of the page that a preview opens at. A sandboxed preview cannot be scrolled from outside, so the page itself starts there. */
-export const MOCKUP_FOCUSES = ['top', 'facts', 'services', 'fees', 'about', 'contact', 'buttons', 'box'] as const;
+export const MOCKUP_FOCUSES = ['top', 'facts', 'services', 'fees', 'about', 'contact', 'overlays', 'buttons', 'box'] as const;
+/**
+ * The Overlays that the Mockup can draw, by identifier. The list is fixed here, so that only these words can reach the page's
+ * markup; a unit test holds it equal to the Catalog's Overlays.
+ */
+export const MOCKUP_OVERLAYS = ['tooltip', 'confirm', 'notice', 'field-error', 'loading', 'sticky-call'] as const;
 /** The two close-ups: one part of the page and nothing else. They serve the small pictures on a card; the others are regions of the page. */
 export const MOCKUP_CLOSE_UPS = ['buttons', 'box'] as const;
 export type MockupFocus = (typeof MOCKUP_FOCUSES)[number];
@@ -102,6 +107,8 @@ export interface MockupInput {
   focus?: MockupFocus;
   /** A still preview skips entrance animation (used for small thumbnails). */
   still?: boolean;
+  /** The Overlays that are switched on. The region "overlays" draws each one open; a Mockup has no script, so none opens or closes. */
+  overlays?: readonly string[];
   /** `@font-face` rules for the fonts in use. The Studio supplies these; exports reference font files instead. */
   fontFaceCss?: string;
   /**
@@ -408,6 +415,42 @@ body[data-focus]:not([data-focus="top"]) .site-header, body[data-focus]:not([dat
 body[data-focus="services"] .facts, body[data-focus="fees"] .facts, body[data-focus="about"] .facts, body[data-focus="contact"] .facts { display: none; }
 body[data-focus="about"] .services, body[data-focus="contact"] .services, body[data-focus="contact"] .about { display: none; }
 
+/* Overlays: small helpers over the page. The region "overlays" shows each one that is switched on, open, as a picture with a
+   caption. Everywhere else they stay out of the page, except the main button that stays in view on a phone, which plain CSS
+   can show as it will behave. */
+.overlay-demo { display: none; }
+body[data-focus="overlays"] main > :not(.overlay-demo), body[data-focus="overlays"] .site-footer { display: none; }
+body[data-focus="overlays"] .overlay-demo { display: block; padding-block: var(--space-8); }
+.overlay-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: var(--space-8) var(--space-6); align-items: start; }
+.ov { display: grid; gap: var(--space-3); min-width: 0; }
+.ov-name { font-size: var(--text-sm); font-weight: 600; color: var(--text-muted); margin: 0; }
+.ov-none { color: var(--text-muted); }
+.ov-stage { position: relative; display: grid; gap: var(--space-3); padding: var(--space-5); border-radius: var(--radius-surface); background: var(--surface-2); min-width: 0; }
+.ov-term { text-decoration: underline dotted; text-underline-offset: 0.2em; }
+.ov-tip { display: block; width: fit-content; max-width: 100%; padding: var(--space-2) var(--space-3); border-radius: var(--radius-small); background: var(--text); color: var(--surface); font-size: var(--text-sm); }
+.ov-dialog { padding: var(--space-5); display: grid; gap: var(--space-3); }
+.ov-dialog h3 { font-size: var(--h3-size); margin: 0; }
+.ov-dialog p { margin: 0; color: var(--text-muted); }
+.ov-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+.ov-quiet { background: transparent; color: var(--text); border-color: var(--border-strong); }
+.ov-toast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); }
+.ov-error input { border-width: calc(var(--control-border-w) + 1px); border-color: var(--text); }
+.ov-error .ov-message { display: flex; gap: var(--space-2); align-items: baseline; font-size: var(--text-sm); font-weight: 600; color: var(--text); margin: 0; }
+.ov-error .ov-mark { display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; border-radius: 50%; background: var(--text); color: var(--surface); font-size: 0.85em; flex: none; }
+.ov-skeleton { display: grid; gap: var(--space-3); padding: var(--space-5); }
+.ov-skeleton span { display: block; height: 0.9em; border-radius: var(--radius-small); background: var(--border); }
+.ov-skeleton span:first-child { height: 5rem; }
+.ov-skeleton span:nth-child(3) { width: 80%; }
+.ov-skeleton span:last-child { width: 55%; }
+.ov-phone { display: grid; gap: 0; border: var(--border-w) solid var(--border); border-radius: var(--radius-surface); overflow: hidden; background: var(--surface); }
+.ov-phone p { margin: 0; padding: var(--space-4); color: var(--text-muted); font-size: var(--text-sm); }
+.ov-bar, .sticky-call { display: grid; padding: var(--space-3) var(--space-4); background: var(--surface); border-top: var(--border-w) solid var(--border); }
+.ov-bar .btn, .sticky-call .btn { width: 100%; justify-content: center; }
+.sticky-call { display: none; }
+@media (max-width: 599px) {
+  body[data-overlays~="sticky-call"]:not([data-focus="overlays"]):not([data-focus="buttons"]):not([data-focus="box"]) .sticky-call { display: grid; position: sticky; bottom: 0; z-index: 3; }
+}
+
 /* Close-ups, for the small pictures on a card. A whole region shrunk to card size left the changed part out of the picture
    or made it too small to see: four cards for the button's look were the same picture, without a button in it (finding U2-08,
    measured 2026-11-14). A close-up shows one part and nothing else.
@@ -437,6 +480,32 @@ body[data-focus="fees"] .fees { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } }
 `;
 
+/**
+ * The picture of each Overlay, open. Every word in a picture is fixed text of the Mockup, except the main button's label,
+ * which arrives escaped. A picture is plain HTML: nothing in it opens, closes, or moves.
+ */
+/**
+ * The name above each picture. The Catalog holds the same names (`catalog/overlays.ts`); the Catalog cannot be read from
+ * here without a circular import, so the names stand here a second time, and a unit test holds the two lists equal.
+ */
+const OVERLAY_NAMES: Record<(typeof MOCKUP_OVERLAYS)[number], string> = {
+  tooltip: 'Tooltip',
+  confirm: '“Are you sure?” question',
+  notice: 'Notice after an action',
+  'field-error': 'Error message beside a field',
+  loading: 'Loading placeholder',
+  'sticky-call': 'Main button that stays in view on a phone',
+};
+
+const OVERLAY_PICTURES: Record<(typeof MOCKUP_OVERLAYS)[number], (action: string) => string> = {
+  tooltip: () => '<p>We accept most <span class="ov-term" aria-describedby="ov-tip">dental plans</span>.</p><span class="ov-tip" id="ov-tip" role="tooltip">A plan pays part of the cost of a visit. Bring your card; we check it for you.</span>',
+  confirm: () => '<div class="card ov-dialog" role="group" aria-label="A question before an action that cannot be taken back"><h3>Cancel your visit on Tuesday?</h3><p>We give the time to another patient. You cannot take this back.</p><div class="ov-actions"><span class="btn btn-primary">Cancel the visit</span><span class="btn ov-quiet">Keep the visit</span></div></div>',
+  notice: () => '<div class="card ov-toast" role="status"><span>Your request was sent. We call you back today.</span><span class="btn ov-quiet">Close</span></div>',
+  'field-error': () => '<div class="field ov-error"><label for="ov-phone">Phone number</label><input id="ov-phone" type="text" value="555-01" readonly aria-invalid="true" aria-describedby="ov-phone-error"><p class="ov-message" id="ov-phone-error"><span class="ov-mark" aria-hidden="true">!</span><span>This number is too short. Enter all ten digits, for example 555 010 0199.</span></p></div>',
+  loading: () => '<div class="card ov-skeleton" role="img" aria-label="Gray shapes stand in for a picture and three lines of text while they load"><span></span><span></span><span></span><span></span></div>',
+  'sticky-call': (action) => `<div class="ov-phone" role="img" aria-label="A phone screen: the page scrolls, and the main button stays at the lower edge"><p>The page scrolls here.</p><p>The button below stays where it is.</p><div class="ov-bar"><span class="btn btn-primary">${action}</span></div></div>`,
+};
+
 /** Render the Mockup as one complete HTML document. Throws if a parameter, a token, or the font CSS could break out of its place in the document. */
 export function renderSmallBusiness(input: MockupInput): string {
   const { params: p, tokens, content: c, fontFaceCss = '' } = input;
@@ -444,6 +513,10 @@ export function renderSmallBusiness(input: MockupInput): string {
   assertKnownParams(p);
   if (input.focus !== undefined && !MOCKUP_FOCUSES.includes(input.focus)) throw new Error('The preview region is not in its list.');
   if (fontFaceCss.includes('<')) throw new Error('The font rules contain a character that is not allowed in a stylesheet.');
+  // Only an identifier from the fixed list reaches the markup, in the list's order, each once.
+  const asked = input.overlays ?? [];
+  if (asked.some((id) => !(MOCKUP_OVERLAYS as readonly string[]).includes(id))) throw new Error('An Overlay is not in its list.');
+  const overlays = MOCKUP_OVERLAYS.filter((id) => asked.includes(id));
   const e = escapeHtml;
   const inert = input.links === 'inert';
   /** The attributes of a link. An inert link keeps the look and the keyboard focus of a link and leads nowhere. */
@@ -465,9 +538,13 @@ export function renderSmallBusiness(input: MockupInput): string {
     `data-display="${e(p.displayTreatment)}"`,
     `data-motion="${e(p.motion)}"`,
     `data-focus="${e(focus)}"`,
+    ...(overlays.length > 0 ? [`data-overlays="${overlays.join(' ')}"`] : []),
     ...(input.still ? ['data-still'] : []),
   ].join(' ');
 
+  const overlayDemo = overlays.length === 0
+    ? '<p class="ov-none">No Overlay is switched on.</p>'
+    : overlays.map((id) => `<div class="ov"><p class="ov-name">${OVERLAY_NAMES[id]}</p><div class="ov-stage">${OVERLAY_PICTURES[id](e(c.primaryAction))}</div></div>`).join('');
   const facts = c.facts.map((f) => `<div><dt>${e(f.value)}</dt><dd>${e(f.label)}</dd></div>`).join('');
   const services = c.services
     .map(
@@ -552,7 +629,9 @@ ${SMALL_BUSINESS_CSS}
       </form>
     </div>
   </section>
+  <section class="block overlay-demo" aria-label="Overlays, each shown open"><div class="wrap overlay-grid">${overlayDemo}</div></section>
 </main>
+<div class="sticky-call"><a class="btn btn-primary" ${link('#contact')}>${e(c.primaryAction)}</a></div>
 <footer class="site-footer"><div class="wrap"><span>${e(c.business)} · ${e(c.address)}</span><span>${e(c.footerNote)}</span></div></footer>
 </body>
 </html>`;

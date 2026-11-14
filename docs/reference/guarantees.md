@@ -1,6 +1,6 @@
 # [00] Studio guarantees: living reference
 
-Version 1.3. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
+Version 1.4. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
 
 Stale-after: 90
 
@@ -38,7 +38,11 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - The Studio never calls its output "WCAG compliant", "ADA compliant", or "accessible". §40.04
 - Every Decision stays true to the design. §50.01
 - A card shows exactly the design that picking it gives. §50.04
+- A Skin changes colors only. §50.07
+- An Overlay changes no value of the design, and its picture holds no script. §50.08, §30.06
 - A trade word appears only inside round brackets. §60.01
+- No Overlay and no research rule is graded "measured" without a source that was read in full. §60.03
+- A research rule says "Holds" only when the measured number meets it. §60.04
 - No look changes by accident. §70.02
 - Every browser test fails when the page meets an error. §70.04
 
@@ -61,6 +65,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
   - [10.11 A copy that the page's database hands over late is kept before any save can replace it](#1011-a-copy-that-the-pages-database-hands-over-late-is-kept-before-any-save-can-replace-it)
   - [10.12 A promise to keep a copy never rests on a copy that can go away](#1012-a-promise-to-keep-a-copy-never-rests-on-a-copy-that-can-go-away)
   - [10.13 A page that closes with an unsaved change first writes it to an entry of its own](#1013-a-page-that-closes-with-an-unsaved-change-first-writes-it-to-an-entry-of-its-own)
+  - [10.14 A tab that finishes opening while another tab saved does not say "Saved" over a project that storage no longer holds](#1014-a-tab-that-finishes-opening-while-another-tab-saved-does-not-say-saved-over-a-project-that-storage-no-longer-holds)
 - [20 Project files](#20-project-files)
   - [20.01 A saved project loads back exactly as it was saved](#2001-a-saved-project-loads-back-exactly-as-it-was-saved)
   - [20.02 The Studio refuses a file that is not a project, in fixed words](#2002-the-studio-refuses-a-file-that-is-not-a-project-in-fixed-words)
@@ -68,12 +73,14 @@ The lines used most often. Each line ends with the ID of the section that suppor
   - [20.04 The Studio says so when it changes a Decision of an opened file](#2004-the-studio-says-so-when-it-changes-a-decision-of-an-opened-file)
   - [20.05 Opening a file never adds to a Decision, and brings no value the Studio cannot set](#2005-opening-a-file-never-adds-to-a-decision-and-brings-no-value-the-studio-cannot-set)
   - [20.06 A name from a file cannot end the quotation in one of the Studio's sentences](#2006-a-name-from-a-file-cannot-end-the-quotation-in-one-of-the-studios-sentences)
+  - [20.07 An Overlay that this version does not know is left out with a notice, and the original file is kept](#2007-an-overlay-that-this-version-does-not-know-is-left-out-with-a-notice-and-the-original-file-is-kept)
 - [30 The preview (Mockup)](#30-the-preview-mockup)
   - [30.01 The Mockup contains no script, no event handler, and no outside address](#3001-the-mockup-contains-no-script-no-event-handler-and-no-outside-address)
   - [30.02 Text from a project is drawn as text, never as markup](#3002-text-from-a-project-is-drawn-as-text-never-as-markup)
   - [30.03 Each preview sits in a locked frame](#3003-each-preview-sits-in-a-locked-frame)
   - [30.04 The Studio sends no request to any outside address](#3004-the-studio-sends-no-request-to-any-outside-address)
   - [30.05 The Mockup fits the window at every setting, and the headline stays the largest text](#3005-the-mockup-fits-the-window-at-every-setting-and-the-headline-stays-the-largest-text)
+  - [30.06 The picture of an Overlay holds no script, no link, and nothing that a visitor could send](#3006-the-picture-of-an-overlay-holds-no-script-no-link-and-nothing-that-a-visitor-could-send)
 - [40 Colors and contrast](#40-colors-and-contrast)
   - [40.01 The Studio writes every color as exact digits](#4001-the-studio-writes-every-color-as-exact-digits)
   - [40.02 A color pair that the Studio calls passing passes when a browser draws it](#4002-a-color-pair-that-the-studio-calls-passing-passes-when-a-browser-draws-it)
@@ -87,9 +94,13 @@ The lines used most often. Each line ends with the ID of the section that suppor
   - [50.04 A card shows exactly the design that picking it gives](#5004-a-card-shows-exactly-the-design-that-picking-it-gives)
   - [50.05 A value follows another value only when the starting design or the owner's pick says so](#5005-a-value-follows-another-value-only-when-the-starting-design-or-the-owners-pick-says-so)
   - [50.06 A written reason leaves a Decision only with a notice that offers it back](#5006-a-written-reason-leaves-a-decision-only-with-a-notice-that-offers-it-back)
+  - [50.07 A Skin changes colors only](#5007-a-skin-changes-colors-only)
+  - [50.08 An Overlay changes no value of the design, and a project without Overlays is stored as before](#5008-an-overlay-changes-no-value-of-the-design-and-a-project-without-overlays-is-stored-as-before)
 - [60 The Studio's words](#60-the-studios-words)
   - [60.01 A trade word appears only inside round brackets](#6001-a-trade-word-appears-only-inside-round-brackets)
   - [60.02 Every Step says where its guidance comes from and how well it is known](#6002-every-step-says-where-its-guidance-comes-from-and-how-well-it-is-known)
+  - [60.03 No Overlay and no research rule is graded "measured" without a source that was read in full](#6003-no-overlay-and-no-research-rule-is-graded-measured-without-a-source-that-was-read-in-full)
+  - [60.04 A research rule says "Holds" only when the measured number meets it](#6004-a-research-rule-says-holds-only-when-the-measured-number-meets-it)
 - [70 How the Studio is built](#70-how-the-studio-is-built)
   - [70.01 The shared core holds no React import and no browser API](#7001-the-shared-core-holds-no-react-import-and-no-browser-api)
   - [70.02 No look changes by accident](#7002-no-look-changes-by-accident)
@@ -246,6 +257,16 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Open.** When storage has no room for the extra entry, the page writes the saved project as before, without this protection. The 48 trials ran in one browser on one machine.
 - Last verified: 2026-11-14
 
+### [10.14] A tab that finishes opening while another tab saved does not say "Saved" over a project that storage no longer holds
+
+<!-- index: opening while another tab saves | saving table; slow opening; see also: two tabs -->
+
+- **Rule.** When a tab finishes opening the saved project and storage meanwhile holds another tab's save, the tab stops saving and says so; it never shows the older project under "Saved". [S12]
+- **Test.** "opening, and another tab saves meanwhile: the tab does not say "Saved" over a project that storage no longer holds". [S3]
+- **Examples.** The saving table (`docs/reference/saving-table.md`) lists every situation of a tab against every event. Writing it on 2026-11-14 showed this case, which no earlier review had found; the test failed before the repair.
+- **Open.** The table names what no test covers: the browser's own "leave this page?" question, a browser that ends a tab without running the page's last code, and any browser other than Chromium.
+- Last verified: 2026-11-14
+
 ## [20] Project files
 
 ### [20.01] A saved project loads back exactly as it was saved
@@ -303,6 +324,15 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Open.** A name can still hold a misleading sentence inside its quotation marks.
 - Last verified: 2026-11-14
 
+### [20.07] An Overlay that this version does not know is left out with a notice, and the original file is kept
+
+<!-- index: unknown Overlay | later version; left out; see also: Overlay -->
+
+- **Rule.** A project stores its switched-on Overlays as a list of identifiers; on opening, the Studio keeps the ones its Catalog holds, each once, in the Catalog's order, leaves out any other, says so, and keeps the file as it was as a copy. [S1 at D53]
+- **Test.** "leaves out an Overlay that this version does not know, repeats included, and says so"; "refuses a file whose Overlay list is not a short list of short words". [S2]
+- **Test.** "leaves out an Overlay that this version does not know when it opens a saved project, keeps the original, and says so". [S3]
+- Last verified: 2026-11-14
+
 ## [30] The preview (Mockup)
 
 ### [30.01] The Mockup contains no script, no event handler, and no outside address
@@ -350,6 +380,15 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Exceptions.** The tests change one Step at a time from each Direction, plus all sliders at their lowest and all at their highest. They do not try every combination of Options.
 - **Open.** Measured in Chromium only, at the named widths only.
 - Last verified: 2026-11-13
+
+### [30.06] The picture of an Overlay holds no script, no link, and nothing that a visitor could send
+
+<!-- index: Overlay picture | still picture; question; notice; see also: Mockup -->
+
+- **Rule.** The Mockup draws each switched-on Overlay open, as a still picture built from fixed text; only an identifier from a fixed list reaches the markup, and the one text of the owner in a picture (the label of the main button) arrives escaped. [S1 at D53; S10 at hard rule 6]
+- **Test.** "keeps the pictures free of script, of live links, and of anything a visitor could send"; "refuses an Overlay that is not in its list, before anything reaches the markup"; "draws each switched-on Overlay once, under its Catalog name, in the Catalog order". [S7]
+- **Exceptions.** A picture shows what an Overlay looks like in the design. It does not show how the Overlay opens, closes, or behaves with a keyboard or a screen reader; the built website does that, and a person must check it there.
+- Last verified: 2026-11-14
 
 ## [40] Colors and contrast
 
@@ -454,6 +493,25 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Open.** The owner may prefer that a reason always stays (decision D50 is open to veto). The notice goes when the owner moves to another screen.
 - Last verified: 2026-11-14
 
+### [50.07] A Skin changes colors only
+
+<!-- index: Skin | other colors; color fade; chip; see also: Direction -->
+
+- **Rule.** A Skin gives a Direction other colors, with or without a color fade in the headline; layout, letter styles, shapes, and the lightness of the main color stay as the Direction made them, and a Direction offers only Skins that cause no clash and no failing color pair that its own colors pass. [S1 at D52]
+- **Test.** "offers a color fade only where the headline can really end in the Skin’s second color (code review of 2026-11-14)"; "changes colors only: layout, letters, shapes, and how light the main color is stay as the Direction made them"; "offers every curated Direction at least two skins, each without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass". [S8]
+- **Test.** "offers a Direction’s skins on its card; a skin changes the picture and the colors a project starts with, and nothing else". [S3]
+- **Open.** A project does not store the name of its Skin, and a Skin can be chosen only when a project starts; a later change of colors goes through the color Steps.
+- Last verified: 2026-11-14
+
+### [50.08] An Overlay changes no value of the design, and a project without Overlays is stored as before
+
+<!-- index: Overlay | small helper; tooltip; are you sure; switch -->
+
+- **Rule.** Switching an Overlay on or off changes the project's list of Overlays and nothing else; with the last Overlay switched off, the project equals the project before, so a project saved before Overlays existed opens and saves unchanged. Undo takes a switch back. [S1 at D53]
+- **Test.** "keeps a project without Overlays exactly as it was: no new field, so older files and older tests read the same"; "stores the switched-on Overlays in the order of the Catalog, and reads them back". [S2]
+- **Test.** "draws a switched-on Overlay in the preview, saves it, lists it on the Summary, keeps it through a reload, and lets Undo take it back"; "shows the main button that stays in view in the Summary’s phone preview only, and never on the cards of a Step"; "treats switched-on Overlays as work: a project that holds nothing else is kept as a copy, with Undo offered, when a Direction replaces it". [S3]
+- Last verified: 2026-11-14
+
 ## [60] The Studio's words
 
 ### [60.01] A trade word appears only inside round brackets
@@ -461,7 +519,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 <!-- index: plain words | jargon; trade word -->
 
 - **Rule.** Every text that the Studio shows uses plain words; a listed trade word appears only inside round brackets, as a word to learn. [S1 at D38]
-- **Test.** "uses a trade word only inside round brackets, as a word to learn"; in the browser, "shows no trade word outside round brackets and no vague phrase on the Directions, on every Step, and on the Summary, with no error and no outside request". [S8; S3]
+- **Test.** "uses a trade word only inside round brackets, as a word to learn"; in the browser, "shows no trade word outside round brackets and no vague phrase on the Directions, on every Step, on the Overlays, and on the Summary, with no error and no outside request". [S8; S3]
 - **Exceptions.** The test knows only the words on its list (`packages/core/src/catalog/words.ts`); a trade word that is not on the list passes.
 - Last verified: 2026-11-13
 
@@ -473,6 +531,25 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Test.** "gives every Step plain text, sources that say how they are known, an evidence grade, and a real review date"; "grades a Step "measured" only when a source was read in full".
 - **Policy.** Hard rule 5 and hard rule 13. [S10 at hard rule 5]
 - Last verified: 2026-11-13
+
+### [60.03] No Overlay and no research rule is graded "measured" without a source that was read in full
+
+<!-- index: evidence grade | measured; search summary; research file; see also: source -->
+
+- **Rule.** Each Overlay and each research rule is a Catalog record with sources, an evidence grade, and a review date; the grade "measured" needs a source that was read in full, and every source line names a record that its research file really holds, word for word. [S10 at hard rule 5; S1 at D53]
+- **Test.** "has six Overlays, each a complete record with a source, an evidence grade, and a review date"; "names, in each source line, a record that the knowledge base really holds"; "has five research rules, each a complete record with sources, an evidence grade, and a review date". [S8]
+- **Exceptions.** The tests check that a named record exists. They cannot check that the record is right: AI assistants wrote the records, mostly from search summaries, and nobody has reviewed them.
+- Last verified: 2026-11-14
+
+### [60.04] A research rule says "Holds" only when the measured number meets it
+
+<!-- index: research rule | holds; does not hold; reading size; line length; target size -->
+
+- **Rule.** The Summary measures each research rule on the open design and shows "Holds" or "Does not hold" with the number; four of the five rules hold on every Direction and on every Skin, a missing value never passes, and a rule whose value the sample website fixes says so. [S1 at D53]
+- **Test.** "holds every binding rule on every Direction and on every Skin of every Direction"; "says "does not hold", with the number, when a design breaks a rule"; "says which rules a design can change and which the Template fixes, and names in words what a fixed rule leaves out"; "names the Directions that depart from a rule that does not bind, so that a new departure is a decision and not an accident". [S8]
+- **Test.** "measures every research rule on the open design and says "Holds" or "Does not hold" with the number, as the core computes it"; "says so when a design does not hold a rule, leads to the Step that changes it, and follows the change". [S3]
+- **Exceptions.** The rule "Reading text is at least 16 pixels tall" does not bind: the Direction "Control Room" uses 15 pixels on purpose. A rule measures values of the design, not the built website, and each rule states what a person must still check.
+- Last verified: 2026-11-14
 
 ## [70] How the Studio is built
 
@@ -531,12 +608,16 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Kept copy** (UF: backup): a copy of a project that the Studio keeps before a replace action. §10.02
 - **Mockup** (UF: preview): the HTML and CSS page on which every Option renders. §30.01
 - **Option**: one of the concrete choices that a Step offers. §50.02
+- **Overlay** (UF: small helper): a helper that appears over the page and that the owner switches on or off for any Direction: a tooltip, an "Are you sure?" question, a notice. §50.08
+- **Research rule**: a finding from research, turned into a number that the Studio measures on a design; advice, with its strength stated. §60.04
 - **Replace action**: an opened file, a new Direction, or a new project that takes the place of the current work. §10.05
+- **Skin**: pre-built colors and color fades for a Direction; a Skin changes colors only. §50.07
 - **Standing notice** (UF: hold): a notice that needs the owner's answer; it has its own row and stays until the owner answers. The word avoids "decision", because a Decision is the recorded result of a Step. §10.07
 - **Step**: one screen of the Studio that asks for one design decision. §50.02
 
 ## [85] Changelog
 
+- 2026-11-14 v1.4: after the saving table, Skins, Overlays, and research rules (decisions D52, D53): added §10.14, §20.07, §30.06, §50.07, §50.08, §60.03, §60.04; §60.01 names the test under its new name. 49 guarantees.
 - 2026-11-14 v1.3: after round 3 of campaign 4: added §10.12, §10.13, §20.05, §20.06, §50.06. 42 guarantees.
 - 2026-11-13 v1.0: created with 25 guarantees.
 - 2026-11-13 v1.2: after the retest round and the code review: added §10.09, §10.10, §10.11, §40.05, §50.04, §50.05, §70.04, §70.05; §10.03, §10.05, §10.08, §30.05, and §70.02 now state the changed behavior and tests. 37 guarantees.
@@ -554,20 +635,22 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - [S9] The builder, *Unit tests of the engine*, file `packages/core/test/engine.test.ts` (2026-11-13). Accessed 2026-11-13. Grade: A.
 - [S10] The owner and the builder, *Standing rules for every session in this repository*, file `CLAUDE.md` (2026-11-13). Accessed 2026-11-13. Grade: A. A pinpoint names a hard rule.
 - [S11] The builder, *Boundary rules*, file `.dependency-cruiser.cjs` (2026-11-13). Accessed 2026-11-13. Grade: A.
+- [S12] The builder, *The saving table: what the Studio does with your work, in every situation*, file `docs/reference/saving-table.md` (2026-11-14). Accessed 2026-11-14. Grade: A.
 
 ## [91] Cite index
 
 <!-- authorities:start -->
-- [S1] The builder and the owner, *DECISIONS.md*, repository `catcorner22/frontend`, file `DECISIONS.md` (2026-11-13) — §10.02, §10.03, §10.05, §10.07, §10.08, §10.09, §10.12, §10.13, §20.05, §20.06, §40.01, §50.05, §50.06, §60.01, §70.02, §70.03
-- [S2] The builder, *Unit tests of the project file*, file `packages/core/test/project-file.test.ts` (2026-11-13) — §20.01, §20.02, §20.03, §20.04, §20.05
-- [S3] The builder, *Browser tests of the Studio*, file `apps/studio/e2e/studio.e2e.ts` (2026-11-13) — §10.01, §10.02, §10.03, §10.04, §10.05, §10.06, §10.07, §10.08, §10.09, §10.10, §10.11, §10.12, §10.13, §20.02, §20.03, §20.05, §20.06, §30.02, §30.03, §30.04, §50.06, §60.01, §70.04
+- [S1] The builder and the owner, *DECISIONS.md*, repository `catcorner22/frontend`, file `DECISIONS.md` (2026-11-13) — §10.02, §10.03, §10.05, §10.07, §10.08, §10.09, §10.12, §10.13, §20.05, §20.06, §20.07, §30.06, §40.01, §50.05, §50.06, §50.07, §50.08, §60.01, §60.03, §60.04, §70.02, §70.03
+- [S2] The builder, *Unit tests of the project file*, file `packages/core/test/project-file.test.ts` (2026-11-13) — §20.01, §20.02, §20.03, §20.04, §20.05, §20.07, §50.08
+- [S3] The builder, *Browser tests of the Studio*, file `apps/studio/e2e/studio.e2e.ts` (2026-11-13) — §10.01, §10.02, §10.03, §10.04, §10.05, §10.06, §10.07, §10.08, §10.09, §10.10, §10.11, §10.12, §10.13, §10.14, §20.02, §20.03, §20.05, §20.06, §20.07, §30.02, §30.03, §30.04, §50.06, §50.07, §50.08, §60.01, §60.04, §70.04
 - [S4] The builder, *Browser tests of the Mockup and of drawn colors*, file `apps/studio/e2e/visual.e2e.ts`… — §30.05, §40.02, §70.02
 - [S5] The builder, *Unit tests of the color values and contrast checks*, file `packages/core/test/tokens.test.ts`… — §40.01, §40.02, §40.03, §40.05, §40.04
-- [S7] The builder, *Unit tests of the Mockup*, file `packages/core/test/mockup.test.ts` (2026-11-13) — §30.01, §30.02, §30.03
-- [S8] The builder, *Unit tests of the Catalog*, file `packages/core/test/catalog.test.ts` (2026-11-13) — §40.04, §50.02, §50.03, §60.01, §60.02, §70.05
+- [S7] The builder, *Unit tests of the Mockup*, file `packages/core/test/mockup.test.ts` (2026-11-13) — §30.01, §30.02, §30.03, §30.06
+- [S8] The builder, *Unit tests of the Catalog*, file `packages/core/test/catalog.test.ts` (2026-11-13) — §40.04, §50.02, §50.03, §50.07, §60.01, §60.02, §60.03, §60.04, §70.05
 - [S9] The builder, *Unit tests of the engine*, file `packages/core/test/engine.test.ts` (2026-11-13) — §20.01, §50.01, §50.02, §50.03, §50.04, §50.05, §50.06
-- [S10] The owner and the builder, *Standing rules for every session in this repository*, file `CLAUDE.md`… — §30.01, §30.04, §40.04, §60.02, §70.01, §70.03, §70.05
+- [S10] The owner and the builder, *Standing rules for every session in this repository*, file `CLAUDE.md`… — §30.01, §30.04, §30.06, §40.04, §60.02, §60.03, §70.01, §70.03, §70.05
 - [S11] The builder, *Boundary rules*, file `.dependency-cruiser.cjs` (2026-11-13) — §70.01
+- [S12] The builder, *The saving table: what the Studio does with your work, in every situation*, file… — §10.14
 <!-- authorities:end -->
 
 ## [92] Index
@@ -578,6 +661,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - accessible — *see* compliance claim
 - ADA — *see* compliance claim
 - another window — *see* two tabs
+- are you sure — *see* Overlay
 - autosave — *see* saving
 
 **B**
@@ -590,8 +674,10 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 - **card** — §50.04; *see also* Decision
 - **changed Decision** — §20.04; *see also* project file
+- chip — *see* Skin
 - closing a tab — *see* unsaved work
 - **closing in the same instant** — §10.13; *see also* two tabs
+- color fade — *see* Skin
 - **compliance claim** — §40.04
 - console error — *see* page error
 - content policy — *see* locked frame
@@ -608,6 +694,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Decision** — §50.01; *see also* project file
 - **dependency** — §70.03
 - **Direction** — §50.03
+- does not hold — *see* research rule
 - download — *see* project file
 - **drawn color** — §40.05; *see also* contrast check
 
@@ -616,6 +703,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - enforce — *see* Fix for me
 - error message — *see* refused file
 - evidence — *see* source
+- **evidence grade** — §60.03; *see also* source
 - exact digits — *see* written color
 
 **F**
@@ -637,6 +725,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - heading size — *see* phone width
 - hex — *see* written color
 - hold — *see* standing notice
+- holds — *see* research rule
 - **hostile text** — §30.02; *see also* Mockup
 
 **I**
@@ -658,14 +747,18 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 - **lasting copy** — §10.12; *see also* kept copy
 - **late copy** — §10.11; *see also* kept copy
+- later version — *see* unknown Overlay
 - leaving copy — *see* closing in the same instant
 - leaving the page — *see* unsaved work
+- left out — *see* unknown Overlay
+- line length — *see* research rule
 - lint rule — *see* text as text
 - **locked frame** — §30.03
 
 **M**
 
 - markup — *see* hostile text
+- measured — *see* evidence grade
 - measured style — *see* stored picture
 - **Mockup** — §30.01; *see also* locked frame
 
@@ -677,6 +770,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - new project — *see* replace action
 - newer copy — *see* late copy
 - not saving — *see* standing notice
+- notice — *see* Overlay picture
 
 **O**
 
@@ -684,11 +778,15 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - one variable — *see* Step
 - open a file — *see* project file
 - **opening** — §10.10; *see also* saving
+- **opening while another tab saves** — §10.14; *see also* two tabs
 - opposite colors — *see* following value
 - Option — *see* Step
+- other colors — *see* Skin
 - out of range — *see* rejected Options
 - **outside request** — §30.04
 - overflow — *see* phone width
+- **Overlay** — §50.08
+- **Overlay picture** — §30.06; *see also* Mockup
 
 **P**
 
@@ -711,11 +809,13 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 **Q**
 
+- question — *see* Overlay picture
 - **quotation marks** — §20.06
 
 **R**
 
 - race — *see* closing in the same instant
+- reading size — *see* research rule
 - **reason** — §50.06; *see also* Decision
 - record — *see* Decision
 - **refused file** — §20.02; *see also* project file
@@ -723,6 +823,8 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - remote font — *see* outside request
 - repaired — *see* Fix for me
 - **replace action** — §10.05
+- research file — *see* evidence grade
+- **research rule** — §60.04
 - running copy — *see* unsaved work
 
 **S**
@@ -733,26 +835,35 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **save mark** — §10.09; *see also* two tabs
 - saved — *see* saving
 - **saving** — §10.01
+- saving table — *see* opening while another tab saves
 - screenshot — *see* stored picture
 - script — *see* Mockup
+- search summary — *see* evidence grade
 - second color — *see* following value
 - second tab — *see* two tabs
+- **Skin** — §50.07; *see also* Direction
 - slider end — *see* rejected Options
+- slow opening — *see* opening while another tab saves
 - slow page database — *see* opening
+- small helper — *see* Overlay
 - small variation — *see* card
 - **source** — §60.02
 - **standing notice** — §10.07; *see also* saving
 - start again — *see* replace action
 - starting look — *see* Direction
 - **Step** — §50.02
+- still picture — *see* Overlay picture
 - stopped saving — *see* standing notice
 - storage — *see* saving
 - storage full — *see* kept copy
 - **stored picture** — §70.02
+- switch — *see* Overlay
 
 **T**
 
+- target size — *see* research rule
 - **text as text** — §70.05; *see also* hostile text
+- tooltip — *see* Overlay
 - tracking — *see* outside request
 - trade word — *see* plain words
 - **two tabs** — §10.06; *see also* saving
@@ -762,6 +873,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 - uncaught error — *see* page error
 - undo — *see* replace action
+- **unknown Overlay** — §20.07; *see also* Overlay
 - **unreadable project** — §10.04; *see also* kept copy
 - **unsaved work** — §10.08; *see also* kept copy
 - upgrade — *see* old project
@@ -784,7 +896,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 ## [99] Health
 
 <!-- health:start -->
-_59 sections, 10 sources, 41 index terms. Cadence: 90 days. Generated content last changed 2026-11-14._
+_66 sections, 11 sources, 48 index terms. Cadence: 90 days. Generated content last changed 2026-11-14._
 
 - No findings.
 <!-- health:end -->
