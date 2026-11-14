@@ -242,10 +242,10 @@ describe('Catalog: one variable per Step', () => {
 });
 
 describe('Catalog: Directions', () => {
-  it('has 18 curated Directions, each a complete, valid, conflict-free design with record fields', () => {
-    expect(DIRECTIONS).toHaveLength(18);
-    expect(new Set(DIRECTIONS.map((d) => d.id)).size).toBe(18);
-    expect(new Set(DIRECTIONS.map((d) => d.name)).size).toBe(18);
+  it('has 23 curated Directions, each a complete, valid, conflict-free design with record fields', () => {
+    expect(DIRECTIONS).toHaveLength(23);
+    expect(new Set(DIRECTIONS.map((d) => d.id)).size).toBe(23);
+    expect(new Set(DIRECTIONS.map((d) => d.name)).size).toBe(23);
     for (const d of DIRECTIONS) {
       expect(() => assertKnownParams(d.params), d.id).not.toThrow();
       expect(Object.keys(d.params).sort(), d.id).toEqual([...PARAM_KEYS].sort());

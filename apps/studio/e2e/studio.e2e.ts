@@ -16,10 +16,12 @@ const LOCAL_KEY = 'refraction.project.v2';
 const LEGACY_KEY = 'refraction.project.v1';
 const BACKUP_KEY = 'refraction.project.backup';
 
+// A machine whose installed browser is older than this Playwright version names its browser here; CI sets nothing.
+const LOCAL_BROWSER = process.env['PW_CHROMIUM'] ? { executablePath: process.env['PW_CHROMIUM'] } : {};
 let browser: Browser;
 beforeAll(async () => {
   writeFileSync(fileURLToPath(blankUrl), '<!doctype html><title>Blank page for tests</title>');
-  browser = await chromium.launch();
+  browser = await chromium.launch(LOCAL_BROWSER);
 });
 afterAll(async () => {
   await browser.close();
@@ -256,7 +258,7 @@ describe('Studio: first screen', () => {
   it('opens on the Directions with working, sandboxed pictures, no errors, and no outside request', async () => {
     const { context, page, errors, requests } = await open();
     await page.waitForSelector('.direction iframe');
-    expect(await page.locator('.direction').count()).toBe(18);
+    expect(await page.locator('.direction').count()).toBe(23);
     const sandboxes = await page.locator('iframe').evaluateAll((frames) => frames.map((f) => f.getAttribute('sandbox')));
     // An empty sandbox attribute applies every restriction: no scripts, no same-origin access, no forms, no popups.
     expect(sandboxes.length).toBeGreaterThan(0);
@@ -276,14 +278,14 @@ describe('Studio: first screen', () => {
   it('keeps generated Directions while the person moves around, and describes each one in a sentence', async () => {
     const { context, page } = await open();
     await page.getByRole('button', { name: 'Show me six more Directions' }).click();
-    await expect.poll(() => page.locator('.direction').count()).toBe(24);
+    await expect.poll(() => page.locator('.direction').count()).toBe(29);
     const moods = await page.locator('.direction .mood').allInnerTexts();
-    for (const mood of moods.slice(18)) expect(mood).toMatch(/^A (light|dark) page .+\.$/);
+    for (const mood of moods.slice(23)) expect(mood).toMatch(/^A (light|dark) page .+\.$/);
     await page.locator('.top-nav a', { hasText: 'Summary' }).click();
     await page.waitForSelector('.summary');
     await page.locator('.top-nav a', { hasText: 'Directions' }).click();
     await page.waitForSelector('.direction');
-    expect(await page.locator('.direction').count()).toBe(24);
+    expect(await page.locator('.direction').count()).toBe(29);
     await context.close();
   });
 });

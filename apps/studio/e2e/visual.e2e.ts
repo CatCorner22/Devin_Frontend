@@ -39,12 +39,14 @@ function mockup(params: DesignParams, focus: MockupFocus): string {
   return renderSmallBusiness({ params, tokens: deriveTokens(params, 'advise').css, content: SAMPLE_CONTENT, focus, still: true, links: 'inert', fontFaceCss: [...new Set(fonts)].map(fontFace).join('\n') });
 }
 
+// A machine whose installed browser is older than this Playwright version names its browser here; CI sets nothing.
+const LOCAL_BROWSER = process.env['PW_CHROMIUM'] ? { executablePath: process.env['PW_CHROMIUM'] } : {};
 let browser: Browser;
 let page: Page;
 beforeAll(async () => {
   // Pin how the browser draws text, so that the same picture comes out on every machine. By default the browser takes font "hinting" from the
   // machine's own settings; with hinting on, it also rounds each letter's width to whole pixels, so lines wrap at different words (CI runs 11 and 27).
-  browser = await chromium.launch({ args: ['--font-render-hinting=none', '--disable-lcd-text'] });
+  browser = await chromium.launch({ ...LOCAL_BROWSER, args: ['--font-render-hinting=none', '--disable-lcd-text'] });
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   page = await context.newPage();
 });

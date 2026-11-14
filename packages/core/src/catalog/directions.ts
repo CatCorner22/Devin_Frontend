@@ -32,6 +32,9 @@ const researched = (text: string, file: string): { sources: SourceRef[]; evidenc
   reviewed: REVIEWED,
 });
 
+/** A Direction composed later than the first set: the same kind of source, with its own review date. */
+const composedOn = (date: string): { sources: SourceRef[]; evidence: 'expert-opinion'; reviewed: string } => ({ sources: COMPOSED, evidence: 'expert-opinion', reviewed: date });
+
 const d = (overrides: Partial<DesignParams>): DesignParams => ({ ...DEFAULT_PARAMS, ...overrides });
 
 export const DIRECTIONS: Direction[] = [
@@ -285,6 +288,76 @@ export const DIRECTIONS: Direction[] = [
       fontHeading: 'outfit', fontBody: 'dm-sans', headingWeight: 500, headingTracking: 0.1, headingCase: 'upper', baseSize: 16.5, scaleRatio: 1.3, numerals: 'tabular',
       neutralHue: 80, neutralChroma: 0.008, accentHue: 88, accentChroma: 0.13, accentLightness: 0.8, colorStrategy: 'single-accent', theme: 'dark', contrast: 0.9,
       radius: 0, elevation: 'borders', borderWeight: 1, signature: 'color-band', atmosphere: 'spotlight', buttonFinish: 'outline', displayTreatment: 'solid', motion: 'subtle',
+    }),
+  },
+  {
+    id: 'motel-neon',
+    name: 'Motel Neon',
+    mood: 'Dusk on an old California highway: a deep blue-violet evening, a faded rose red, tall elegant letters, and film grain. Wistful and cinematic.',
+    bestFor: 'Musicians, photographers, vintage shops, bars and diners, writers, anything that trades on nostalgia.',
+    risk: 'Melancholy is a narrow mood; it suits a story and can feel heavy on a page that only sells a service. The elegant heading letters need to be large to stay readable.',
+    ...composedOn('2026-11-14'),
+    params: d({
+      nav: 'top-centered', hero: 'text-left', sections: 'alternating', contentWidth: 'standard', emphasis: 'headline', density: 1.2,
+      fontHeading: 'playfair-display', fontBody: 'newsreader', headingWeight: 500, headingTracking: -0.01, headingCase: 'sentence', baseSize: 17.5, scaleRatio: 1.42, numerals: 'proportional',
+      neutralHue: 275, neutralChroma: 0.024, accentHue: 12, accentChroma: 0.15, accentLightness: 0.66, accent2Hue: 215, colorStrategy: 'duo', theme: 'dark', contrast: 0.82,
+      radius: 3, elevation: 'tonal', borderWeight: 1, signature: 'none', atmosphere: 'grain', buttonFinish: 'glow', displayTreatment: 'ink-gradient', motion: 'subtle',
+    }),
+  },
+  {
+    id: 'ocean-drive',
+    name: 'Ocean Drive',
+    mood: 'A 1980s beach-city evening: pale pastel walls, flamingo pink, turquoise water, and thin clean letters. Breezy and stylish.',
+    bestFor: 'Hotels, salons, boutiques, cocktail bars, travel, events.',
+    risk: 'Pink with turquoise is a loud pair; it reads as fashion, and a firm or a clinic may find it too playful.',
+    ...composedOn('2026-11-14'),
+    params: d({
+      nav: 'split-cta', hero: 'split-media', sections: 'grid', contentWidth: 'wide', emphasis: 'headline', density: 1.1,
+      fontHeading: 'outfit', fontBody: 'dm-sans', headingWeight: 300, headingTracking: -0.02, headingCase: 'sentence', baseSize: 17, scaleRatio: 1.42, numerals: 'proportional',
+      neutralHue: 350, neutralChroma: 0.012, accentHue: 355, accentChroma: 0.2, accentLightness: 0.62, accent2Hue: 195, colorStrategy: 'duo', theme: 'light', contrast: 0.75,
+      radius: 18, elevation: 'soft-shadow', borderWeight: 0, signature: 'color-band', atmosphere: 'horizon', buttonFinish: 'flat', displayTreatment: 'accent-gradient', motion: 'subtle',
+    }),
+  },
+  {
+    id: 'mall-sunset',
+    name: 'Mall Sunset',
+    mood: 'A 1980s dream of the future: a violet night, hot magenta and cyan, a grid of lines, and wide capital letters. Playful and unreal.',
+    bestFor: 'Music, games, streetwear, retro events, creative studios.',
+    risk: 'This look is a quotation of an internet style; it is fun for a subculture and wrong for anything that must be taken at face value.',
+    ...composedOn('2026-11-14'),
+    params: d({
+      nav: 'top-inline', hero: 'centered', sections: 'bento', contentWidth: 'standard', emphasis: 'headline', density: 1.05,
+      fontHeading: 'space-grotesk', fontBody: 'space-grotesk', headingWeight: 700, headingTracking: 0.12, headingCase: 'upper', baseSize: 16, scaleRatio: 1.3, numerals: 'mono',
+      neutralHue: 300, neutralChroma: 0.03, accentHue: 335, accentChroma: 0.24, accentLightness: 0.66, accent2Hue: 200, colorStrategy: 'duo', theme: 'dark', contrast: 0.9,
+      radius: 0, elevation: 'hard-shadow', borderWeight: 2, signature: 'corner-tag', atmosphere: 'line-grid', buttonFinish: 'flat', displayTreatment: 'accent-gradient', motion: 'expressive',
+    }),
+  },
+  {
+    id: 'quiet-orbit',
+    name: 'Quiet Orbit',
+    mood: 'A bright, still morning in space: a near-white page with a cool tint, one calm indigo, a few faint stars, and soft round shapes. Smooth and modern.',
+    bestFor: 'Software, science and education, consultancies, anything that should feel clear and forward-looking.',
+    risk: 'Its restraint is the point: one color, no glow. Add more decoration and it turns into a costume.',
+    ...composedOn('2026-11-14'),
+    params: d({
+      nav: 'split-cta', hero: 'text-left', sections: 'bento', contentWidth: 'standard', emphasis: 'headline', density: 1.22,
+      fontHeading: 'manrope', fontBody: 'inter', headingWeight: 600, headingTracking: -0.03, headingCase: 'sentence', baseSize: 17, scaleRatio: 1.36, numerals: 'proportional',
+      neutralHue: 265, neutralChroma: 0.008, accentHue: 272, accentChroma: 0.15, accentLightness: 0.47, colorStrategy: 'single-accent', theme: 'light', contrast: 0.8,
+      radius: 20, elevation: 'ring', borderWeight: 1, signature: 'none', atmosphere: 'stars', buttonFinish: 'flat', displayTreatment: 'solid', motion: 'subtle',
+    }),
+  },
+  {
+    id: 'steady-steps',
+    name: 'Steady Steps',
+    mood: 'A soft mint page with a calm green-teal, friendly round letters, clear buttons, and plenty of room. Encouraging and easy to return to every day.',
+    bestFor: 'Programs that people follow over weeks: coaching, therapy and recovery support, habit and health programs, courses.',
+    risk: 'It shows the look on the sample website only. A daily check-in screen or a progress screen is a different kind of page, which the Studio does not draw yet.',
+    ...composedOn('2026-11-14'),
+    params: d({
+      nav: 'split-cta', hero: 'text-left', sections: 'grid', contentWidth: 'standard', emphasis: 'action', density: 1.2,
+      fontHeading: 'bricolage-grotesque', fontBody: 'dm-sans', headingWeight: 600, headingTracking: -0.02, headingCase: 'sentence', baseSize: 18, scaleRatio: 1.3, numerals: 'tabular',
+      neutralHue: 85, neutralChroma: 0.012, accentHue: 175, accentChroma: 0.11, accentLightness: 0.45, colorStrategy: 'tinted-surface', theme: 'light', contrast: 0.85,
+      radius: 16, elevation: 'soft-shadow', borderWeight: 1, signature: 'big-numerals', atmosphere: 'plain', buttonFinish: 'flat', displayTreatment: 'solid', motion: 'subtle',
     }),
   },
 ];
