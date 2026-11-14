@@ -45,6 +45,14 @@ The tool is for the owner alone. Do not add accounts, payments, analytics, or ma
 12. Run the three red-team reviewers (security attacker, confused first-time user, drift and truth auditor) at each unit of work and at each milestone gate. Give them the code and the running app, not conclusions. Log findings in `redteam/FINDINGS.md`. A blocker stops the milestone.
 13. Report outcomes faithfully. If a check was skipped, say so. If a claim rests on a search snippet, say so.
 
+## Verification rules (the owner's, 2026-11-14)
+
+1. After any change to code, run `npm run check` (type check, lint, boundary rule, and the unit tests: `npm test` is its last part).
+2. After any change to the Studio's screens, the Mockup, or the saving logic, also run `npm run e2e` (the browser tests).
+3. Do not call a task finished, and do not commit code, until every check passes and no lint error remains.
+4. If a check fails, find the cause and repair it before you finish. Never skip, disable, or weaken a test (hard rule 3).
+5. Edit the code as you work, in small steps, and check each step.
+
 ## Writing style for anything the owner reads
 
 Active voice. One term per concept (see the table). Plain words; explain each technical term at first use. The owner learns by understanding every step, contingency, and purpose, so state what a thing is, why it exists, and what can go wrong with it. Metaphors help; the governing metaphor is the eye exam (Studio) and the fitting (Fitter).
