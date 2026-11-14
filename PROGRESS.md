@@ -23,7 +23,7 @@ A fresh session reads this file to learn where the project stands. Update it aft
 - A new screen changes the path: tests that walk from the last Step to the Summary pass through the Overlays.
 - Four links in the top bar do not fit a 320-pixel window side by side; the row wraps.
 
-**What the next session should do first.** Read "Next" and "Waiting on the owner" below. If the owner has sent the ten trial answers, turn each named problem into a row in `redteam/FINDINGS.md` and repair the serious ones; M4 then closes on the owner's word and M5 starts with the Brief (the owner's own words in every preview).
+**What the next session should do first.** Look at the result of CI run 92 (commit `a6c82ee`): it was still running when this was written; if it failed, repair the cause before anything else. Then read "Next" and "Waiting on the owner" below. If the owner has sent the ten trial answers, turn each named problem into a row in `redteam/FINDINGS.md` and repair the serious ones; M4 then closes on the owner's word and M5 starts with the Brief (the owner's own words in every preview).
 
 ## Current milestone: M4 (Step screen). Not complete.
 
