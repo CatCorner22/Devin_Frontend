@@ -1735,7 +1735,9 @@ describe('Studio: what the third round of campaign 4 found', () => {
     await waitForStep(page, 'Main color');
     await page.locator('summary', { hasText: 'Adjust with sliders' }).click();
     const slider = page.locator('#tune-accentLightness');
-    expect((await stored(page))!.params.accentLightness).toBe(0.8);
+    // The Studio saves 300 milliseconds after a change, so the stored value is asked until it is there. A single read at
+    // once found nothing stored on a slower machine (CI run on pull request 3, 2026-11-14).
+    await expect.poll(async () => (await stored(page))?.params.accentLightness).toBe(0.8);
     expect(await slider.getAttribute('aria-valuetext')).toBe('0.8 (drawn like 0.68 on this page)');
     const accent = (): Promise<string> => page.frameLocator('.large-preview iframe').locator('body').evaluate((body) => getComputedStyle(body).getPropertyValue('--accent').trim());
     const before = await accent();
