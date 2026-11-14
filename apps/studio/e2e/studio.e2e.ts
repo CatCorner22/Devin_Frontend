@@ -1763,6 +1763,29 @@ describe('Studio: what the third round of campaign 4 found', () => {
     // Inside the Studio's sentence, the only quotation marks are the Studio's own: two pairs, around the two names.
     expect(body.slice(0, body.indexOf(' Opening it replaces')).match(/[“”"]/g)?.length).toBe(4);
     await page.getByRole('button', { name: 'Keep my project' }).click();
+    // The same class of name, in three further forms (review of 2026-11-14, findings S5-02 and S5-03; judge's retest of F-19).
+    const RLO = String.fromCharCode(0x202e);
+    const cases: { file: string; project: string }[] = [
+      // Doubled marks: each became a single mark, and two single marks side by side draw like a double one.
+      { file: 'notes.json', project: 'Owner work””. Nothing will change. ““Owner work' },
+      // A sign that looks like a closing quotation mark (the double prime).
+      { file: 'holiday″. This file changes nothing; your project stays. ″x.json', project: 'Plain' },
+      // An invisible sign that turns the rest of the line into mirror writing, in the file name and in the project name.
+      { file: `notes${RLO}.json`, project: `Safe${RLO}` },
+    ];
+    for (const one of cases) {
+      const file = { ...JSON.parse(JSON.stringify(createProject('x'))), name: one.project };
+      await page.locator('#project-file').setInputFiles({ name: one.file, mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
+      const text = await page.locator('#confirm-body').innerText();
+      const sentence = text.slice(0, text.indexOf(' Opening it replaces'));
+      expect(text.includes(' Opening it replaces the project on screen.'), text).toBe(true);
+      // The Studio's two pairs of marks, and no other double mark, no look-alike, and no run of single marks.
+      expect(sentence.match(/[“”"″＂❝❞]/g)?.length, sentence).toBe(4);
+      expect(sentence, sentence).not.toMatch(/’’|''/);
+      // No sign that changes the direction of writing, and none that hides between letters.
+      expect([...text].filter((c) => /[\u200b-\u200f\u202a-\u202e\u2060-\u206f\ufeff]/.test(c)), one.file).toEqual([]);
+      await page.getByRole('button', { name: 'Keep my project' }).click();
+    }
     await context.close();
   });
 
@@ -1948,14 +1971,22 @@ describe('Studio: skins, the same look in other colors (decision D52)', () => {
     expect(skinsOf(aurora)).toContain(skin);
     await card.locator('.skin', { hasText: skin.name }).click();
     await expect.poll(picture).not.toBe(own);
-    expect(await card.locator('.skins .hint').innerText()).toBe(skin.what);
+    expect(await card.locator('.skins .hint').first().innerText()).toBe(skin.what);
+    // A second line says what a Skin does and does not change, and when it can be chosen.
+    expect(await card.locator('.skins .hint').nth(1).innerText()).toContain('A Skin sets which color. How light and how vivid the color is stays as this Direction has it');
     await card.getByRole('button', { name: 'Start from Midnight Aurora', exact: true }).click();
     await page.waitForSelector('.cards');
-    expect(await page.locator('.banner').innerText()).toContain('Started from “Midnight Aurora”, in the skin “Sunset fade”.');
+    expect(await page.locator('.banner').innerText()).toContain('Started from “Midnight Aurora”, in the Skin “Sunset fade”.');
     await settle(page);
     const project = (await stored(page))!;
     const expected = skinParams(aurora, skin);
     expect(project.direction).toBe('midnight-aurora');
+    // The project remembers the Skin, and the Studio names it wherever it names the start, also after a reload (finding U5-04).
+    expect(project.skin).toBe('sunset');
+    expect(await page.locator('.rail-direction strong').innerText()).toBe('Midnight Aurora in the Skin “Sunset fade”');
+    await page.reload();
+    await page.waitForSelector('.cards');
+    expect(await page.locator('.rail-direction strong').innerText()).toBe('Midnight Aurora in the Skin “Sunset fade”');
     expect(project.params).toEqual(expected);
     expect(project.base).toEqual(expected);
     expect(project.decisions).toEqual({});
@@ -1979,7 +2010,7 @@ describe('Studio: skins, the same look in other colors (decision D52)', () => {
     await card.getByRole('button', { name: 'Start from Soft Daylight', exact: true }).click();
     await page.getByRole('button', { name: 'Start again', exact: true }).click();
     await page.waitForSelector('.cards');
-    expect(await page.locator('.banner:not(.hold)').innerText()).toContain(`Started again from “Soft Daylight”, in the skin “${chosen}”.`);
+    expect(await page.locator('.banner:not(.hold)').innerText()).toContain(`Started again from “Soft Daylight”, in the Skin “${chosen}”.`);
     // Undo brings the replaced project back.
     await page.locator('.banner:not(.hold)').getByRole('button', { name: 'Undo' }).click();
     await settle(page);
@@ -2113,6 +2144,32 @@ describe('Studio: Overlays, small helpers over the page (decision D52)', () => {
     await context.close();
   });
 
+  it('makes no claim about saving beside the switches, and names the switched-on Overlays in the question before a new project (findings S5-01, S5-04)', async () => {
+    const project = { ...worked('Has work'), overlays: ['tooltip', 'confirm', 'notice'] };
+    // A saved copy that cannot be read: the Studio stops saving. No sentence on the screen may then say that a change is saved.
+    const { context, page } = await open({ hash: '#overlays', storage: { [LOCAL_KEY]: '{"cut off' } });
+    await page.waitForSelector('.overlay-list');
+    expect(await page.locator('.save-state').innerText()).toContain('Not saving');
+    expect(await page.locator('#main, .options').allInnerTexts().then((texts) => texts.join(' '))).not.toMatch(/\b(is|are) saved\b|saves your work/);
+    await context.close();
+    const second = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(project) } });
+    await second.page.waitForSelector('.summary');
+    await second.page.getByRole('button', { name: 'Start a new project…' }).click();
+    expect(await second.page.locator('#confirm-body').innerText()).toContain('This clears the Direction, 1 Decision, 3 switched-on Overlays, the project name, and the Contrast checks setting.');
+    await second.page.getByRole('button', { name: 'Keep it' }).click();
+    await second.context.close();
+  });
+
+  it('says in words, at phone width, that some cards of the first two Steps draw the same picture (finding U5-07)', async () => {
+    const { context, page } = await open({ hash: '#nav', viewport: { width: 390, height: 800 }, storage: { [LOCAL_KEY]: envelope(worked('Has work')) } });
+    await waitForStep(page, 'Menu (navigation)');
+    const note = 'At phone width some of these cards draw the same picture';
+    expect(await page.locator('.cards').innerText()).toContain(note);
+    await page.getByRole('button', { name: 'Desktop', exact: true }).click();
+    await expect.poll(() => page.locator('.cards').innerText()).not.toContain(note);
+    await context.close();
+  });
+
   it('gives the Tab key one stop in the list of Steps on the Overlays screen: the link of the Overlays', async () => {
     const { context, page } = await open({ hash: '#overlays', storage: { [LOCAL_KEY]: envelope(worked('Has work')) } });
     await page.waitForSelector('.overlay-list');
@@ -2152,7 +2209,7 @@ describe('Studio: research rules on the Summary (decision D52)', () => {
       const row = rows(page).nth(i);
       await row.locator('summary').click();
       const text = await row.innerText();
-      for (const part of [result.rule.why, result.rule.notChecked, `Reviewed on ${result.rule.reviewed}`]) expect(text, result.rule.id).toContain(part);
+      for (const part of [result.rule.why, result.rule.notChecked, `Written on ${result.rule.reviewed}; no person has reviewed it yet.`]) expect(text, result.rule.id).toContain(part);
       expect(await row.locator('details ul li').count(), result.rule.id).toBe(result.rule.sources.length);
       // A rule whose value the sample website fixes says so, in place of passing for a measurement of the owner's choices.
       expect(text.includes('no Step changes this value'), result.rule.id).toBe(result.rule.setBy === 'template');

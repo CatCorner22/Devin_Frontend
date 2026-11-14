@@ -68,7 +68,6 @@ const fromJapaneseStudy = (...titles: string[]): { sources: SourceRef[]; evidenc
 export const DIRECTIONS: Direction[] = [
   {
     id: 'graphite-precision',
-    skins: ['berry', 'gold', 'forest', 'ember'],
     group: 'calm',
     name: 'Graphite Precision',
     mood: 'Exact, quiet, engineered. Black, white, and a faint grid of lines.',
@@ -116,7 +115,6 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'paper-and-ink',
-    skins: ['ocean', 'berry', 'violet', 'gold', 'indigo'],
     group: 'nostalgic',
     name: 'Paper and Ink',
     mood: 'A well-edited magazine: paper grain, ink, and one red pencil.',
@@ -132,7 +130,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'soft-daylight',
-    skins: ['ember', 'berry', 'gold', 'graphite'],
+    skins: ['ember', 'berry', 'gold', 'graphite', 'indigo'],
     group: 'calm',
     name: 'Soft Daylight',
     mood: 'Bright, airy, unhurried. Boxes float on soft shadows in clear light.',
@@ -180,7 +178,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'clinical-calm',
-    skins: ['meadow', 'ember', 'violet', 'gold', 'graphite'],
+    skins: ['graphite', 'indigo'],
     group: 'calm',
     name: 'Clinical Calm',
     mood: 'Clean, reassuring, plainly spoken. Nothing to worry about here.',
@@ -228,7 +226,6 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'quiet-luxury',
-    skins: ['ocean', 'gold', 'forest', 'ember', 'indigo'],
     group: 'calm',
     name: 'Quiet Luxury',
     mood: 'Nearly nothing, perfectly placed. Thin letters with small feet, wide margins, no lines.',
@@ -244,7 +241,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'cobalt-wash',
-    skins: ['berry', 'gold', 'forest', 'ember'],
+    skins: ['berry', 'gold', 'forest', 'ember', 'graphite'],
     group: 'calm',
     name: 'Cobalt Wash',
     mood: 'The whole page breathes one color. Fresh, modern, unmistakable.',
@@ -276,7 +273,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'garden-ledger',
-    skins: ['ocean', 'ember', 'orchid', 'violet', 'gold'],
+    skins: ['ocean', 'orchid', 'violet', 'gold', 'lagoon'],
     group: 'nostalgic',
     name: 'Garden Ledger',
     mood: 'A seed catalog: deep green, sturdy letters with small feet, orderly lists.',
@@ -420,7 +417,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'steady-steps',
-    skins: ['berry', 'gold', 'graphite', 'ocean', 'ember'],
+    skins: ['berry', 'gold', 'graphite', 'ocean', 'violet'],
     group: 'calm',
     name: 'Steady Steps',
     mood: 'A soft mint page with a calm green-teal, friendly round letters, clear buttons, and plenty of room. Encouraging and easy to return to every day.',
@@ -564,7 +561,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'field-manual',
-    skins: ['ocean', 'lagoon', 'ember', 'orchid', 'violet'],
+    skins: ['graphite', 'indigo'],
     group: 'calm',
     name: 'Field Manual',
     mood: 'A printed manual: a paper-white page, black ink, one olive green, typewriter-style capital headings, thin lines, and numbered parts. Orderly and plain-spoken.',
@@ -580,7 +577,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'blue-hour-chapel',
-    skins: ['meadow', 'sunset', 'berry', 'orchid', 'gold'],
+    skins: ['indigo'],
     group: 'nostalgic',
     name: 'Blue Hour Chapel',
     mood: 'An old photograph of a summer that is over: sun-faded cream, dusty blue, a faded red, tall elegant letters, and soft grain. Glamorous and sad at once.',
@@ -628,7 +625,6 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'ink-and-seal',
-    skins: ['indigo', 'forest', 'graphite'],
     group: 'calm',
     name: 'Ink and Seal',
     mood: 'Warm paper, soft black ink, and a few small orange-red marks, like the seal on a letter. Wide empty margins, thin lines, square corners. Nothing shines and nothing moves.',
@@ -649,10 +645,10 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'unbleached-indigo',
-    skins: ['vermilion', 'forest', 'berry'],
+    skins: ['graphite'],
     group: 'calm',
     name: 'Unbleached and Indigo',
-    mood: 'Unbleached cloth and deep blue dye. Words and picture share the first screen unevenly, areas are set apart by a change of tone in place of lines, and the blue marks what a visitor can press.',
+    mood: 'Unbleached cloth and deep blue dye. Words and picture stand side by side on the first screen, areas are set apart by a change of tone in place of lines, and the blue marks what a visitor can press.',
     bestFor: 'Makers, small hotels, clinics, studios: places that want calm without coldness.',
     risk: 'The blue is deep and quiet, so the button depends on its place and its size to be found. Check that a first-time visitor finds it within a few seconds.',
     ...fromJapaneseStudy(
@@ -670,12 +666,11 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'plain-label',
-    skins: ['indigo', 'forest', 'graphite'],
     group: 'calm',
-    name: 'Plain Label',
-    mood: 'A near-white ground, plain letters, a black button, and one dark red for small marks and links. No emblem, no badge, no decoration: the goods do the talking.',
-    bestFor: 'Shops with good products and honest prices: food, household goods, stationery, clothing basics.',
-    risk: 'Without strong photographs of the goods the page has nothing to show. Plain is not the same as unfinished: every gap must be exact.',
+    name: 'Plain Ground',
+    mood: 'A near-white ground, plain letters, a black button, and one dark green for small marks and links. No emblem, no badge, no decoration: the goods do the talking.',
+    bestFor: 'Makers and small shops whose goods should speak for themselves: a bakery, a bookshop, a pottery, a hardware store.',
+    risk: 'Without strong photographs of the goods the page has nothing to show. Plain goods on a plain ground is also the look of some well-known shops: keep your own name and your own colors in plain sight, and copy no other shop’s label, colors, or lettering.',
     ...fromJapaneseStudy(
       'Emptiness as a container, and the plain-goods approach in retail',
       'Kanso (簡素): plain and uncluttered, with few kinds of thing',
@@ -684,7 +679,7 @@ export const DIRECTIONS: Direction[] = [
     params: d({
       nav: 'top-centered', hero: 'text-left', sections: 'grid', contentWidth: 'wide', emphasis: 'action', density: 1.2,
       fontHeading: 'public-sans', fontBody: 'public-sans', headingWeight: 600, headingTracking: 0, headingCase: 'sentence', baseSize: 16, scaleRatio: 1.24, numerals: 'tabular',
-      neutralHue: 60, neutralChroma: 0.004, accentHue: 20, accentChroma: 0.13, accentLightness: 0.4, colorStrategy: 'quiet', theme: 'light', contrast: 0.9,
+      neutralHue: 60, neutralChroma: 0.004, accentHue: 160, accentChroma: 0.09, accentLightness: 0.38, colorStrategy: 'quiet', theme: 'light', contrast: 0.9,
       radius: 0, elevation: 'flat', borderWeight: 1, signature: 'none', atmosphere: 'plain', buttonFinish: 'flat', displayTreatment: 'solid', motion: 'none',
     }),
   },

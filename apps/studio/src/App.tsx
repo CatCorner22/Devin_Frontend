@@ -323,6 +323,7 @@ function DirectionCard({ direction }: { direction: Direction }): React.JSX.Eleme
   const skin = skinId === null ? undefined : findSkin(skinId);
   const params = useMemo(() => (skin ? skinParams(direction, skin) : direction.params), [direction, skin]);
   const html = useMemo(() => mockupHtml(project, params, { wireframe: false, focus: 'top', still: true }).html, [project.content, project.a11y, params]);
+  const twoColors = direction.params.colorStrategy === 'duo';
   return (
     <article className="direction" aria-labelledby={`direction-${direction.id}`}>
       <div className="direction-body">
@@ -348,13 +349,14 @@ function DirectionCard({ direction }: { direction: Direction }): React.JSX.Eleme
               })}
             </div>
             <p className="hint">{skin ? skin.what : 'The colors this Direction was composed with.'}</p>
+            <p className="hint">A Skin sets which color. How light and how vivid the color is stays as this Direction has it, and the color shows most in buttons, links, and bands.{twoColors ? ' A chip with two colors: this Direction has a second color, and it moves around the color wheel together with the first.' : ''} You choose a Skin here, at the start; later you change colors on the color Steps.</p>
           </fieldset>
         )}
         <dl>
           <div><dt>Best for</dt><dd>{direction.bestFor}</dd></div>
           <div><dt>Watch for</dt><dd>{direction.risk}</dd></div>
         </dl>
-        <button type="button" className="btn primary" onClick={() => request(skin ? { ...direction, params } : direction, skin?.name)}>Start from {direction.name}</button>
+        <button type="button" className="btn primary" onClick={() => request(skin ? { ...direction, params } : direction, skin)}>Start from {direction.name}</button>
       </div>
     </article>
   );
@@ -382,7 +384,7 @@ function DirectionsView(): React.JSX.Element {
           The Studio helps you decide how a website looks and feels, one small decision at a time. Today you leave with a project file that holds your Decisions. A later version will turn them into exact instructions for an AI coding tool.
         </p>
         <p className="teach">
-          First pick a Direction below. Then {STEPS.length} short Steps let you change one thing at a time, like an eye exam: “which is better, 1 or 2?” You can stop at any point; the Studio saves your work as you go.
+          First pick a Direction below. Then {STEPS.length} short Steps let you change one thing at a time, like an eye exam: “which is better, 1 or 2?” You can stop at any point; the line under the top bar says whether your work is saved.
         </p>
         <p className="teach">Every picture shows the same made-up dental practice, so that only the design differs. It is a sample; it is not your content.</p>
         {started && <p className="note">You already have a project, started from {directionName(s.project, s.generated)}. If you start from another Direction, the Studio asks first, and you can undo it.</p>}
@@ -713,6 +715,7 @@ function StepsView(): React.JSX.Element {
             {shown.exemplar && <p><strong>Where you can see it:</strong> {shown.exemplar}</p>}
           </section>
           {step.thumb?.note && <p className="hint">{step.thumb.note}</p>}
+          {step.thumb?.narrowNote && s.device === 'phone' && <p className="hint">{step.thumb.narrowNote}</p>}
           <div className="tiles" data-device={step.thumb?.width ? 'detail' : cardsDevice}>
             {cards.map((card, i) => {
               const isShown = shown.id === card.id;
@@ -851,7 +854,7 @@ function OverlaysView(): React.JSX.Element {
       <aside className="options" aria-label="The Overlays">
         <fieldset className="overlay-list">
           <legend>Overlays</legend>
-          <p className="hint">Tick an Overlay to switch it on. Each change is saved, and Undo in the top bar takes it back.</p>
+          <p className="hint">Tick an Overlay to switch it on. Undo in the top bar takes a change back.</p>
           {OVERLAYS.map((overlay) => (
             <div key={overlay.id} className="overlay" data-on={on.includes(overlay.id) || undefined}>
               <label className="check">
@@ -863,7 +866,7 @@ function OverlaysView(): React.JSX.Element {
               <p><strong>What can go wrong:</strong> {overlay.risk}</p>
               <details className="source">
                 <summary>Where this guidance comes from</summary>
-                <p><strong>How strong the guidance is:</strong> {EVIDENCE_LABEL[overlay.evidence]}. Reviewed on {overlay.reviewed}.</p>
+                <p><strong>How strong the guidance is:</strong> {EVIDENCE_LABEL[overlay.evidence]}. Written on {overlay.reviewed}; no person has reviewed it yet.</p>
                 <ul>
                   {overlay.sources.map((source) => <li key={source.text}>{source.text} <em>({BASIS_LABEL[source.basis]})</em></li>)}
                 </ul>
@@ -1054,7 +1057,7 @@ function SummaryView(): React.JSX.Element {
         </section>
         <section aria-labelledby="research-heading">
           <h2 id="research-heading">Research rules</h2>
-          <p className="hint">A research rule turns a finding from research into a number that the Studio measures on your design. Each rule is advice, with its strength stated; none of them changes your design. Open a rule to read why it exists and what you must still check yourself.</p>
+          <p className="hint">A research rule turns a finding from research into a number that the Studio measures on your design. “Holds” means that your design meets the rule. Each rule is advice, with its strength stated; none of them changes your design. Open a rule to read why it exists and what you must still check yourself.</p>
           <ul className="research-list">
             {research.map((result) => {
               const step = RESEARCH_STEP[result.rule.id];
@@ -1065,8 +1068,8 @@ function SummaryView(): React.JSX.Element {
                     <p><strong>Why the rule exists:</strong> {result.rule.why}</p>
                     <p><strong>What the Studio does not check:</strong> {result.rule.notChecked}</p>
                     {step && <p>You change this on the Step <a href={`#${step.id}`}>“{step.name}”</a>.</p>}
-                    {result.rule.setBy === 'template' && <p><strong>Set by the sample website, not by your choices:</strong> no Step changes this value, so the rule holds for every design today. It is listed so that a later change of the sample website cannot break it unseen.</p>}
-                    <p><strong>How strong the guidance is:</strong> {EVIDENCE_LABEL[result.rule.evidence]}. Reviewed on {result.rule.reviewed}.</p>
+                    {result.rule.setBy === 'template' && <p><strong>Set by the sample website:</strong> no Step changes this value yet, so your choices cannot break this rule today.</p>}
+                    <p><strong>How strong the guidance is:</strong> {EVIDENCE_LABEL[result.rule.evidence]}. Written on {result.rule.reviewed}; no person has reviewed it yet.</p>
                     <ul>
                       {result.rule.sources.map((source) => <li key={source.text}>{source.text} <em>({BASIS_LABEL[source.basis]})</em></li>)}
                     </ul>

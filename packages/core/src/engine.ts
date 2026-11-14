@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { DIRECTIONS, findDirection, type Direction } from './catalog/directions.js';
 import { OVERLAYS, findOverlay } from './catalog/overlays.js';
+import { skinsOf } from './catalog/skins.js';
 import { CONFLICT_RULES, HARMONY_RULES } from './catalog/rules.js';
 import { STEPS, findStep } from './catalog/steps.js';
 import type { Option, Step, Tunable } from './catalog/types.js';
@@ -53,6 +54,12 @@ export interface Project {
    * before Overlays existed opens without a change.
    */
   overlays?: string[];
+  /**
+   * The Skin in which the project started, by identifier. Absent when the project started in the Direction's own colors.
+   * It is a name for the owner to read; the colors themselves are in the design values (review of 2026-11-14, finding U5-04:
+   * after the start, nothing on screen named the Skin).
+   */
+  skin?: string;
 }
 
 const hueTurn = (h: number, by: number): number => (((h + by) % 360) + 360) % 360;
@@ -134,16 +141,28 @@ export function wireframeParams(params: DesignParams): DesignParams {
  * Start from a Direction: every parameter is set at once, and earlier Decisions are cleared,
  * because they described a different design. The Steps then refine the Direction one variable at a time.
  */
-export function applyDirection(project: Project, direction: Direction | string): Project {
+export function applyDirection(project: Project, direction: Direction | string, skinId?: string): Project {
   const found = typeof direction === 'string' ? findDirection(direction) : direction;
   if (!found) throw new Error('Unknown Direction.');
   assertKnownParams(found.params);
-  return { ...project, direction: found.id, base: { ...found.params }, params: { ...found.params }, decisions: {} };
+  const next: Project = { ...project, direction: found.id, base: { ...found.params }, params: { ...found.params }, decisions: {} };
+  // The name of the Skin is recorded only for a Skin that this Direction offers; the caller passes the Skin's colors in `direction.params`.
+  if (skinId !== undefined && offersSkin(found.id, skinId)) next.skin = skinId;
+  else delete next.skin;
+  return next;
+}
+
+/** True when the curated Direction with this identifier offers the Skin. */
+function offersSkin(directionId: string | null, skinId: string): boolean {
+  const direction = directionId === null ? undefined : findDirection(directionId);
+  return direction !== undefined && skinsOf(direction).some((skin) => skin.id === skinId);
 }
 
 /** Start plain: no Direction, the default Option of every Step, and no Decisions. */
 export function startPlain(project: Project): Project {
-  return { ...project, direction: null, base: { ...DEFAULT_PARAMS }, params: { ...DEFAULT_PARAMS }, decisions: {} };
+  const next: Project = { ...project, direction: null, base: { ...DEFAULT_PARAMS }, params: { ...DEFAULT_PARAMS }, decisions: {} };
+  delete next.skin;
+  return next;
 }
 
 // ───────── Decisions ─────────
@@ -688,6 +707,7 @@ const projectSchema = z.object({
   decisions: z.record(z.string().max(60), decisionSchema),
   content: contentSchema,
   overlays: z.array(z.string().max(40)).max(40).optional(),
+  skin: z.string().max(40).optional(),
 });
 
 export type ParseResult =
@@ -697,7 +717,7 @@ export type ParseResult =
 // Every message is fixed text. A message never repeats content from the file.
 const NOT_A_PROJECT = 'This is not a Refraction project file.';
 const NEWER_VERSION = 'A newer version of the Studio made this file, and this version cannot read it.';
-const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content', 'overlays'] as const;
+const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content', 'overlays', 'skin'] as const;
 /** What each part of a project file holds, in plain words, for the message that refuses a damaged file (finding U2-21). The words are fixed; nothing from the file is repeated. */
 const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   name: 'the project name',
@@ -709,6 +729,7 @@ const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   decisions: 'the Decisions',
   content: 'the sample text',
   overlays: 'the Overlays',
+  skin: 'the Skin',
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -836,7 +857,10 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   const overlays = OVERLAYS.map((overlay) => overlay.id).filter((id) => listed.includes(id));
   const unknown = new Set(listed.filter((id) => !findOverlay(id))).size;
   if (unknown > 0) notes.push(unknown === 1 ? 'One Overlay in the file is unknown to this version of the Studio. It was left out.' : `${unknown} Overlays in the file are unknown to this version of the Studio. They were left out.`);
-  const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}) };
+  // The Skin's name stays only when this Direction offers that Skin; the colors are in the design values either way.
+  const skin = data.skin !== undefined && offersSkin(direction, data.skin) ? data.skin : undefined;
+  if (data.skin !== undefined && skin === undefined) notes.push('The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
+  const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
   return { project, notes };
 }
 

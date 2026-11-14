@@ -12,19 +12,20 @@
 
 1. Open the private page. Read the first screen without clicking.
 2. Look through the four groups of Directions.
-3. Under one Direction's picture, press two of the small color chips. Each chip is a Skin: the same Direction in other colors. Watch the picture change.
+3. Under one Direction's picture, press two of the small color chips. Each chip is a Skin: the same Direction in other colors. Watch the picture change; the color shows most in buttons, links, and bands. (A few Directions offer no Skin: their main color shows only in small marks.)
 4. Pick the Direction and the Skin you like best and press its "Start from …" button.
 
 **Question 1.** Did you understand what the Studio wanted from you before you clicked anything? If not, which sentence lost you?
 
 **Question 2.** Which Direction and which Skin did you pick, and was one missing that you wished for?
 
-## Part 2: three Steps (6 minutes)
+## Part 2: three Steps and one slider (6 minutes)
 
 1. On the Step that opens, look at each card. Click two of them and watch the large preview change.
 2. Pick one card with the main button.
-3. Do the same on the next two Steps. On one of them, open "Adjust with sliders" and move a slider.
-4. On one Step, type a reason into "Why this choice?".
+3. Do the same on the next two Steps.
+4. In the list of Steps, open "6. Spacing" (nine of the 23 Steps have sliders; the first five have none). Pick a card with the main button, go back to "6. Spacing", open "Adjust with sliders", and move the slider.
+5. On a Step that you have decided, type a reason into "Why this choice?". (The field appears only after the Step is decided.)
 
 **Question 3.** At which Step did you first not know what to do, or what a word meant?
 
@@ -32,7 +33,7 @@
 
 ## Part 3: changing your mind (3 minutes)
 
-1. Press "Undo" in the top bar once. Read the notice.
+1. On any Step, pick another card, then press "Undo" in the top bar once. Read the notice. (Undo takes back the last thing you did. If the last thing was typing a reason, Undo removes that reason.)
 2. Go back one Step and pick another card. If the Studio tells you that it removed your reason, read the notice and decide whether to keep the reason.
 3. Press "Put this Step back to how the project started" on one Step.
 

@@ -1,6 +1,6 @@
 # [00] Studio guarantees: living reference
 
-Version 1.4. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
+Version 1.5. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
 
 Stale-after: 90
 
@@ -104,7 +104,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - [70 How the Studio is built](#70-how-the-studio-is-built)
   - [70.01 The shared core holds no React import and no browser API](#7001-the-shared-core-holds-no-react-import-and-no-browser-api)
   - [70.02 No look changes by accident](#7002-no-look-changes-by-accident)
-  - [70.03 Every dependency is pinned to an exact version that is at least 7 days old](#7003-every-dependency-is-pinned-to-an-exact-version-that-is-at-least-7-days-old)
+  - [70.03 Every dependency is pinned to an exact version; a version that the builder adopts is at least 7 days old](#7003-every-dependency-is-pinned-to-an-exact-version-a-version-that-the-builder-adopts-is-at-least-7-days-old)
   - [70.04 Every browser test fails when the page meets an error](#7004-every-browser-test-fails-when-the-page-meets-an-error)
   - [70.05 No source file uses a way to turn text into markup](#7005-no-source-file-uses-a-way-to-turn-text-into-markup)
 - [80 Glossary](#80-glossary)
@@ -318,7 +318,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 <!-- index: quotation marks | forged sentence; project name; file name -->
 
-- **Rule.** Inside one of the Studio's own sentences, every double quotation mark of a project name, a file name, or a written reason becomes a single one, and the name is cut to a fixed length. [S1 at D50]
+- **Rule.** A project name or a file name enters one of the Studio's sentences only after cleaning: every quotation mark and every sign that looks like one becomes a single mark, a run of such marks becomes one mark, and the invisible signs that change the direction of writing or hide between letters are taken out. A name therefore cannot end the quotation, and cannot turn the Studio's sentence into mirror writing. [S1 at D50]
 - **Test.** "lets no project name or file name end the quotation in one of the Studio’s own sentences". [S3]
 - **Examples.** A file whose project name held a closing quotation mark and a sentence made the dialog read: "holds the project “Owner work”. It is the same as the open project, so nothing will change." (campaign 4, finding F-19).
 - **Open.** A name can still hold a misleading sentence inside its quotation marks.
@@ -328,7 +328,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 <!-- index: unknown Overlay | later version; left out; see also: Overlay -->
 
-- **Rule.** A project stores its switched-on Overlays as a list of identifiers; on opening, the Studio keeps the ones its Catalog holds, each once, in the Catalog's order, leaves out any other, says so, and keeps the file as it was as a copy. [S1 at D53]
+- **Rule.** A project stores its switched-on Overlays as a list of identifiers; on opening, the Studio keeps the ones its Catalog holds, each once, in the Catalog's order, leaves out any other, and says so. When the project was the copy saved in the browser, the Studio first keeps that copy as it was; when it was a file that the owner opened, the file on the owner's disk stays as it is and the Studio keeps no copy of it. [S1 at D53]
 - **Test.** "leaves out an Overlay that this version does not know, repeats included, and says so"; "refuses a file whose Overlay list is not a short list of short words". [S2]
 - **Test.** "leaves out an Overlay that this version does not know when it opens a saved project, keeps the original, and says so". [S3]
 - Last verified: 2026-11-14
@@ -497,10 +497,11 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 <!-- index: Skin | other colors; color fade; chip; see also: Direction -->
 
-- **Rule.** A Skin gives a Direction other colors, with or without a color fade in the headline; layout, letter styles, shapes, and the lightness of the main color stay as the Direction made them, and a Direction offers only Skins that cause no clash and no failing color pair that its own colors pass. [S1 at D52]
-- **Test.** "offers a color fade only where the headline can really end in the Skin’s second color (code review of 2026-11-14)"; "changes colors only: layout, letters, shapes, and how light the main color is stay as the Direction made them"; "offers every curated Direction at least two skins, each without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass". [S8]
+- **Rule.** A Skin gives a Direction other colors, with or without a color fade in the headline; layout, letter styles, shapes, and the lightness of the main color stay as the Direction made them. A Direction offers a Skin only where the Skin's color shows on something large and the Skin's text is true of what is drawn, and only when it causes no clash and no failing color pair that the Direction's own colors pass. A project records the Skin it started in, and the Studio names it wherever it names the start. [S1 at D52; S1 at D54]
+- **Test.** "offers a color fade only where the headline can really end in the Skin’s second color (code review of 2026-11-14)"; "changes colors only: layout, letters, shapes, and how light the main color is stay as the Direction made them"; "offers a Skin only where its color shows and its text is true, without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass"; "says in a Skin’s text which color it gives and nothing about how light or how vivid, because the Direction keeps those". [S8]
 - **Test.** "offers a Direction’s skins on its card; a skin changes the picture and the colors a project starts with, and nothing else". [S3]
-- **Open.** A project does not store the name of its Skin, and a Skin can be chosen only when a project starts; a later change of colors goes through the color Steps.
+- **Exceptions.** Five Directions offer no Skin: they paint their main color on small marks only, or their main color is nearly gray.
+- **Open.** A Skin can be chosen only when a project starts; a later change of colors goes through the color Steps. Whether a Skin's color is easy to see in a card's small picture was judged from the design's values, not measured in pixels.
 - Last verified: 2026-11-14
 
 ### [50.08] An Overlay changes no value of the design, and a project without Overlays is stored as before
@@ -572,14 +573,15 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Open.** The measured-style record covers the top of the page of each Direction as it starts; it does not cover every Option.
 - Last verified: 2026-11-13
 
-### [70.03] Every dependency is pinned to an exact version that is at least 7 days old
+### [70.03] Every dependency is pinned to an exact version; a version that the builder adopts is at least 7 days old
 
 <!-- index: dependency | package; pinned version -->
 
 - **Rule.** The project pins exact dependency versions, records a check of each direct dependency, and adopts a version only 7 days or more after its release. [S1 at D27]
 - **Policy.** Hard rule 7. [S10 at hard rule 7]
+- **Exceptions.** The owner merged six of Dependabot's updates on 2026-11-14 (among them Playwright 1.65.0 and Vite 8.3.7). Nobody checked those six versions against the 7-day wait, and their rows in the package-check table still show the versions of 2026-11-13 (review of 2026-11-14, finding DT-03).
 - **Open.** Registry signatures are unverified in this environment (stated in `DECISIONS.md`). No automatic test enforces the 7-day wait.
-- Last verified: 2026-11-13
+- Last verified: 2026-11-14
 
 ### [70.04] Every browser test fails when the page meets an error
 
@@ -617,6 +619,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 ## [85] Changelog
 
+- 2026-11-14 v1.5: after the reviews of 2026-11-14 (decision D54): §20.06 covers look-alike marks and invisible direction signs; §20.07 says which original is kept; §50.07 states the rule for offering a Skin; §70.03 states its exception. 49 guarantees.
 - 2026-11-14 v1.4: after the saving table, Skins, Overlays, and research rules (decisions D52, D53): added §10.14, §20.07, §30.06, §50.07, §50.08, §60.03, §60.04; §60.01 names the test under its new name. 49 guarantees.
 - 2026-11-14 v1.3: after round 3 of campaign 4: added §10.12, §10.13, §20.05, §20.06, §50.06. 42 guarantees.
 - 2026-11-13 v1.0: created with 25 guarantees.

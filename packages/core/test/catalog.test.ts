@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONFLICT_RULES, CONFLICT_TESTS, DEFAULT_PARAMS, DIRECTION_GROUPS, DIRECTIONS, EVIDENCE_GRADES, FONTS, HARMONY_FIXES, HARMONY_RULES, NOT_CHECKED, PAIRS, PARAM_KEYS, RULES, SOURCE_BASES, STEPS,
-  MOCKUP_OVERLAYS, OVERLAYS, RESEARCH_RULES, SKINS, SMALL_BUSINESS_CSS, assertKnownParams, findOverlay, researchReport, closerOptions, conflicts, createProject, deriveTokens, findSkin, skinParams, skinsOf, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
+  MOCKUP_OVERLAYS, OVERLAYS, RESEARCH_RULES, SKINS, SMALL_BUSINESS_CSS, assertKnownParams, skinFits, findOverlay, researchReport, closerOptions, conflicts, createProject, deriveTokens, findSkin, skinParams, skinsOf, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
   CITED_NAMES, tradeWordsOutsideBrackets, vaguePhrasesIn,
   type DesignParams, type SourceRef,
 } from '../src/index.js';
@@ -424,20 +424,42 @@ describe('Skins: pre-built colors for a Direction', () => {
     }
   });
 
-  it('offers every curated Direction at least two skins, each without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass', () => {
+  it('offers a Skin only where its color shows and its text is true, without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass', () => {
+    let offering = 0;
     for (const d of DIRECTIONS) {
       const skins = skinsOf(d);
-      expect(skins.length, `${d.id}: number of skins`).toBeGreaterThanOrEqual(2);
-      expect(skins.length, `${d.id}: every listed skin exists`).toBe(d.skins?.length);
+      expect(skins.length, `${d.id}: every listed skin exists`).toBe(d.skins?.length ?? 0);
+      if (skins.length > 0) offering += 1;
       const own = new Set(deriveTokens(d.params, 'advise').pairs.filter((pair) => !pair.passes).map((pair) => pair.id));
       for (const skin of skins) {
+        // The offer rule: the color must show on something large, and the Skin's words must fit what is drawn (finding DT-01).
+        expect(skinFits(d, skin), `${d.id}/${skin.id}: the Direction cannot show this Skin as its text describes it`).toBe(true);
         const p = skinParams(d, skin);
+        // A Skin that names a color really moves the main color to another place on the color wheel.
+        const turn = Math.abs(p.accentHue - d.params.accentHue);
+        if (skin.accentChroma === undefined) expect(Math.min(turn, 360 - turn), `${d.id}/${skin.id}: the color barely changes`).toBeGreaterThanOrEqual(35);
+        else expect(p.accentHue !== d.params.accentHue || p.accentChroma !== d.params.accentChroma, `${d.id}/${skin.id}: changes nothing`).toBe(true);
         expect(() => assertKnownParams(p), `${d.id}/${skin.id}`).not.toThrow();
         expect(conflicts({ ...createProject(), params: p }), `${d.id}/${skin.id}: clash`).toEqual([]);
         expect(harmonize(p), `${d.id}/${skin.id}: harmony`).toEqual(p);
         const failing = deriveTokens(p, 'advise').pairs.filter((pair) => !pair.passes && !own.has(pair.id)).map((pair) => pair.id);
         expect(failing, `${d.id}/${skin.id}: color pairs`).toEqual([]);
       }
+    }
+    // Most Directions offer Skins; the ones that paint their main color on small marks only, or whose main color is nearly gray, offer none.
+    expect(offering).toBeGreaterThanOrEqual(30);
+    for (const id of ['graphite-precision', 'paper-and-ink', 'quiet-luxury', 'ink-and-seal', 'plain-label']) expect(skinsOf(DIRECTIONS.find((d) => d.id === id)!), id).toEqual([]);
+    // Every Skin of the Catalog is offered somewhere: a Skin that no Direction can show is not kept.
+    for (const skin of SKINS) expect(DIRECTIONS.some((d) => skinsOf(d).includes(skin)), skin.id).toBe(true);
+  });
+
+  it('says in a Skin’s text which color it gives and nothing about how light or how vivid, because the Direction keeps those', () => {
+    for (const skin of SKINS) {
+      expect(skin.what, skin.id).not.toMatch(/\b(deep|dark|light|clear|bright|near-black|pale|vivid)\b/i);
+      for (const source of skin.sources) checkSource(source, `skin ${skin.id}`);
+      for (const source of skin.sources) if (source.record?.endsWith('.json')) expectNamedRecord(source, `skin ${skin.id}`);
+      expect(EVIDENCE_GRADES, skin.id).toContain(skin.evidence);
+      expect(isDate(skin.reviewed), skin.id).toBe(true);
     }
   });
 
@@ -542,7 +564,7 @@ describe('Research rules: findings turned into numbers that a design can be meas
     for (const d of DIRECTIONS) {
       for (const result of report(d.params)) {
         expect(result.found, `${d.id}/${result.rule.id}`).not.toMatch(/NaN|undefined|Infinity/);
-        expect(result.found, `${d.id}/${result.rule.id}`).toMatch(/\b\d+(\.\d+)? (pixels|character widths|text heights)\b/);
+        expect(result.found, `${d.id}/${result.rule.id}`).toMatch(/\b\d+(\.\d+)? (pixels|characters|text heights)\b/);
       }
     }
   });
@@ -568,18 +590,18 @@ describe('Research rules: findings turned into numbers that a design can be meas
     // The step between sizes is measured on the sizes that the design really works out, not on the ratio it asks for. With
     // small reading text the two smallest sizes meet their lower limits and end up closer than a tenth (finding "core 4").
     expect(by({ ...DEFAULT_PARAMS, baseSize: 14, scaleRatio: 1.25 }, 'size-step')).toMatchObject({ holds: false, found: 'The two closest text sizes are 13 and 14 pixels: the larger is 7.69 percent larger.' });
-    expect(by({ ...DEFAULT_PARAMS, baseSize: 13, scaleRatio: 1.25 }, 'size-step')).toMatchObject({ holds: false, found: 'The two closest text sizes are 13 and 13 pixels: the larger is 0 percent larger.' });
+    expect(by({ ...DEFAULT_PARAMS, baseSize: 13, scaleRatio: 1.25 }, 'size-step')).toMatchObject({ holds: false, found: 'Two of the design’s text sizes are the same: 13 pixels.' });
     expect(by({ ...DEFAULT_PARAMS, baseSize: 17, scaleRatio: 1.05 }, 'size-step').holds).toBe(false);
     expect(by({ ...DEFAULT_PARAMS, baseSize: 17, scaleRatio: 1.25 }, 'size-step').holds).toBe(true);
     // The measures read the design's worked-out values, so a Template that changed them would be caught.
     const css = deriveTokens(DEFAULT_PARAMS, 'advise').css;
     const withCss = (change: Record<string, string>, id: string) => researchReport(DEFAULT_PARAMS, { ...css, ...change }).find((r) => r.rule.id === id)!;
     expect(withCss({ '--measure': '95ch' }, 'line-length').holds).toBe(false);
-    expect(withCss({ '--measure': '95ch' }, 'line-length').found).toContain('at most 95 character widths wide');
+    expect(withCss({ '--measure': '95ch' }, 'line-length').found).toContain('at most 95 characters wide');
     expect(withCss({ '--leading-body': '1.3' }, 'line-height').holds).toBe(false);
     expect(withCss({ '--leading-body': '2' }, 'line-height').holds).toBe(false);
-    expect(withCss({ '--target-min': '24px' }, 'target-size')).toMatchObject({ holds: false, found: 'Buttons, menu links, and form fields are at least 24 pixels tall.' });
-    expect(withCss({ '--target-min': '2.75rem' }, 'target-size')).toMatchObject({ holds: true, found: 'Buttons, menu links, and form fields are at least 44 pixels tall.' });
+    expect(withCss({ '--target-min': '24px' }, 'target-size')).toMatchObject({ holds: false, found: 'They are 24 pixels tall.' });
+    expect(withCss({ '--target-min': '2.75rem' }, 'target-size')).toMatchObject({ holds: true, found: 'They are 44 pixels tall.' });
     // A value that is missing never passes.
     expect(withCss({ '--target-min': '' }, 'target-size').holds).toBe(false);
     expect(withCss({ '--measure': '' }, 'line-length').holds).toBe(false);

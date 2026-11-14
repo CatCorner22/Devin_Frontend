@@ -112,7 +112,8 @@ export interface Step {
    * `focus`: the part of the page that the small pictures show, when it differs from the part where the large preview
    * opens: a close-up of the buttons or of one box.
    */
-  thumb?: { width?: number; note?: string; focus?: MockupFocus };
+  /** `narrowNote` is shown with the cards while the preview has phone width: there some cards draw the same picture. */
+  thumb?: { width?: number; note?: string; focus?: MockupFocus; narrowNote?: string };
   options: Option[];
   /** The Option that a plain, undecorated start uses. */
   defaultOptionId: string;

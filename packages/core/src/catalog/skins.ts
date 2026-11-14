@@ -11,6 +11,7 @@
 
 import type { DesignParams, DisplayTreatment } from '../params.js';
 import type { Direction } from './directions.js';
+import type { Evidence, SourceRef } from './types.js';
 
 export interface Skin {
   id: string;
@@ -27,24 +28,40 @@ export interface Skin {
   accentChroma?: number;
   /** How the largest headline is filled: one color, or a fade. */
   displayTreatment: DisplayTreatment;
+  sources: SourceRef[];
+  evidence: Evidence;
+  /** The date on which the record was written or last checked, as YYYY-MM-DD. */
+  reviewed: string;
 }
 
+/**
+ * Where each Skin comes from. A Skin is the builder's own composition: a place on the color wheel for the main color and a
+ * tint for the grays. No outside source gives these values (code review of 2026-11-14, finding DT-02).
+ */
+const COMPOSED: SourceRef = { text: 'Composed by the assistant that wrote this Studio and judged by eye on rendered Mockups. No outside source was consulted for the colors.', basis: 'builder' };
+const JAPANESE: SourceRef = { text: 'The record “Traditional Japanese colour names have no single screen value”: a tradition, not an experiment. The values of this Skin are the Studio’s own, inside the color family that the name describes.', basis: 'snippet', record: 'docs/knowledge/kb-japanese-design.json' };
+const own = { sources: [COMPOSED], evidence: 'expert-opinion' as const, reviewed: '2026-11-14' };
+const fromStudy = { sources: [JAPANESE, COMPOSED], evidence: 'expert-opinion' as const, reviewed: '2026-11-14' };
+
+// A Skin's text says which color, and nothing about how light or how vivid it is: the Direction keeps those, so the same
+// Skin is lighter on a dark page and duller on a quiet one (review of 2026-11-14, finding DT-01: the texts said "deep",
+// "clear", and "near-black", which was untrue on many Directions).
 export const SKINS: readonly Skin[] = [
-  { id: 'ocean', name: 'Ocean', what: 'A clear blue, with grays that lean slightly blue.', accentHue: 245, accent2Hue: null, neutralHue: 245, displayTreatment: 'solid' },
-  { id: 'lagoon', name: 'Lagoon fade', what: 'Blue-green that fades into blue across the headline.', accentHue: 195, accent2Hue: 255, neutralHue: 215, displayTreatment: 'accent-gradient' },
-  { id: 'forest', name: 'Forest', what: 'A deep green, with grays that lean slightly green.', accentHue: 152, accent2Hue: null, neutralHue: 150, displayTreatment: 'solid' },
-  { id: 'meadow', name: 'Meadow fade', what: 'Green that fades into yellow-green across the headline.', accentHue: 140, accent2Hue: 100, neutralHue: 120, displayTreatment: 'accent-gradient' },
-  { id: 'sunset', name: 'Sunset fade', what: 'Orange that fades into rose pink across the headline.', accentHue: 42, accent2Hue: 355, neutralHue: 50, displayTreatment: 'accent-gradient' },
-  { id: 'ember', name: 'Ember', what: 'A red-orange, with grays that lean slightly warm.', accentHue: 28, accent2Hue: null, neutralHue: 45, displayTreatment: 'solid' },
-  { id: 'berry', name: 'Berry', what: 'A rose red, with grays that lean slightly pink.', accentHue: 355, accent2Hue: null, neutralHue: 350, displayTreatment: 'solid' },
-  { id: 'orchid', name: 'Orchid fade', what: 'Pink-purple that fades into violet across the headline.', accentHue: 320, accent2Hue: 275, neutralHue: 300, displayTreatment: 'accent-gradient' },
-  { id: 'violet', name: 'Violet', what: 'A blue-purple, with grays that lean slightly purple.', accentHue: 288, accent2Hue: null, neutralHue: 285, displayTreatment: 'solid' },
-  { id: 'gold', name: 'Gold', what: 'A warm yellow-brown, with grays that lean slightly yellow.', accentHue: 82, accent2Hue: null, neutralHue: 78, displayTreatment: 'solid' },
-  { id: 'graphite', name: 'Graphite', what: 'Almost no color: a near-black main color and a soft fade from top to bottom in the headline.', accentHue: 255, accent2Hue: null, neutralHue: 255, accentChroma: 0.02, displayTreatment: 'ink-gradient' },
-  // Two skins from the study of Japanese design (decision D52). The names say what a person sees. No screen value of a
-  // "traditional" color exists (the research record says so), so these are the Studio's own values inside each color family.
-  { id: 'indigo', name: 'Indigo dye', what: 'A deep, quiet blue, like cloth dyed with indigo, with grays that lean slightly warm.', accentHue: 250, accent2Hue: null, neutralHue: 85, accentChroma: 0.09, displayTreatment: 'solid' },
-  { id: 'vermilion', name: 'Vermilion seal', what: 'The orange-red of a seal stamped on a letter, with grays that lean slightly warm.', accentHue: 35, accent2Hue: null, neutralHue: 85, displayTreatment: 'solid' },
+  { id: 'ocean', name: 'Ocean', what: 'Blue as the main color, with grays that lean slightly blue.', accentHue: 245, accent2Hue: null, neutralHue: 245, displayTreatment: 'solid', ...own },
+  { id: 'lagoon', name: 'Lagoon fade', what: 'Blue-green that fades into blue across the headline.', accentHue: 195, accent2Hue: 255, neutralHue: 215, displayTreatment: 'accent-gradient', ...own },
+  { id: 'forest', name: 'Forest', what: 'Green as the main color, with grays that lean slightly green.', accentHue: 152, accent2Hue: null, neutralHue: 150, displayTreatment: 'solid', ...own },
+  { id: 'meadow', name: 'Meadow fade', what: 'Green that fades into yellow-green across the headline.', accentHue: 140, accent2Hue: 100, neutralHue: 120, displayTreatment: 'accent-gradient', ...own },
+  { id: 'sunset', name: 'Sunset fade', what: 'Orange that fades into rose pink across the headline.', accentHue: 42, accent2Hue: 355, neutralHue: 50, displayTreatment: 'accent-gradient', ...own },
+  { id: 'ember', name: 'Ember', what: 'Red-orange as the main color, with grays that lean slightly warm.', accentHue: 28, accent2Hue: null, neutralHue: 45, displayTreatment: 'solid', ...own },
+  { id: 'berry', name: 'Berry', what: 'Rose red as the main color, with grays that lean slightly pink.', accentHue: 355, accent2Hue: null, neutralHue: 350, displayTreatment: 'solid', ...own },
+  { id: 'orchid', name: 'Orchid fade', what: 'Pink-purple that fades into violet across the headline.', accentHue: 320, accent2Hue: 275, neutralHue: 300, displayTreatment: 'accent-gradient', ...own },
+  { id: 'violet', name: 'Violet', what: 'Blue-purple as the main color, with grays that lean slightly purple.', accentHue: 288, accent2Hue: null, neutralHue: 285, displayTreatment: 'solid', ...own },
+  { id: 'gold', name: 'Gold', what: 'Yellow-brown as the main color, with grays that lean slightly yellow.', accentHue: 82, accent2Hue: null, neutralHue: 78, displayTreatment: 'solid', ...own },
+  { id: 'graphite', name: 'Graphite', what: 'Almost no color: the main color turns gray, and the headline fades softly from top to bottom.', accentHue: 255, accent2Hue: null, neutralHue: 255, accentChroma: 0.02, displayTreatment: 'ink-gradient', ...own },
+  // One Skin from the study of Japanese design (decision D52). The name says what a person sees. No screen value of a
+  // "traditional" color exists (the research record says so), so this is the Studio's own value inside the color family.
+  // A second one, "Vermilion seal", was taken out on 2026-11-14: no Direction could show it as the orange-red its text named.
+  { id: 'indigo', name: 'Indigo dye', what: 'A quiet, grayed blue, like cloth dyed with indigo, with grays that lean slightly warm.', accentHue: 250, accent2Hue: null, neutralHue: 85, accentChroma: 0.09, displayTreatment: 'solid', ...fromStudy },
 ];
 
 const SKIN_TABLE = new Map<string, Skin>(SKINS.map((skin) => [skin.id, skin]));
@@ -76,3 +93,24 @@ export function skinParams(direction: Direction, skin: Skin): DesignParams {
 export function skinsOf(direction: Direction): Skin[] {
   return (direction.skins ?? []).map((id) => findSkin(id)).filter((skin): skin is Skin => skin !== undefined);
 }
+
+/**
+ * True when a Direction may offer a Skin: the Skin's color must show, and the Skin's text must be true of what is drawn
+ * (review of 2026-11-14, findings DT-01 and U5-03). A unit test holds every listed pair to this rule.
+ * - The Direction paints its main color on something large (a button, a band). A "quiet" Direction uses it for small marks
+ *   only, so another color would change almost nothing a person can see.
+ * - The main color is vivid enough to be told from gray, unless the Skin sets how vivid it is.
+ * - Red-orange turns brown when dark, so "Ember" needs a main color that is neither dark nor dull.
+ * - "Indigo dye" is a quiet blue only on a light page with a main color that is not light.
+ * - A fade needs a page that can carry the Skin's second color.
+ */
+export function skinFits(direction: Direction, skin: Skin): boolean {
+  const p = direction.params;
+  if (p.colorStrategy === 'quiet') return false;
+  if (skin.accentChroma === undefined && p.accentChroma < 0.1) return false;
+  if (skin.id === 'ember' && (p.accentLightness < 0.45 || p.accentChroma < 0.13)) return false;
+  if (skin.id === 'indigo' && (p.theme !== 'light' || p.accentLightness > 0.55)) return false;
+  if (skin.accent2Hue !== null && p.colorStrategy !== 'duo' && p.colorStrategy !== 'single-accent') return false;
+  return true;
+}
+

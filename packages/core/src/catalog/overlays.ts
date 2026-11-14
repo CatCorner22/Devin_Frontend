@@ -89,9 +89,10 @@ export const OVERLAYS: readonly Overlay[] = [
     risk: 'A placeholder for something that loads at once only adds a flicker. A placeholder that never ends hides a failure: after about ten seconds, say what is wrong.',
     sources: [
       fromRecord('The record “Show progress during waits”.', KB1),
-      fromRecord('The record “A wait feels shorter when it is explained, bounded and occupied”.', KB2),
+      fromRecord('The record “A wait feels shorter when it is explained, bounded and occupied”: it says not to count on a placeholder to make a wait feel shorter.', KB2),
+      fromRecord('The record “Response-time limits: about 0.1, 1 and 10 seconds”: the source of “about a second” and “about ten seconds”.', KB1),
     ],
-    evidence: 'convention',
+    evidence: 'expert-opinion',
     reviewed: REVIEWED,
   },
   {
@@ -102,9 +103,9 @@ export const OVERLAYS: readonly Overlay[] = [
     risk: 'The bar covers the lowest part of the page. The page needs room at its end so that the last lines can be read above the bar.',
     sources: [
       fromRecord('The record “Touch targets: 24 CSS pixels minimum, about 44 for comfort”.', KB1),
-      fromRecord('The record “Fitts’s law and the steering law: size, distance and path width”: a large target that is always near is reached fastest.', KB1),
+      fromRecord('The record “Fitts’s law and the steering law: size, distance and path width”. That a button which stays in view is reached fastest is this Studio’s own conclusion from it; the record adds that on a phone the reach of the thumb and the covering hand matter as much.', KB1),
     ],
-    evidence: 'convention',
+    evidence: 'expert-opinion',
     reviewed: REVIEWED,
   },
 ];

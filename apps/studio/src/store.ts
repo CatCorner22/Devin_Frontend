@@ -1,8 +1,8 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
-  DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findStep, firstOpenStepId, generateDirections, keep, matchingOptionId,
+  DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, keep, matchingOptionId,
   nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, startPlain, tune,
-  type A11yProfile, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type Step,
+  type A11yProfile, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
 import {
@@ -94,8 +94,8 @@ export interface StudioState {
   tuneValue(key: keyof DesignParams, value: number): void;
   /** Store the owner's reason on the Decision of the named Step (not of whichever Step is on screen at that moment). */
   setReason(stepId: string, reason: string): void;
-  /** Start from a Direction; `skinName` is the name of the skin whose colors `direction` already carries, if any. */
-  requestDirection(direction: Direction, skinName?: string): void;
+  /** Start from a Direction; `skin` is the Skin whose colors `direction` already carries, if any. */
+  requestDirection(direction: Direction, skin?: Skin): void;
   requestPlainStart(): void;
   moreDirections(): void;
   setProfile(profile: A11yProfile): void;
@@ -122,7 +122,10 @@ export const stepOf = (id: string): Step => findStep(id) ?? STEPS[0]!;
 /** The name to show for where a project started. */
 export function directionName(project: Project, generated: Direction[] = []): string {
   if (project.direction === null) return 'the plain start';
-  return findDirection(project.direction)?.name ?? generated.find((d) => d.id === project.direction)?.name ?? 'a generated Direction';
+  const name = findDirection(project.direction)?.name ?? generated.find((d) => d.id === project.direction)?.name ?? 'a generated Direction';
+  // A project that started in a Skin says so wherever it names its start (review of 2026-11-14, finding U5-04).
+  const skin = project.skin === undefined ? undefined : findSkin(project.skin);
+  return skin ? `${name} in the Skin “${skin.name}”` : name;
 }
 
 /** The card that shows the design as it stands: the matching Catalog Option, or the "current" card. */
@@ -153,10 +156,15 @@ export function paramsForCard(state: Pick<StudioState, 'project' | 'stepId' | 'v
  * A name from a file or from the owner, made fit to stand inside quotation marks in one of the Studio's own sentences.
  * A name may hold a closing quotation mark and a sentence of its own; a dialog then read as if the Studio had said that
  * sentence ("…holds the project “X”. It is the same as the open project, so nothing will change."; campaign 4, round 3).
- * Every double quotation mark in the name becomes a single one, so the name cannot end the quotation, and line breaks go.
+ * Every quotation mark in the name, and every sign that looks like one, becomes a single mark, and a run of such marks
+ * becomes one mark, so that the name cannot end the quotation (two single marks side by side draw like a double one: campaign
+ * 4, retest of finding F-19). Line breaks go. So do the invisible signs that change the direction of writing or hide between
+ * letters: one of them turned the Studio's own sentence into mirror writing (review of 2026-11-14, finding S5-02).
  */
+const INVISIBLE_SIGNS = /[\u0000-\u001f\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff9-\ufffb]/g;
+const QUOTATION_SIGNS = /["'`´“”„‟‘’‚‛«»‹›＂＇″‴‶′‵ʺʹˮ˝❛❜❝❞〝〞〟]+/g;
 export function plainName(name: string, limit = 60): string {
-  return name.replace(/["“”„‟«»＂]/g, '’').replace(/\s+/g, ' ').slice(0, limit);
+  return name.replace(INVISIBLE_SIGNS, ' ').replace(QUOTATION_SIGNS, '’').replace(/\s+/g, ' ').trim().slice(0, limit);
 }
 
 /** The same data with every object's keys in one fixed order, so that two copies compare by content and not by the order of their fields. */
@@ -864,15 +872,16 @@ export const useStudio = create<StudioState>((set, get) => {
       commit(setReason(project, stepId, reason), `reason:${stepId}`);
     },
 
-    requestDirection(direction, skinName) {
+    requestDirection(direction, skin) {
+      const skinName = skin?.name;
       const { project } = get();
-      const inSkin = skinName ? `, in the skin “${skinName}”` : '';
+      const inSkin = skinName ? `, in the Skin “${skinName}”` : '';
       const replace = (): void => {
         const hadWork = hasWork(project);
-        commit(applyDirection(get().project, direction));
+        commit(applyDirection(get().project, direction, skin?.id));
         enter('steps', STEPS[0]!.id);
         if (hadWork) set({ notice: { text: `Started again from “${direction.name}”${inSkin}.`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
-        else if (skinName) set({ notice: { text: `Started from “${direction.name}”${inSkin}. The skin changed colors only; every Step still starts from this Direction’s layout, letters, and shapes.` } });
+        else if (skinName) set({ notice: { text: `Started from “${direction.name}”${inSkin}. The Skin changed colors only; every Step still starts from this Direction’s layout, letters, and shapes.` } });
       };
       const start = (): void => replaceKeepingCopy(replace, `you started again from “${direction.name}”`);
       const decided = Object.keys(project.decisions).length;
@@ -963,7 +972,7 @@ export const useStudio = create<StudioState>((set, get) => {
       set({
         confirmation: {
           title: 'Start a new project?',
-          body: `This clears the Direction, ${plural(Object.keys(project.decisions).length, 'Decision', 'Decisions')}, the project name, and the Contrast checks setting. ${UNDO_PROMISE}. The Studio also keeps a copy of the replaced project where this browser allows it; the Summary lists every kept copy.`,
+          body: `This clears the Direction, ${plural(Object.keys(project.decisions).length, 'Decision', 'Decisions')}, ${plural(overlaysOf(project).length, 'switched-on Overlay', 'switched-on Overlays')}, the project name, and the Contrast checks setting. ${UNDO_PROMISE}. The Studio also keeps a copy of the replaced project where this browser allows it; the Summary lists every kept copy.`,
           confirmLabel: 'Yes, clear this project',
           cancelLabel: 'Keep it',
           danger: true,

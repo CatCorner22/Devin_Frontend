@@ -50,6 +50,7 @@ export const STEPS: Step[] = [
     ],
     evidence: 'convention',
     reviewed: REVIEWED,
+    thumb: { narrowNote: 'At phone width some of these cards draw the same picture: the difference shows on a wider screen. Choose “Tablet” or “Desktop” above the large preview to see it.' },
     options: [
       { id: 'top-inline', label: 'Name left, links right', what: 'One row: the business name on the left, the links on the right.', chooseWhen: 'Almost always. It is the familiar arrangement for a small site.', risk: 'More than six links will wrap.', patch: { nav: 'top-inline' } },
       { id: 'top-centered', label: 'Name centered, links below', what: 'The name sits centered on its own line, like the title at the top of a newspaper, with the links centered beneath it.', chooseWhen: 'The name itself is the brand, as on a restaurant, studio, or publication.', risk: 'Uses more height before the content starts.', patch: { nav: 'top-centered' } },
@@ -75,6 +76,7 @@ export const STEPS: Step[] = [
     ],
     evidence: 'expert-opinion',
     reviewed: REVIEWED,
+    thumb: { narrowNote: 'At phone width some of these cards draw the same picture: the difference shows on a wider screen. Choose “Tablet” or “Desktop” above the large preview to see it.' },
     options: [
       { id: 'text-left', label: 'Headline left', what: 'Headline, short paragraph, and buttons, aligned to the left edge.', chooseWhen: 'The page has more than a few words, and you want them read in order.', risk: 'Plain, unless the letter style carries it.', patch: { hero: 'text-left' } },
       {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_PARAMS, DIRECTIONS, SAMPLE_CONTENT, SCHEMA_VERSION, STEPS,
-  OVERLAYS, applyDirection, createProject, findStep, keep, matchingOptionId, overlaysOf, ownedValues, parseProject, pick, setOverlay, setReason, tune,
+  OVERLAYS, findSkin, skinParams, skinsOf, startPlain, applyDirection, createProject, findStep, keep, matchingOptionId, overlaysOf, ownedValues, parseProject, pick, setOverlay, setReason, tune,
   type Project,
 } from '../src/index.js';
 import { fixture } from './helpers.js';
@@ -363,5 +363,39 @@ describe('saved projects: Overlays (decision D52)', () => {
       expect(refusal({ ...(roundTrip(busyProject()) as object), overlays: bad }), JSON.stringify(bad).slice(0, 40)).toBe('The file does not match the project format. The problem is in the part that holds the Overlays.');
     }
     expect(OVERLAYS.every((o) => o.id.length <= 40)).toBe(true);
+  });
+});
+
+describe('saved projects: the Skin a project started in (review of 2026-11-14, finding U5-04)', () => {
+  const daylight = DIRECTIONS.find((d) => d.id === 'soft-daylight')!;
+  const berry = findSkin('berry')!;
+  const inBerry = (): Project => applyDirection(createProject('In a Skin'), { ...daylight, params: skinParams(daylight, berry) }, berry.id);
+
+  it('records the Skin when a project starts in one, and only for a Skin that the Direction offers', () => {
+    expect(skinsOf(daylight)).toContain(berry);
+    const p = inBerry();
+    expect(p.skin).toBe('berry');
+    expect(p.params).toEqual(skinParams(daylight, berry));
+    // The Direction's own colors: no Skin is recorded, so a project without a Skin is stored as before.
+    expect('skin' in applyDirection(createProject('Own colors'), 'soft-daylight')).toBe(false);
+    // A Skin that this Direction does not offer, or that does not exist, is not recorded.
+    expect('skin' in applyDirection(createProject('x'), 'ink-and-seal', 'berry')).toBe(false);
+    expect('skin' in applyDirection(createProject('x'), 'soft-daylight', 'no-such-skin')).toBe(false);
+  });
+
+  it('forgets the Skin when the project starts again from another Direction or from the plain start', () => {
+    expect('skin' in applyDirection(inBerry(), 'graphite-precision')).toBe(false);
+    expect('skin' in startPlain(inBerry())).toBe(false);
+  });
+
+  it('reads the Skin back from a file, and leaves out, with a note, a Skin that the Direction does not offer', () => {
+    const loaded = ok(roundTrip(inBerry()));
+    expect(loaded.project.skin).toBe('berry');
+    expect(loaded.notes).toEqual([]);
+    const wrong = ok({ ...(roundTrip(inBerry()) as object), skin: 'lagoon-of-a-later-version' });
+    expect('skin' in wrong.project).toBe(false);
+    expect(wrong.project.params).toEqual(skinParams(daylight, berry));
+    expect(wrong.notes.join(' ')).toContain('The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
+    expect(refusal({ ...(roundTrip(inBerry()) as object), skin: 7 })).toBe('The file does not match the project format. The problem is in the part that holds the Skin.');
   });
 });

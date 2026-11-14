@@ -15,7 +15,7 @@
 | Opening | The Studio is still looking for the saved project. The screen holds a placeholder. | "Opening your project…" |
 | Saved | The screen shows exactly what is stored. | "Saved in this browser, on this computer", or "Saved on this page" on the private page; "Nothing to save yet" before the first change of a new project |
 | Change pending | The owner changed something less than 0.3 seconds ago, or a save is under way. | "Saving…" |
-| Save failed | The last save was refused: storage is full or blocked. The work is on screen only. | "Cannot save here: …", with the button "Try to save again" |
+| Save failed | The last save was refused: storage is full or blocked. The work is on screen only. (One case differs: after an Undo back to exactly what is stored, the line still says "Cannot save here" until "Try to save again" is pressed or the next change saves; the judge's retest of finding F-23 on 2026-11-14 recorded this.) | "Cannot save here: …", with the button "Try to save again" |
 | Not saving | The Studio has stopped saving until the owner decides: another tab changed the project, the saved copy cannot be read, or a copy could not be kept. | "Not saving: see the notice at the top of the page" |
 
 ## Opening

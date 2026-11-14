@@ -25,7 +25,7 @@
 | Eye care | Refraction | State |
 |---|---|---|
 | You try on a few finished frames first | A **Direction**: a complete starting look | built (38) |
-| The same frame in another color | A **Skin**: pre-built colors and color fades for a Direction | built (13 Skins; each Direction offers 2 to 5) |
+| The same frame in another color | A **Skin**: pre-built colors and color fades for a Direction | built (12 Skins; 33 of the 38 Directions offer 1 to 5, the other five paint their main color on small marks only) |
 | "Which is clearer, 1 or 2?" | Each **Step** shows several **Options** | built (23 Steps) |
 | Each comparison changes one lens only | Each Step changes one design variable; all else stays fixed | built |
 | You read the same letter chart every time | Every Option renders on the same **Mockup** | built with sample content; your own content is M5 |
@@ -63,7 +63,7 @@ A rule graded C or D is shown as opinion or folklore, never as science.
 | # | Screen | What you do there | State |
 |---|---|---|---|
 | 1 | Directions | Pick a complete starting look from four groups (light and calm; dark and dramatic; warm and nostalgic; bold and playful), or let the Studio compose six more at random, or start plain | built |
-| 1a | Skin | On a Direction's card, pick one of its pre-built skins: other colors, with or without a color fade in the headline | built; a Skin is chosen when a project starts, and the project does not yet store the Skin's name |
+| 1a | Skin | On a Direction's card, pick one of its pre-built skins: other colors, with or without a color fade in the headline | built; a Skin is chosen when a project starts, and the project records its name |
 | 2 | Steps | 23 Steps in two stages (6 for layout, in gray; 17 for look and feel). On each: compare cards, pick one, fine-tune with sliders, ask for small variations, write a reason, decide later, undo, or put the Step back | built |
 | 3 | Overlays | Switch small helpers on or off; the preview draws each one open, in your design | built |
 | 4 | Summary | Read every Decision back; see the contrast notes and the research rules; download or open a project file; manage kept copies | built |

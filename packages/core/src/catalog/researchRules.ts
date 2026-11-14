@@ -72,7 +72,7 @@ export const RESEARCH_RULES: readonly ResearchRule[] = [
   {
     id: 'reading-size',
     name: `Reading text is at least ${READING_SIZE_MIN} pixels tall`,
-    why: 'Reading slows sharply when letters fall below a certain size. For most letter styles, at the distance at which people hold a phone or sit at a desk, 16 pixels keeps the small letters above that size.',
+    why: 'Reading slows sharply when letters fall below a certain size. At 16 pixels the small letters of most letter styles sit at about that limit, not safely above it; 16 pixels is therefore a lower limit and not a recommendation.',
     notChecked: 'The Studio does not measure how tall the small letters of your letter style are. A letter style with unusually small letters needs a larger size than 16 pixels.',
     binding: false,
     setBy: 'design',
@@ -89,9 +89,9 @@ export const RESEARCH_RULES: readonly ResearchRule[] = [
   },
   {
     id: 'line-length',
-    name: `A line of reading text holds at most ${LINE_LETTERS_MAX} letters`,
-    why: 'At the end of a long line the eye must travel far back and can land on the wrong line. Studies of reading on screens favor moderate lines of about 50 to 80 letters, and the published accessibility guideline names 80 as its upper limit.',
-    notChecked: 'The Studio reads the limit that the design sets for paragraphs; it does not count the letters of each line on each screen width. The short opening paragraph under a heading follows another limit (a fixed width of 736 pixels) and is not measured. On a narrow phone a line holds far fewer letters; reading stays fast down to about 13 letters per line.',
+    name: `Paragraphs are at most ${LINE_LETTERS_MAX} characters wide`,
+    why: 'At the end of a long line the eye must travel far back and can land on the wrong line. The studies of reading on screens are small and partly disagree (in some, longer lines were read faster); understanding and the readers’ own preference favored moderate lines of about 50 to 80 characters, and the published accessibility guideline names 80 as its upper limit.',
+    notChecked: 'The Studio reads the limit that the design sets for paragraphs; it does not count the letters of each line on each screen width. The short opening paragraph under a heading follows another limit (a fixed width of 736 pixels) and is not measured. On a narrow phone a line holds far fewer letters; at about 13 letters per line a reader has already lost about a fifth of the fastest reading speed.',
     binding: true,
     setBy: 'template',
     evidence: 'convention',
@@ -102,13 +102,13 @@ export const RESEARCH_RULES: readonly ResearchRule[] = [
     reviewed: REVIEWED,
     measure: (_params, css) => {
       const letters = Number(/^(\d+(?:\.\d+)?)ch$/.exec(css['--measure'] ?? '')?.[1] ?? Number.NaN);
-      return { holds: letters <= LINE_LETTERS_MAX, found: `Paragraphs in the list of services and in the part about the business are at most ${plain(letters)} character widths wide (one such width is that of the digit 0, a little wider than an average letter).` };
+      return { holds: letters <= LINE_LETTERS_MAX, found: `Paragraphs in the list of services and in the part about the business are at most ${plain(letters)} characters wide (measured with the digit 0, which is a little wider than an average letter).` };
     },
   },
   {
     id: 'line-height',
     name: 'Lines of reading text stand between 1.5 and 1.8 text heights apart',
-    why: 'Lines that stand too close run into each other; lines that stand too far apart stop reading as one paragraph. The value 1.5 comes from the published accessibility guideline. It is a standard, not a measured best value: studies find worse reading only at the extremes.',
+    why: 'Lines that stand too close run into each other; lines that stand too far apart stop reading as one paragraph. The value 1.5 comes from the published accessibility guideline. It is a standard, not a measured best value: studies find worse reading only at the extremes. The upper value, 1.8, is a working limit of this Studio.',
     notChecked: 'Headings stand closer together on purpose, and the Studio does not judge them. No formula that ties this distance to the length of a line has support.',
     binding: true,
     setBy: 'template',
@@ -127,7 +127,7 @@ export const RESEARCH_RULES: readonly ResearchRule[] = [
   {
     id: 'size-step',
     name: 'Each text size is at least a tenth larger than the size below it',
-    why: 'People tell two sizes apart by their ratio, not by a count of pixels. Two text sizes less than about a tenth apart look like one size that was set carelessly, so a heading must be clearly larger than the text under it.',
+    why: 'People tell two sizes apart by their ratio, not by a count of pixels. Two text sizes less than about a tenth apart risk looking like one size.',
     notChecked: 'The tenth is an estimate that an AI assistant drew from laboratory tests of how people judge size. Nobody has tested it on the headings of websites, and no ratio between sizes has evidence that it reads better or looks better than another. On a narrow phone the design caps its largest sizes to fit the screen; the Studio does not measure those capped sizes.',
     binding: true,
     setBy: 'design',
@@ -150,7 +150,9 @@ export const RESEARCH_RULES: readonly ResearchRule[] = [
       // A hundredth of a percent of slack, so that a step of exactly one tenth is not lost to rounding.
       return {
         holds: complete && closest.ratio >= SIZE_STEP_MIN - 0.0001,
-        found: `The two closest text sizes are ${plain(closest.small)} and ${plain(closest.large)} pixels: the larger is ${plain((closest.ratio - 1) * 100)} percent larger.`,
+        found: closest.small === closest.large
+          ? `Two of the design’s text sizes are the same: ${plain(closest.small)} pixels.`
+          : `The two closest text sizes are ${plain(closest.small)} and ${plain(closest.large)} pixels: the larger is ${plain((closest.ratio - 1) * 100)} percent larger.`,
       };
     },
   },
@@ -169,7 +171,7 @@ export const RESEARCH_RULES: readonly ResearchRule[] = [
     reviewed: REVIEWED,
     measure: (_params, css) => {
       const size = pixels(css['--target-min']);
-      return { holds: size >= TARGET_MIN, found: `Buttons, menu links, and form fields are at least ${plain(size)} pixels tall.` };
+      return { holds: size >= TARGET_MIN, found: `They are ${plain(size)} pixels tall.` };
     },
   },
 ];
