@@ -258,7 +258,7 @@ describe('Studio: first screen', () => {
   it('opens on the Directions with working, sandboxed pictures, no errors, and no outside request', async () => {
     const { context, page, errors, requests } = await open();
     await page.waitForSelector('.direction iframe');
-    expect(await page.locator('.direction').count()).toBe(23);
+    expect(await page.locator('.direction').count()).toBe(35);
     const sandboxes = await page.locator('iframe').evaluateAll((frames) => frames.map((f) => f.getAttribute('sandbox')));
     // An empty sandbox attribute applies every restriction: no scripts, no same-origin access, no forms, no popups.
     expect(sandboxes.length).toBeGreaterThan(0);
@@ -278,14 +278,14 @@ describe('Studio: first screen', () => {
   it('keeps generated Directions while the person moves around, and describes each one in a sentence', async () => {
     const { context, page } = await open();
     await page.getByRole('button', { name: 'Show me six more Directions' }).click();
-    await expect.poll(() => page.locator('.direction').count()).toBe(29);
+    await expect.poll(() => page.locator('.direction').count()).toBe(41);
     const moods = await page.locator('.direction .mood').allInnerTexts();
-    for (const mood of moods.slice(23)) expect(mood).toMatch(/^A (light|dark) page .+\.$/);
+    for (const mood of moods.slice(35)) expect(mood).toMatch(/^A (light|dark) page .+\.$/);
     await page.locator('.top-nav a', { hasText: 'Summary' }).click();
     await page.waitForSelector('.summary');
     await page.locator('.top-nav a', { hasText: 'Directions' }).click();
     await page.waitForSelector('.direction');
-    expect(await page.locator('.direction').count()).toBe(29);
+    expect(await page.locator('.direction').count()).toBe(41);
     await context.close();
   });
 });

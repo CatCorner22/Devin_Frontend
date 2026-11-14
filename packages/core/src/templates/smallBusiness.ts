@@ -278,7 +278,9 @@ section.block { padding-block: var(--section-gap); }
 .service .more { font-weight: 600; font-size: var(--text-sm); }
 .service .num { display: none; font-family: var(--font-heading); font-weight: var(--heading-weight); color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .service-media { display: none; }
-.service-body { display: grid; gap: var(--space-3); align-content: start; }
+/* The box and its one column may shrink below the width of their longest word, which then wraps: a long word in spaced capitals pushed the page 5 pixels wider than a 1024-pixel window (found 2026-11-14 on a new Direction). */
+.service { min-width: 0; }
+.service-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); align-content: start; min-width: 0; }
 /* Light falls from above: a box that casts a shadow also catches a faint highlight along its top edge. */
 .card, body[data-sections="grid"] .service, body[data-sections="bento"] .service { background-clip: padding-box; }
 .card { background: var(--card-bg); border: var(--card-border-w) solid var(--card-border); border-radius: var(--radius-surface); box-shadow: var(--card-shadow); -webkit-backdrop-filter: var(--card-backdrop); backdrop-filter: var(--card-backdrop); }
