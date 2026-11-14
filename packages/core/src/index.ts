@@ -6,5 +6,6 @@ export * from './catalog/types.js';
 export { STEPS, findStep } from './catalog/steps.js';
 export { CONFLICT_RULES, HARMONY_RULES, RULES } from './catalog/rules.js';
 export * from './catalog/directions.js';
+export * from './catalog/skins.js';
 export * from './catalog/words.js';
 export * from './templates/smallBusiness.js';

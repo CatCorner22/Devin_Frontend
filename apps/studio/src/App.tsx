@@ -1,5 +1,5 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, STEPS, activeTunables, conflicts, findStep, matchingOptionId, nearestSliderValue, nextSliderValue, resolvePatch,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, STEPS, activeTunables, conflicts, findSkin, findStep, matchingOptionId, nearestSliderValue, nextSliderValue, resolvePatch, skinParams, skinsOf, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -304,10 +304,24 @@ function useHeadingFocus(): React.RefObject<HTMLHeadingElement | null> {
 
 // ───────── Directions ─────────
 
+/** The two colors of a skin's chip: the main color as the Direction would draw it in that skin, and the far end of its fade or its second color. */
+function chipColors(direction: Direction, skinId: string | null): [string, string] {
+  const skin = skinId === null ? undefined : findSkin(skinId);
+  const p = skin ? skinParams(direction, skin) : direction.params;
+  const main = toCss({ l: p.accentLightness, c: p.accentChroma, h: p.accentHue });
+  const second = p.colorStrategy === 'duo' ? toCss({ l: p.accentLightness, c: p.accentChroma, h: p.accent2Hue }) : main;
+  return [main, second];
+}
+
 function DirectionCard({ direction }: { direction: Direction }): React.JSX.Element {
   const project = useStudio((s) => s.project);
   const request = useStudio((s) => s.requestDirection);
-  const html = useMemo(() => mockupHtml(project, direction.params, { wireframe: false, focus: 'top', still: true }).html, [project.content, project.a11y, direction]);
+  const skins = skinsOf(direction);
+  // `null`: the Direction's own colors. A skin changes colors only; the Direction's layout, letters, and shapes stay.
+  const [skinId, setSkinId] = useState<string | null>(null);
+  const skin = skinId === null ? undefined : findSkin(skinId);
+  const params = useMemo(() => (skin ? skinParams(direction, skin) : direction.params), [direction, skin]);
+  const html = useMemo(() => mockupHtml(project, params, { wireframe: false, focus: 'top', still: true }).html, [project.content, project.a11y, params]);
   return (
     <article className="direction" aria-labelledby={`direction-${direction.id}`}>
       <div className="direction-body">
@@ -316,11 +330,30 @@ function DirectionCard({ direction }: { direction: Direction }): React.JSX.Eleme
       </div>
       <Thumbnail html={html} width={1280} ratio={0.64} />
       <div className="direction-body">
+        {skins.length > 0 && (
+          <fieldset className="skins">
+            <legend>Skin (the same look in other colors)</legend>
+            <div className="skin-row">
+              {[null, ...skins.map((s) => s.id)].map((id) => {
+                const [main, second] = chipColors(direction, id);
+                const name = id === null ? 'As designed' : findSkin(id)!.name;
+                return (
+                  <label key={id ?? 'own'} className="skin" data-picked={skinId === id || undefined}>
+                    <input type="radio" name={`skin-${direction.id}`} checked={skinId === id} onChange={() => setSkinId(id)} />
+                    <span className="skin-chip" aria-hidden="true" style={{ background: `linear-gradient(135deg, ${main} 50%, ${second} 50%)` }} />
+                    <span>{name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            <p className="hint">{skin ? skin.what : 'The colors this Direction was composed with.'}</p>
+          </fieldset>
+        )}
         <dl>
           <div><dt>Best for</dt><dd>{direction.bestFor}</dd></div>
           <div><dt>Watch for</dt><dd>{direction.risk}</dd></div>
         </dl>
-        <button type="button" className="btn primary" onClick={() => request(direction)}>Start from {direction.name}</button>
+        <button type="button" className="btn primary" onClick={() => request(skin ? { ...direction, params } : direction, skin?.name)}>Start from {direction.name}</button>
       </div>
     </article>
   );

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONFLICT_RULES, CONFLICT_TESTS, DEFAULT_PARAMS, DIRECTION_GROUPS, DIRECTIONS, EVIDENCE_GRADES, FONTS, HARMONY_FIXES, HARMONY_RULES, NOT_CHECKED, PAIRS, PARAM_KEYS, RULES, SOURCE_BASES, STEPS,
-  assertKnownParams, closerOptions, conflicts, createProject, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
+  SKINS, assertKnownParams, closerOptions, conflicts, createProject, deriveTokens, findSkin, skinParams, skinsOf, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
   CITED_NAMES, tradeWordsOutsideBrackets, vaguePhrasesIn,
   type DesignParams, type SourceRef,
 } from '../src/index.js';
@@ -389,5 +389,57 @@ describe('claims about output (hard rule 8)', () => {
     for (const file of files) expect(readFileSync(repoPath(file), 'utf8').match(forbidden)?.[0], file).toBeUndefined();
     // The checker fails the texts it must fail.
     for (const bad of ['This page is WCAG compliant.', 'ADA-compliant output', 'an accessible design']) expect(forbidden.test(bad), bad).toBe(true);
+  });
+});
+
+describe('Skins: pre-built colors for a Direction', () => {
+  it('has skins with unique identifiers and names, and plain text', () => {
+    expect(new Set(SKINS.map((s) => s.id)).size).toBe(SKINS.length);
+    expect(new Set(SKINS.map((s) => s.name)).size).toBe(SKINS.length);
+    for (const skin of SKINS) {
+      expect(skin.what.trim().length, skin.id).toBeGreaterThan(12);
+      expect(tradeWordsOutsideBrackets(`${skin.name}. ${skin.what}`), skin.id).toEqual([]);
+      expect(findSkin(skin.id)).toBe(skin);
+    }
+  });
+
+  it('changes colors only: layout, letters, shapes, and how light the main color is stay as the Direction made them', () => {
+    const COLOR_KEYS = new Set(['accentHue', 'accent2Hue', 'accentChroma', 'neutralHue', 'colorStrategy', 'displayTreatment']);
+    for (const d of DIRECTIONS) {
+      for (const skin of skinsOf(d)) {
+        const p = skinParams(d, skin);
+        for (const key of Object.keys(d.params) as (keyof DesignParams)[]) {
+          if (!COLOR_KEYS.has(key)) expect(p[key], `${d.id}/${skin.id}: ${key}`).toEqual(d.params[key]);
+        }
+        expect(p.accentHue).toBe(skin.accentHue);
+      }
+    }
+  });
+
+  it('offers every curated Direction at least two skins, each without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass', () => {
+    for (const d of DIRECTIONS) {
+      const skins = skinsOf(d);
+      expect(skins.length, `${d.id}: number of skins`).toBeGreaterThanOrEqual(2);
+      expect(skins.length, `${d.id}: every listed skin exists`).toBe(d.skins?.length);
+      const own = new Set(deriveTokens(d.params, 'advise').pairs.filter((pair) => !pair.passes).map((pair) => pair.id));
+      for (const skin of skins) {
+        const p = skinParams(d, skin);
+        expect(() => assertKnownParams(p), `${d.id}/${skin.id}`).not.toThrow();
+        expect(conflicts({ ...createProject(), params: p }), `${d.id}/${skin.id}: clash`).toEqual([]);
+        expect(harmonize(p), `${d.id}/${skin.id}: harmony`).toEqual(p);
+        const failing = deriveTokens(p, 'advise').pairs.filter((pair) => !pair.passes && !own.has(pair.id)).map((pair) => pair.id);
+        expect(failing, `${d.id}/${skin.id}: color pairs`).toEqual([]);
+      }
+    }
+  });
+
+  it('keeps a two-color Direction two-colored, and gives a one-color page a second color only where the page has room for one', () => {
+    const goth = DIRECTIONS.find((d) => d.id === 'galactic-goth')!;
+    const gothOcean = skinParams(goth, findSkin('ocean')!);
+    // "Galactic Goth" keeps the distance between its two colors (302 and 18: 76 degrees on).
+    expect(gothOcean.colorStrategy).toBe('duo');
+    expect(gothOcean.accent2Hue).toBe((245 + (18 - 302) + 360) % 360);
+    const cobalt = DIRECTIONS.find((d) => d.id === 'cobalt-wash')!;
+    expect(skinParams(cobalt, findSkin('sunset')!).colorStrategy).toBe(cobalt.params.colorStrategy);
   });
 });

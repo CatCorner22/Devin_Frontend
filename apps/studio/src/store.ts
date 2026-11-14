@@ -94,7 +94,8 @@ export interface StudioState {
   tuneValue(key: keyof DesignParams, value: number): void;
   /** Store the owner's reason on the Decision of the named Step (not of whichever Step is on screen at that moment). */
   setReason(stepId: string, reason: string): void;
-  requestDirection(direction: Direction): void;
+  /** Start from a Direction; `skinName` is the name of the skin whose colors `direction` already carries, if any. */
+  requestDirection(direction: Direction, skinName?: string): void;
   requestPlainStart(): void;
   moreDirections(): void;
   setProfile(profile: A11yProfile): void;
@@ -859,13 +860,15 @@ export const useStudio = create<StudioState>((set, get) => {
       commit(setReason(project, stepId, reason), `reason:${stepId}`);
     },
 
-    requestDirection(direction) {
+    requestDirection(direction, skinName) {
       const { project } = get();
+      const inSkin = skinName ? `, in the skin “${skinName}”` : '';
       const replace = (): void => {
         const hadWork = hasWork(project);
         commit(applyDirection(get().project, direction));
         enter('steps', STEPS[0]!.id);
-        if (hadWork) set({ notice: { text: `Started again from “${direction.name}”.`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
+        if (hadWork) set({ notice: { text: `Started again from “${direction.name}”${inSkin}.`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
+        else if (skinName) set({ notice: { text: `Started from “${direction.name}”${inSkin}. The skin changed colors only; every Step still starts from this Direction’s layout, letters, and shapes.` } });
       };
       const start = (): void => replaceKeepingCopy(replace, `you started again from “${direction.name}”`);
       const decided = Object.keys(project.decisions).length;

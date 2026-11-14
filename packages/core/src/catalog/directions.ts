@@ -33,6 +33,8 @@ export interface Direction {
   evidence: Evidence;
   /** The date of the last review, as YYYY-MM-DD; `null` for a generated Direction, which nobody has reviewed. */
   reviewed: string | null;
+  /** The skins this Direction offers besides its own colors, by identifier (see `skins.ts`). A generated Direction offers none. */
+  skins?: string[];
 }
 
 const REVIEWED = '2026-11-13';
@@ -54,6 +56,7 @@ const d = (overrides: Partial<DesignParams>): DesignParams => ({ ...DEFAULT_PARA
 export const DIRECTIONS: Direction[] = [
   {
     id: 'graphite-precision',
+    skins: ['lagoon', 'meadow', 'sunset', 'berry', 'gold'],
     group: 'calm',
     name: 'Graphite Precision',
     mood: 'Exact, quiet, engineered. Black, white, and a faint grid of lines.',
@@ -69,6 +72,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'midnight-aurora',
+    skins: ['lagoon', 'sunset', 'berry', 'orchid', 'gold'],
     group: 'dark',
     name: 'Midnight Aurora',
     mood: 'A deep night sky with soft colored light behind frosted, see-through boxes. Luminous and calm.',
@@ -84,6 +88,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'ember-noir',
+    skins: ['ocean', 'lagoon', 'forest', 'berry', 'orchid'],
     group: 'dark',
     name: 'Ember Noir',
     mood: 'Charcoal and firelight. Warm, confident, a little theatrical.',
@@ -99,6 +104,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'paper-and-ink',
+    skins: ['ocean', 'berry', 'orchid', 'violet', 'gold'],
     group: 'nostalgic',
     name: 'Paper and Ink',
     mood: 'A well-edited magazine: paper grain, ink, and one red pencil.',
@@ -114,6 +120,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'soft-daylight',
+    skins: ['ember', 'berry', 'gold', 'graphite'],
     group: 'calm',
     name: 'Soft Daylight',
     mood: 'Bright, airy, unhurried. Boxes float on soft shadows in clear light.',
@@ -129,6 +136,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'poster-block',
+    skins: ['ocean', 'forest', 'berry', 'violet', 'gold'],
     group: 'bold',
     name: 'Poster Block',
     mood: 'A printed poster: one loud color, heavy letters, square corners.',
@@ -144,6 +152,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'sticker-pop',
+    skins: ['ocean', 'lagoon', 'ember', 'orchid', 'gold'],
     group: 'bold',
     name: 'Sticker Pop',
     mood: 'Cheerful and tactile: thick outlines, solid sticker-like shadows, two bright colors.',
@@ -159,6 +168,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'clinical-calm',
+    skins: ['meadow', 'ember', 'violet', 'gold', 'graphite'],
     group: 'calm',
     name: 'Clinical Calm',
     mood: 'Clean, reassuring, plainly spoken. Nothing to worry about here.',
@@ -174,6 +184,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'evening-formal',
+    skins: ['lagoon', 'forest', 'berry', 'orchid', 'graphite'],
     group: 'dark',
     name: 'Evening Formal',
     mood: 'Candlelight and engraved invitations. Dark, slow, elegant.',
@@ -189,6 +200,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'control-room',
+    skins: ['meadow', 'ember', 'orchid', 'gold', 'graphite'],
     group: 'dark',
     name: 'Control Room',
     mood: 'An instrument panel: dense, exact, numbers first.',
@@ -204,6 +216,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'quiet-luxury',
+    skins: ['ocean', 'lagoon', 'meadow', 'sunset', 'gold'],
     group: 'calm',
     name: 'Quiet Luxury',
     mood: 'Nearly nothing, perfectly placed. Thin letters with small feet, wide margins, no lines.',
@@ -219,6 +232,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'cobalt-wash',
+    skins: ['lagoon', 'meadow', 'sunset', 'berry', 'gold'],
     group: 'calm',
     name: 'Cobalt Wash',
     mood: 'The whole page breathes one color. Fresh, modern, unmistakable.',
@@ -234,6 +248,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'sunlit-studio',
+    skins: ['lagoon', 'forest', 'berry', 'orchid', 'graphite'],
     group: 'calm',
     name: 'Sunlit Studio',
     mood: 'Morning light in a workshop: golden, open, optimistic.',
@@ -249,6 +264,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'garden-ledger',
+    skins: ['ocean', 'ember', 'orchid', 'violet', 'gold'],
     group: 'nostalgic',
     name: 'Garden Ledger',
     mood: 'A seed catalog: deep green, sturdy letters with small feet, orderly lists.',
@@ -264,6 +280,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'vector-horizon',
+    skins: ['ocean', 'forest'],
     group: 'dark',
     name: 'Vector Horizon',
     mood: 'A flight deck at night: thin lines, a faint grid, capital letters, and one electric color. Precise and forward-looking.',
@@ -279,6 +296,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'frontier-gazette',
+    skins: ['lagoon', 'forest', 'orchid', 'violet', 'graphite'],
     group: 'nostalgic',
     name: 'Frontier Gazette',
     mood: 'A small-town newspaper and a wanted poster: sun-faded paper, heavy capital letters, rust red, and denim blue.',
@@ -294,6 +312,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'galactic-goth',
+    skins: ['ocean', 'lagoon', 'sunset', 'berry', 'gold'],
     group: 'dark',
     name: 'Galactic Goth',
     mood: 'Deep space in velvet: a violet-black sky full of stars, frosted boxes, royal purple, and one deep red. Dramatic and elegant.',
@@ -309,6 +328,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'marquee-deco',
+    skins: ['lagoon', 'forest', 'berry', 'orchid', 'graphite'],
     group: 'dark',
     name: 'Marquee Deco',
     mood: 'A theater front from the 1920s: black and gold, even capital letters, square corners, and a light from above.',
@@ -324,6 +344,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'motel-neon',
+    skins: ['lagoon', 'forest', 'violet', 'gold', 'graphite'],
     group: 'nostalgic',
     name: 'Motel Neon',
     mood: 'Night on an old California highway: a near-black blue page, a warm rose pink like a lit sign, tall elegant letters, and a faint film grain. Wistful and cinematic.',
@@ -339,6 +360,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'ocean-drive',
+    skins: ['ocean', 'sunset', 'orchid', 'violet', 'gold'],
     group: 'bold',
     name: 'Ocean Drive',
     mood: 'A 1980s beach city: pale pastel walls, a deep flamingo pink, a touch of turquoise, and thin clean letters. Breezy and stylish.',
@@ -354,6 +376,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'mall-sunset',
+    skins: ['lagoon', 'sunset', 'violet', 'gold', 'graphite'],
     group: 'bold',
     name: 'Mall Sunset',
     mood: 'A 1980s dream of the future: a violet night, hot magenta and cyan, a grid of lines, and wide capital letters. Playful and unreal.',
@@ -369,6 +392,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'quiet-orbit',
+    skins: ['lagoon', 'forest', 'sunset', 'berry', 'gold'],
     group: 'calm',
     name: 'Quiet Orbit',
     mood: 'A bright, still morning in space: a near-white page with a cool tint, one calm indigo, a few faint stars, and soft round shapes. Smooth and modern.',
@@ -384,6 +408,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'steady-steps',
+    skins: ['sunset', 'berry', 'orchid', 'gold', 'graphite'],
     group: 'calm',
     name: 'Steady Steps',
     mood: 'A soft mint page with a calm green-teal, friendly round letters, clear buttons, and plenty of room. Encouraging and easy to return to every day.',
@@ -399,6 +424,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'malibu-sunset',
+    skins: ['ocean', 'berry', 'orchid', 'violet', 'gold'],
     group: 'nostalgic',
     name: 'Malibu Sunset',
     mood: 'The Pacific coast at the end of the day: pale sand, a coral sun, a touch of ocean teal, and easy round letters. Sunlit and unhurried.',
@@ -414,6 +440,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'miami-beach-deco',
+    skins: ['lagoon', 'forest', 'orchid', 'violet', 'gold'],
     group: 'nostalgic',
     name: 'Miami Beach Deco',
     mood: 'A sun-warmed hotel front from the 1930s: cream walls, soft coral, a line of sea green, capital letters with air between them, and clean thin lines. Warm and relaxed, with a quiet nod to Art Deco.',
@@ -429,6 +456,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'vegas-modern',
+    skins: ['lagoon', 'forest', 'berry', 'orchid', 'graphite'],
     group: 'dark',
     name: 'Vegas Modern',
     mood: 'A new resort at night: a black page, warm gold, glass boxes, a single light from above, and large confident letters. Sleek and impressive.',
@@ -444,6 +472,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'smoky-mountain-autumn',
+    skins: ['ocean', 'lagoon', 'meadow', 'berry', 'orchid'],
     group: 'nostalgic',
     name: 'Smoky Mountain Autumn',
     mood: 'The ridges in October: a warm parchment page, burnt orange leaves, deep evergreen, bookish letters, and a soft morning haze. Calm and rooted.',
@@ -459,6 +488,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'childhood-nostalgia',
+    skins: ['ocean', 'lagoon', 'forest', 'berry', 'orchid'],
     group: 'nostalgic',
     name: 'Childhood Nostalgia',
     mood: 'A small-town living room in the 1980s, remembered kindly: wood-brown, harvest gold, a soft lamp-lit page, friendly letters, and a little grain like an old photograph. Warm and safe.',
@@ -474,6 +504,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'long-conversation',
+    skins: ['ocean', 'lagoon', 'forest', 'berry', 'orchid'],
     group: 'dark',
     name: 'Long Conversation',
     mood: 'A dark studio late at night: warm amber light, a deep red, sturdy plain letters, and plenty of room to read. Curious and unhurried.',
@@ -489,6 +520,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'before-dawn',
+    skins: ['ocean', 'lagoon', 'berry', 'orchid', 'violet'],
     group: 'dark',
     name: 'Before Dawn',
     mood: 'The road at five in the morning: a near-black page, one hard orange like a safety vest, heavy capital letters, and square edges. Stripped down and relentless.',
@@ -504,6 +536,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'mountain-rhinestone',
+    skins: ['lagoon', 'forest', 'sunset', 'violet', 'graphite'],
     group: 'nostalgic',
     name: 'Mountain Rhinestone',
     mood: 'A big-hearted stage in the hills: warm cream, a bright rose pink, a butterfly yellow, round generous shapes, and elegant letters. Joyful and kind.',
@@ -519,6 +552,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'field-manual',
+    skins: ['ocean', 'lagoon', 'ember', 'orchid', 'violet'],
     group: 'calm',
     name: 'Field Manual',
     mood: 'A printed manual: a paper-white page, black ink, one olive green, typewriter-style capital headings, thin lines, and numbered parts. Orderly and plain-spoken.',
@@ -534,6 +568,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'blue-hour-chapel',
+    skins: ['meadow', 'sunset', 'berry', 'orchid', 'gold'],
     group: 'nostalgic',
     name: 'Blue Hour Chapel',
     mood: 'An old photograph of a summer that is over: sun-faded cream, dusty blue, a faded red, tall elegant letters, and soft grain. Glamorous and sad at once.',
@@ -549,6 +584,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'woody-creek-winter',
+    skins: ['lagoon', 'forest', 'violet', 'gold', 'graphite'],
     group: 'nostalgic',
     name: 'Woody Creek Winter',
     mood: 'A writer’s kitchen table in the Rockies: a snow-white page, weathered wood brown, a red like a typewriter ribbon, and typewriter-style headings. Personal and a little unruly.',
@@ -564,6 +600,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'desert-fever',
+    skins: ['ocean', 'lagoon', 'meadow', 'berry', 'orchid'],
     group: 'bold',
     name: 'Desert Fever',
     mood: 'A road trip through the desert that went wrong in an interesting way: bleached sand, acid orange, a sour green, very large heavy headings, and boxes like stickers. Loud and a little unhinged.',

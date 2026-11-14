@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { CITED_NAMES, DIRECTIONS, FONTS, STEPS, applyDirection, createProject, pick, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
+import { CITED_NAMES, DIRECTIONS, FONTS, STEPS, applyDirection, createProject, findSkin, pick, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -1923,6 +1923,64 @@ describe('Studio: a person can choose by eye (findings U2-08, U2-06, U3-05; meas
     expect(await page.locator('.option-title').first().innerText()).toContain('Starting point');
     expect(await mainButton(page)).toBe('Keep the starting point and continue');
     expect(await page.locator('main, aside').allInnerTexts().then((texts) => texts.join(' '))).not.toMatch(/my design|As it was/);
+    await context.close();
+  });
+});
+
+describe('Studio: skins, the same look in other colors (decision D52)', () => {
+  const aurora = DIRECTIONS.find((d) => d.id === 'midnight-aurora')!;
+  const cardOf = (page: Page, name: string) => page.locator('.direction', { has: page.getByRole('heading', { name, exact: true }) });
+
+  it('offers a Direction’s skins on its card; a skin changes the picture and the colors a project starts with, and nothing else', async () => {
+    const { context, page } = await open({ hash: '#directions' });
+    await page.waitForSelector('.direction');
+    const card = cardOf(page, 'Midnight Aurora');
+    await card.scrollIntoViewIfNeeded();
+    // The Direction's own colors first, then each skin of its record, by name.
+    expect(await card.locator('.skin').allInnerTexts()).toEqual(['As designed', ...skinsOf(aurora).map((skin) => skin.name)]);
+    expect(await card.locator('.skin input').first().isChecked()).toBe(true);
+    const picture = (): Promise<string | null> => card.locator('iframe').getAttribute('srcdoc');
+    const own = await picture();
+    const skin = findSkin('sunset')!;
+    expect(skinsOf(aurora)).toContain(skin);
+    await card.locator('.skin', { hasText: skin.name }).click();
+    await expect.poll(picture).not.toBe(own);
+    expect(await card.locator('.skins .hint').innerText()).toBe(skin.what);
+    await card.getByRole('button', { name: 'Start from Midnight Aurora', exact: true }).click();
+    await page.waitForSelector('.cards');
+    expect(await page.locator('.banner').innerText()).toContain('Started from “Midnight Aurora”, in the skin “Sunset fade”.');
+    await settle(page);
+    const project = (await stored(page))!;
+    const expected = skinParams(aurora, skin);
+    expect(project.direction).toBe('midnight-aurora');
+    expect(project.params).toEqual(expected);
+    expect(project.base).toEqual(expected);
+    expect(project.decisions).toEqual({});
+    // Colors changed; a value of layout, of letters, and of shape did not.
+    expect(project.params.accentHue).not.toBe(aurora.params.accentHue);
+    expect([project.params.hero, project.params.fontHeading, project.params.radius, project.params.accentLightness]).toEqual([aurora.params.hero, aurora.params.fontHeading, aurora.params.radius, aurora.params.accentLightness]);
+    await context.close();
+  });
+
+  it('lets the keyboard choose a skin, and names the skin when a project is replaced', async () => {
+    const { context, page } = await open({ hash: '#directions', storage: { [LOCAL_KEY]: envelope(worked('Has work')) } });
+    await page.waitForSelector('.direction');
+    const card = cardOf(page, 'Soft Daylight');
+    await card.scrollIntoViewIfNeeded();
+    const radios = card.locator('.skin input');
+    await radios.first().focus();
+    await page.keyboard.press('ArrowRight');
+    expect(await radios.nth(1).isChecked()).toBe(true);
+    const chosen = (await card.locator('.skin[data-picked]').innerText()).trim();
+    expect(chosen).toBe(skinsOf(DIRECTIONS.find((d) => d.id === 'soft-daylight')!)[0]!.name);
+    await card.getByRole('button', { name: 'Start from Soft Daylight', exact: true }).click();
+    await page.getByRole('button', { name: 'Start again', exact: true }).click();
+    await page.waitForSelector('.cards');
+    expect(await page.locator('.banner:not(.hold)').innerText()).toContain(`Started again from “Soft Daylight”, in the skin “${chosen}”.`);
+    // Undo brings the replaced project back.
+    await page.locator('.banner:not(.hold)').getByRole('button', { name: 'Undo' }).click();
+    await settle(page);
+    expect((await stored(page))?.name).toBe('Has work');
     await context.close();
   });
 });
