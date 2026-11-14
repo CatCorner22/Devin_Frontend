@@ -21,7 +21,7 @@ export const TRADE_WORDS: readonly string[] = [
  * Phrases that point at something the reader cannot see, or that give one thing a second name. They may not appear at all,
  * in any text the Studio shows, the source lines included.
  */
-export const VAGUE_PHRASES: readonly string[] = ['research helper', 'reference files', 'your own checklist', 'the builder', 'builder’s', 'the tool'];
+export const VAGUE_PHRASES: readonly string[] = ['research helper', 'reference files', 'your own checklist', 'the builder', 'builder’s', 'the tool', 'my design'];
 
 /**
  * Names of things that the texts cite and that happen to hold a trade word. A name is not a description, so the check sets

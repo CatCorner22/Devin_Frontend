@@ -1,5 +1,5 @@
 import {
-  DIRECTIONS, FONTS, NOT_CHECKED, STEPS, activeTunables, conflicts, findStep, matchingOptionId, nearestSliderValue, nextSliderValue, resolvePatch,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, STEPS, activeTunables, conflicts, findStep, matchingOptionId, nearestSliderValue, nextSliderValue, resolvePatch,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -330,6 +330,15 @@ function DirectionsView(): React.JSX.Element {
   const s = useStudio();
   const heading = useHeadingFocus();
   const started = s.project.direction !== null || Object.keys(s.project.decisions).length > 0;
+  // Decided once, when the screen opens: a later change of the window's width does not close a group that the person opened.
+  const [wide] = useState(() => window.innerWidth >= 700);
+  const openGroup = (id: string): void => {
+    const group = document.getElementById(`group-${id}`) as HTMLDetailsElement | null;
+    if (!group) return;
+    group.open = true;
+    group.scrollIntoView({ block: 'start' });
+    group.querySelector<HTMLElement>('summary')?.focus();
+  };
   return (
     <main className="directions" id="main" tabIndex={-1}>
       <div className="intro">
@@ -344,9 +353,27 @@ function DirectionsView(): React.JSX.Element {
         <p className="teach">Every picture shows the same made-up dental practice, so that only the design differs. It is a sample; it is not your content.</p>
         {started && <p className="note">You already have a project, started from {directionName(s.project, s.generated)}. If you start from another Direction, the Studio asks first, and you can undo it.</p>}
       </div>
-      <div className="direction-grid">
-        {[...DIRECTIONS, ...s.generated].map((d) => <DirectionCard key={d.id} direction={d} />)}
-      </div>
+      {/* The Directions stand in groups, each under a plain heading. On a wide window every group is open; on a narrow one
+          only the first is, so that the person meets four headings and not thirty-five cards in a row. */}
+      <nav className="group-links" aria-label="Groups of Directions">
+        {DIRECTION_GROUPS.map((g) => <a key={g.id} href={`#group-${g.id}`} onClick={(e) => { e.preventDefault(); openGroup(g.id); }}>{g.label} ({DIRECTIONS.filter((d) => d.group === g.id).length})</a>)}
+      </nav>
+      {DIRECTION_GROUPS.map((g, i) => (
+        <details key={g.id} id={`group-${g.id}`} className="direction-group" open={wide || i === 0 || undefined}>
+          <summary><h2>{g.label}</h2><span>{DIRECTIONS.filter((d) => d.group === g.id).length} Directions</span></summary>
+          <div className="direction-grid">
+            {DIRECTIONS.filter((d) => d.group === g.id).map((d) => <DirectionCard key={d.id} direction={d} />)}
+          </div>
+        </details>
+      ))}
+      {s.generated.length > 0 && (
+        <details id="group-generated" className="direction-group" open>
+          <summary><h2>Composed at random</h2><span>{s.generated.length} Directions</span></summary>
+          <div className="direction-grid">
+            {s.generated.map((d) => <DirectionCard key={d.id} direction={d} />)}
+          </div>
+        </details>
+      )}
       <div className="more">
         <button type="button" className="btn" onClick={s.moreDirections}>Show me six more Directions</button>
         <p className="hint">The Studio composes each new Direction at random from its own choices and then removes combinations that clash. No person has looked at them, so judge them by eye.</p>
@@ -469,8 +496,8 @@ function StepsView(): React.JSX.Element {
   const cards: Card[] = useMemo(() => {
     if (s.variations) {
       return [
-        { id: 'as-it-was', label: 'As it was', what: 'The values these variations start from.' },
-        ...s.variations.options.map((o) => ({ id: o.id, label: o.label, what: 'One small step away from “As it was”.' })),
+        { id: 'as-it-was', label: 'Starting point', what: 'The values these small variations start from.' },
+        ...s.variations.options.map((o) => ({ id: o.id, label: o.label, what: 'One small step away from the starting point.' })),
       ];
     }
     const out: Card[] = step.options.map((o) => ({ id: o.id, label: o.label, what: o.what, chooseWhen: o.chooseWhen, risk: o.risk, exemplar: o.exemplar?.text, warn: o.warn?.text, focus: o.focus }));
@@ -490,14 +517,15 @@ function StepsView(): React.JSX.Element {
   // on a Step with 14 cards, and the person saw nothing change for that time (measured 2026-11-14).
   const cardsDevice = useDeferredValue(s.device);
   const thumbWidth = step.thumb?.width ?? DEVICE_WIDTH[cardsDevice];
-  const thumbRatio = step.thumb?.width ? (step.thumb.width < 600 ? 0.9 : 0.6) : THUMB_RATIO[cardsDevice];
+  const thumbRatio = step.thumb?.focus ? 0.7 : step.thumb?.width ? (step.thumb.width < 600 ? 0.9 : 0.6) : THUMB_RATIO[cardsDevice];
   const lookingAtApplied = !s.variations && shown.id === applied;
   const sliders = activeTunables(step, s.project.params);
 
   const stateKey = JSON.stringify([s.project.params, s.project.content, s.project.a11y, step.id, s.variations?.round ?? -1, s.variations?.origin ?? null, wire, s.region]);
   const thumbs = useMemo(() => {
     const out: Record<string, string> = {};
-    for (const card of cards) out[card.id] = mockupHtml(s.project, paramsForCard(s, card.id), { wireframe: wire, focus: s.region === 'auto' ? (card.focus ?? step.focus) : s.region, still: true }).html;
+    // A Step may give its small pictures a close-up of their own (the buttons, one box), so that the change can be seen at card size.
+    for (const card of cards) out[card.id] = mockupHtml(s.project, paramsForCard(s, card.id), { wireframe: wire, focus: s.region === 'auto' ? (step.thumb?.focus ?? card.focus ?? step.focus) : s.region, still: true }).html;
     return out;
   }, [stateKey, cards.length]);
   // Only the Motion Step plays the entrance; on every other Step the page stands still, so that a comparison is not blurred by a fade.
@@ -547,9 +575,9 @@ function StepsView(): React.JSX.Element {
   }, [s.shownId]);
 
   const mainLabel = s.variations
-    ? shown.id === 'as-it-was' ? 'Use it as it was and continue' : `Pick “${shown.label}” and continue`
+    ? shown.id === 'as-it-was' ? 'Keep the starting point and continue' : `Pick “${shown.label}” and continue`
     : lookingAtApplied
-      ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep my design and continue' : `Keep “${shown.label}” and continue`
+      ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
   const canPutBack = Boolean(decision) || step.owns.some((key) => s.project.params[key] !== s.project.base[key]);
 
@@ -678,8 +706,12 @@ function StepsView(): React.JSX.Element {
             })}
           </div>
         </fieldset>
+        {/* Only the main button stays in view while the cards scroll. The whole row of buttons used to stay, three rows high
+            on a narrow column, and lay over the cards and their names (finding U2-06). */}
         <div className="actions sticky">
           <button type="button" className="btn primary" onClick={s.decideAndContinue}>{mainLabel}</button>
+        </div>
+        <div className="actions">
           {s.variations ? (
             <>
               <button type="button" className="btn" onClick={s.startVariations}>Show finer variations of “{shown.label}”</button>

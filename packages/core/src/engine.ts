@@ -594,6 +594,7 @@ export function generateDirections(seed: number, count: number, avoid: DesignPar
       sources: GENERATED_SOURCE,
       evidence: 'expert-opinion',
       reviewed: null,
+      group: null,
     };
   });
 }

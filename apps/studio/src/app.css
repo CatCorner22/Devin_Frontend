@@ -198,7 +198,10 @@ select, .name, .project-text {
 .about strong { color: var(--text); font-weight: 600; }
 .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .actions .primary { flex: 1 1 100%; }
-.actions.sticky { position: sticky; bottom: 0; z-index: 2; padding-block: 0.75rem 1rem; background: linear-gradient(to bottom, transparent, var(--bg) 0.75rem); }
+/* The main button stays in view; its strip is solid, with a thin line on top, so that it reads as a bar and nothing shows through it. */
+.actions.sticky { position: sticky; bottom: 0; z-index: 2; padding-block: 0.625rem; background: var(--bg); border-top: 1px solid var(--border); }
+/* A card that is brought into view stops above the bar, never under it. */
+.options { scroll-padding-bottom: 5rem; }
 .tune { font-size: 0.875rem; display: grid; gap: 0.5rem; padding-bottom: 1.5rem; }
 .slider { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 0.125rem 0.5rem; margin-top: 0.75rem; }
 .slider-name { font-weight: 600; }
@@ -218,6 +221,11 @@ select, .name, .project-text {
 .notice-list p { color: var(--text-muted); overflow-wrap: anywhere; }
 .licence-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono); font-size: 0.75rem; padding: 1rem; border-radius: var(--radius-surface); background: var(--surface-2); max-height: 28rem; overflow-y: auto; }
 .intro { display: grid; gap: 0.5rem; max-width: 72ch; }
+.group-links { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; margin-block: 0.5rem 1rem; font-size: 0.9375rem; }
+.direction-group { margin-bottom: 1.5rem; }
+.direction-group > summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; padding-block: 0.75rem; cursor: pointer; border-top: 1px solid var(--border); }
+.direction-group > summary h2 { font-size: 1.25rem; display: inline; }
+.direction-group > summary span { color: var(--text-muted); font-size: 0.875rem; }
 .direction-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr)); gap: 1.25rem; }
 .direction { display: grid; grid-template-rows: auto auto 1fr; border-radius: var(--radius-surface); background: var(--card-bg); box-shadow: var(--card-shadow); overflow: hidden; }
 .direction .thumb { border-radius: 0; box-shadow: 0 1px 0 var(--border), 0 -1px 0 var(--border); }
@@ -254,6 +262,7 @@ select, .name, .project-text {
   .about { height: auto; min-height: 6rem; }
   /* The main button stays in reach while the cards scroll past. */
   .actions.sticky { bottom: 0; }
+  :root { scroll-padding-bottom: 5rem; }
   /* A notice stays in view while the page scrolls, so that the answer to a press (Undo, for example) is never off the screen (finding U3-01). */
   /* The notices stay in view, and never take more than 45 percent of the window's height: on a small sideways phone two rows
      left 38 pixels for the cards (code review of 2026-11-13, finding "screen 10"). */

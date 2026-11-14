@@ -324,6 +324,7 @@ export const STEPS: Step[] = [
     variable: 'The color and the strength of the tint in backgrounds, lines, and text',
     owns: ['neutralHue', 'neutralChroma'],
     focus: 'top',
+    thumb: { note: 'At this size some of these pictures differ only a little. The color chips under each picture show its exact colors, and the large preview shows the whole page.' },
     defaultOptionId: 'cool',
     tunables: [
       { key: 'neutralHue', label: 'Tint color', min: 0, max: 360, step: 1, unit: '°', nudge: 18 },
@@ -354,6 +355,7 @@ export const STEPS: Step[] = [
     variable: 'Which color the main color is, how vivid it is, and how light it is',
     owns: ['accentHue', 'accentChroma', 'accentLightness'],
     focus: 'top',
+    thumb: { width: 300, focus: 'buttons', note: 'Each small picture shows the main button and a link at close range. The large preview shows the whole page.' },
     defaultOptionId: 'ink-blue',
     tunables: [
       { key: 'accentHue', label: 'Color (hue)', min: 0, max: 360, step: 1, unit: '°', nudge: 14 },
@@ -396,6 +398,7 @@ export const STEPS: Step[] = [
     variable: 'Where the main color appears, and which second color joins it',
     owns: ['colorStrategy', 'accent2Hue'],
     focus: 'top',
+    thumb: { note: 'At this size some of these pictures differ only a little. The color chips under each picture show its exact colors, and the large preview shows the whole page.' },
     defaultOptionId: 'single-accent',
     tunables: [{ key: 'accent2Hue', label: 'Second color', min: 0, max: 360, step: 1, unit: '°', nudge: 20, onlyWhen: { key: 'colorStrategy', is: 'duo' } }],
     sources: [
@@ -446,6 +449,7 @@ export const STEPS: Step[] = [
     variable: 'How strongly text and lines stand out from the background',
     owns: ['contrast'],
     focus: 'top',
+    thumb: { note: 'At this size some of these pictures differ only a little. The color chips under each picture show its exact colors, and the large preview shows the whole page.' },
     defaultOptionId: 'crisp',
     tunables: [{ key: 'contrast', label: 'Text contrast', min: 0, max: 1, step: 0.05, nudge: 0.12, directions: ['softer', 'crisper'] }],
     sources: [
@@ -463,7 +467,7 @@ export const STEPS: Step[] = [
   },
   {
     id: 'atmosphere',
-    name: 'Background at the top of the page',
+    name: 'Background of the first screen',
     stage: 'feel',
     title: 'What sits behind the first screen?',
     teach:
@@ -471,7 +475,7 @@ export const STEPS: Step[] = [
     variable: 'The background of the first screen',
     owns: ['atmosphere'],
     focus: 'top',
-    thumb: { width: 900 },
+    thumb: { width: 520, note: 'A fine pattern is hard to see at this size. Look at the large preview to compare “Plain background” with the patterns.' },
     defaultOptionId: 'plain',
     sources: [
       read('Background recipes in open-source code: Once UI and Magic UI (dot and line grids under a fading mask), ray.so (a spotlight glow), the cmdk website (an aurora), Open Props (grain). An AI research assistant read the source files for this Studio; no person has reviewed its record yet.', R09),
@@ -507,7 +511,7 @@ export const STEPS: Step[] = [
     variable: 'How rounded the corners of buttons and boxes are',
     owns: ['radius'],
     focus: 'contact',
-    thumb: { width: 440 },
+    thumb: { width: 280, focus: 'buttons', note: 'Each small picture shows the main button at close range. The large preview shows the boxes and the form as well.' },
     defaultOptionId: 'subtle',
     tunables: [{ key: 'radius', label: 'Corner rounding', min: 0, max: 28, step: 1, unit: 'px', nudge: 3, directions: ['sharper', 'rounder'] }],
     sources: [
@@ -536,7 +540,7 @@ export const STEPS: Step[] = [
     variable: 'What sets a box apart: a line, a shadow, or a shade',
     owns: ['elevation'],
     focus: 'about',
-    thumb: { width: 440 },
+    thumb: { width: 340, focus: 'box', note: 'Each small picture shows one box at close range. Some of these differ only a little; the large preview shows several boxes on the page.' },
     defaultOptionId: 'borders',
     sources: [
       read('Vercel Web Interface Guidelines: at least two shadow layers.', R04),
@@ -594,7 +598,7 @@ export const STEPS: Step[] = [
     variable: 'The look of the main button',
     owns: ['buttonFinish'],
     focus: 'top',
-    thumb: { width: 440 },
+    thumb: { width: 280, focus: 'buttons', note: 'Each small picture shows the main button at close range.' },
     defaultOptionId: 'flat',
     sources: [
       read('Button recipes in open-source code: Radix Themes (solid and "classic" beveled buttons), coss ui (a lit top edge; an outline button), HeroUI (a colored shadow), ray.so (a tinted button). An AI research assistant read the source files for this Studio; no person has reviewed its record yet.', R09),

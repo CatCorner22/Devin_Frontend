@@ -109,8 +109,10 @@ export interface Step {
    * How the small pictures on the cards are made, when the whole page shrunk to card size would hide the change.
    * `width`: the width at which the Mockup is drawn before it is shrunk (a narrow width enlarges details).
    * `note`: what to tell the owner when a still picture cannot show the difference at all.
+   * `focus`: the part of the page that the small pictures show, when it differs from the part where the large preview
+   * opens: a close-up of the buttons or of one box.
    */
-  thumb?: { width?: number; note?: string };
+  thumb?: { width?: number; note?: string; focus?: MockupFocus };
   options: Option[];
   /** The Option that a plain, undecorated start uses. */
   defaultOptionId: string;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CONFLICT_RULES, CONFLICT_TESTS, DEFAULT_PARAMS, DIRECTIONS, EVIDENCE_GRADES, FONTS, HARMONY_FIXES, HARMONY_RULES, NOT_CHECKED, PAIRS, PARAM_KEYS, RULES, SOURCE_BASES, STEPS,
+  CONFLICT_RULES, CONFLICT_TESTS, DEFAULT_PARAMS, DIRECTION_GROUPS, DIRECTIONS, EVIDENCE_GRADES, FONTS, HARMONY_FIXES, HARMONY_RULES, NOT_CHECKED, PAIRS, PARAM_KEYS, RULES, SOURCE_BASES, STEPS,
   assertKnownParams, closerOptions, conflicts, createProject, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
   CITED_NAMES, tradeWordsOutsideBrackets, vaguePhrasesIn,
   type DesignParams, type SourceRef,
@@ -255,6 +255,8 @@ describe('Catalog: Directions', () => {
       expect(isDate(d.reviewed), `${d.id}: review date`).toBe(true);
       expect(conflicts({ ...createProject(), params: d.params }), `${d.id} has a conflict`).toEqual([]);
       expect(findDirection(d.id)).toBe(d);
+      // Every curated Direction stands in one of the groups that the first screen shows.
+      expect(DIRECTION_GROUPS.map((g) => g.id), `${d.id}: group`).toContain(d.group);
       // A curated Direction already satisfies the harmony rules that generated Directions must satisfy.
       expect(harmonize(d.params), `${d.id} breaks a harmony rule`).toEqual(d.params);
     }

@@ -7,8 +7,22 @@
 import { DEFAULT_PARAMS, type DesignParams } from '../params.js';
 import type { Evidence, SourceRef } from './types.js';
 
+/**
+ * The groups under which the first screen lists the curated Directions. 35 Directions in one list were too many to take in;
+ * a group's heading says in plain words what its Directions have in common.
+ */
+export const DIRECTION_GROUPS = [
+  { id: 'calm', label: 'Light and calm' },
+  { id: 'dark', label: 'Dark and dramatic' },
+  { id: 'nostalgic', label: 'Warm and nostalgic' },
+  { id: 'bold', label: 'Bold and playful' },
+] as const;
+export type DirectionGroup = (typeof DIRECTION_GROUPS)[number]['id'];
+
 export interface Direction {
   id: string;
+  /** The group on the first screen; `null` for a generated Direction, which has a list of its own. */
+  group: DirectionGroup | null;
   name: string;
   /** The mood in plain words. */
   mood: string;
@@ -40,6 +54,7 @@ const d = (overrides: Partial<DesignParams>): DesignParams => ({ ...DEFAULT_PARA
 export const DIRECTIONS: Direction[] = [
   {
     id: 'graphite-precision',
+    group: 'calm',
     name: 'Graphite Precision',
     mood: 'Exact, quiet, engineered. Black, white, and a faint grid of lines.',
     bestFor: 'Software, professional services, anything that should feel rigorous.',
@@ -54,6 +69,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'midnight-aurora',
+    group: 'dark',
     name: 'Midnight Aurora',
     mood: 'A deep night sky with soft colored light behind frosted, see-through boxes. Luminous and calm.',
     bestFor: 'Products and studios that want atmosphere and a sense of technology.',
@@ -68,6 +84,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'ember-noir',
+    group: 'dark',
     name: 'Ember Noir',
     mood: 'Charcoal and firelight. Warm, confident, a little theatrical.',
     bestFor: 'Restaurants, bars, studios, craftspeople, evening businesses.',
@@ -82,6 +99,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'paper-and-ink',
+    group: 'nostalgic',
     name: 'Paper and Ink',
     mood: 'A well-edited magazine: paper grain, ink, and one red pencil.',
     bestFor: 'Writers, advisers, law, education: places where words matter.',
@@ -96,6 +114,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'soft-daylight',
+    group: 'calm',
     name: 'Soft Daylight',
     mood: 'Bright, airy, unhurried. Boxes float on soft shadows in clear light.',
     bestFor: 'Consumer products, health, hospitality: anything that should feel effortless.',
@@ -110,6 +129,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'poster-block',
+    group: 'bold',
     name: 'Poster Block',
     mood: 'A printed poster: one loud color, heavy letters, square corners.',
     bestFor: 'Bold local brands, events, food, anything that should be remembered at a glance.',
@@ -124,6 +144,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'sticker-pop',
+    group: 'bold',
     name: 'Sticker Pop',
     mood: 'Cheerful and tactile: thick outlines, solid sticker-like shadows, two bright colors.',
     bestFor: 'Children, pets, creative shops, friendly neighborhood businesses.',
@@ -138,6 +159,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'clinical-calm',
+    group: 'calm',
     name: 'Clinical Calm',
     mood: 'Clean, reassuring, plainly spoken. Nothing to worry about here.',
     bestFor: 'Clinics, dental and medical practices, care services.',
@@ -152,6 +174,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'evening-formal',
+    group: 'dark',
     name: 'Evening Formal',
     mood: 'Candlelight and engraved invitations. Dark, slow, elegant.',
     bestFor: 'Fine dining, events, jewelry, hotels.',
@@ -166,6 +189,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'control-room',
+    group: 'dark',
     name: 'Control Room',
     mood: 'An instrument panel: dense, exact, numbers first.',
     bestFor: 'Dashboards, operations tools, technical services.',
@@ -180,6 +204,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'quiet-luxury',
+    group: 'calm',
     name: 'Quiet Luxury',
     mood: 'Nearly nothing, perfectly placed. Thin letters with small feet, wide margins, no lines.',
     bestFor: 'High-end services, galleries, architects, private practices.',
@@ -194,6 +219,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'cobalt-wash',
+    group: 'calm',
     name: 'Cobalt Wash',
     mood: 'The whole page breathes one color. Fresh, modern, unmistakable.',
     bestFor: 'Young brands and products that want to be recognized by color alone.',
@@ -208,6 +234,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'sunlit-studio',
+    group: 'calm',
     name: 'Sunlit Studio',
     mood: 'Morning light in a workshop: golden, open, optimistic.',
     bestFor: 'Makers, cafes, wellness, family businesses.',
@@ -222,6 +249,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'garden-ledger',
+    group: 'nostalgic',
     name: 'Garden Ledger',
     mood: 'A seed catalog: deep green, sturdy letters with small feet, orderly lists.',
     bestFor: 'Garden, food, sustainability, outdoor and craft businesses.',
@@ -236,6 +264,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'vector-horizon',
+    group: 'dark',
     name: 'Vector Horizon',
     mood: 'A flight deck at night: thin lines, a faint grid, capital letters, and one electric color. Precise and forward-looking.',
     bestFor: 'Technology products, engineering firms, anything that sells the future.',
@@ -250,6 +279,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'frontier-gazette',
+    group: 'nostalgic',
     name: 'Frontier Gazette',
     mood: 'A small-town newspaper and a wanted poster: sun-faded paper, heavy capital letters, rust red, and denim blue.',
     bestFor: 'Ranches, outfitters, diners and saloons, craft makers, country inns.',
@@ -264,6 +294,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'galactic-goth',
+    group: 'dark',
     name: 'Galactic Goth',
     mood: 'Deep space in velvet: a violet-black sky full of stars, frosted boxes, royal purple, and one deep red. Dramatic and elegant.',
     bestFor: 'Studios, musicians, tattoo and piercing shops, game and book makers, evening venues.',
@@ -278,6 +309,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'marquee-deco',
+    group: 'dark',
     name: 'Marquee Deco',
     mood: 'A theater front from the 1920s: black and gold, even capital letters, square corners, and a light from above.',
     bestFor: 'Theaters, cocktail bars, hotels, jewelers, events with a sense of occasion.',
@@ -292,6 +324,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'motel-neon',
+    group: 'nostalgic',
     name: 'Motel Neon',
     mood: 'Night on an old California highway: a near-black blue page, a warm rose pink like a lit sign, tall elegant letters, and a faint film grain. Wistful and cinematic.',
     bestFor: 'Musicians, photographers, vintage shops, bars and diners, writers, anything that trades on nostalgia.',
@@ -306,6 +339,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'ocean-drive',
+    group: 'bold',
     name: 'Ocean Drive',
     mood: 'A 1980s beach city: pale pastel walls, a deep flamingo pink, a touch of turquoise, and thin clean letters. Breezy and stylish.',
     bestFor: 'Hotels, salons, boutiques, cocktail bars, travel, events.',
@@ -320,6 +354,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'mall-sunset',
+    group: 'bold',
     name: 'Mall Sunset',
     mood: 'A 1980s dream of the future: a violet night, hot magenta and cyan, a grid of lines, and wide capital letters. Playful and unreal.',
     bestFor: 'Music, games, streetwear, retro events, creative studios.',
@@ -334,6 +369,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'quiet-orbit',
+    group: 'calm',
     name: 'Quiet Orbit',
     mood: 'A bright, still morning in space: a near-white page with a cool tint, one calm indigo, a few faint stars, and soft round shapes. Smooth and modern.',
     bestFor: 'Software, science and education, consultancies, anything that should feel clear and forward-looking.',
@@ -348,6 +384,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'steady-steps',
+    group: 'calm',
     name: 'Steady Steps',
     mood: 'A soft mint page with a calm green-teal, friendly round letters, clear buttons, and plenty of room. Encouraging and easy to return to every day.',
     bestFor: 'Programs that people follow over weeks: coaching, therapy and recovery support, habit and health programs, courses.',
@@ -362,6 +399,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'malibu-sunset',
+    group: 'nostalgic',
     name: 'Malibu Sunset',
     mood: 'The Pacific coast at the end of the day: pale sand, a coral sun, a touch of ocean teal, and easy round letters. Sunlit and unhurried.',
     bestFor: 'Surf and swim shops, beach rentals, wellness studios, cafes, coastal real estate, travel.',
@@ -376,6 +414,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'miami-beach-deco',
+    group: 'nostalgic',
     name: 'Miami Beach Deco',
     mood: 'A sun-warmed hotel front from the 1930s: cream walls, soft coral, a line of sea green, capital letters with air between them, and clean thin lines. Warm and relaxed, with a quiet nod to Art Deco.',
     bestFor: 'Hotels and guest houses, restaurants, spas, galleries, event venues.',
@@ -390,6 +429,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'vegas-modern',
+    group: 'dark',
     name: 'Vegas Modern',
     mood: 'A new resort at night: a black page, warm gold, glass boxes, a single light from above, and large confident letters. Sleek and impressive.',
     bestFor: 'Venues, shows, restaurants, luxury services, product launches, anything that should feel like an arrival.',
@@ -404,6 +444,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'smoky-mountain-autumn',
+    group: 'nostalgic',
     name: 'Smoky Mountain Autumn',
     mood: 'The ridges in October: a warm parchment page, burnt orange leaves, deep evergreen, bookish letters, and a soft morning haze. Calm and rooted.',
     bestFor: 'Cabins and lodges, outfitters, farms and orchards, craftspeople, local guides, churches and community groups.',
@@ -418,6 +459,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'childhood-nostalgia',
+    group: 'nostalgic',
     name: 'Childhood Nostalgia',
     mood: 'A small-town living room in the 1980s, remembered kindly: wood-brown, harvest gold, a soft lamp-lit page, friendly letters, and a little grain like an old photograph. Warm and safe.',
     bestFor: 'Family businesses, diners, thrift and antique shops, memoirs and family histories, anything that says “you are welcome here”.',
@@ -432,6 +474,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'long-conversation',
+    group: 'dark',
     name: 'Long Conversation',
     mood: 'A dark studio late at night: warm amber light, a deep red, sturdy plain letters, and plenty of room to read. Curious and unhurried.',
     bestFor: 'Podcasts and interviews, writers, gyms and martial-arts schools, comedy, long reads.',
@@ -446,6 +489,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'before-dawn',
+    group: 'dark',
     name: 'Before Dawn',
     mood: 'The road at five in the morning: a near-black page, one hard orange like a safety vest, heavy capital letters, and square edges. Stripped down and relentless.',
     bestFor: 'Coaches and trainers, endurance events, gyms, anyone whose message is discipline.',
@@ -460,6 +504,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'mountain-rhinestone',
+    group: 'nostalgic',
     name: 'Mountain Rhinestone',
     mood: 'A big-hearted stage in the hills: warm cream, a bright rose pink, a butterfly yellow, round generous shapes, and elegant letters. Joyful and kind.',
     bestFor: 'Charities and reading programs, music and theater, bakeries, salons, family attractions.',
@@ -474,6 +519,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'field-manual',
+    group: 'calm',
     name: 'Field Manual',
     mood: 'A printed manual: a paper-white page, black ink, one olive green, typewriter-style capital headings, thin lines, and numbered parts. Orderly and plain-spoken.',
     bestFor: 'Leadership and training programs, consultancies, veterans’ groups, outdoor and safety courses, checklists and guides.',
@@ -488,6 +534,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'blue-hour-chapel',
+    group: 'nostalgic',
     name: 'Blue Hour Chapel',
     mood: 'An old photograph of a summer that is over: sun-faded cream, dusty blue, a faded red, tall elegant letters, and soft grain. Glamorous and sad at once.',
     bestFor: 'Musicians, wedding and portrait photographers, florists, vintage clothing, poetry and memoir.',
@@ -502,6 +549,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'woody-creek-winter',
+    group: 'nostalgic',
     name: 'Woody Creek Winter',
     mood: 'A writer’s kitchen table in the Rockies: a snow-white page, weathered wood brown, a red like a typewriter ribbon, and typewriter-style headings. Personal and a little unruly.',
     bestFor: 'Writers and journalists, small presses, newsletters, bars, ranch and mountain businesses.',
@@ -516,6 +564,7 @@ export const DIRECTIONS: Direction[] = [
   },
   {
     id: 'desert-fever',
+    group: 'bold',
     name: 'Desert Fever',
     mood: 'A road trip through the desert that went wrong in an interesting way: bleached sand, acid orange, a sour green, very large heavy headings, and boxes like stickers. Loud and a little unhinged.',
     bestFor: 'Zines, bands, bars, street food, festivals, art projects.',

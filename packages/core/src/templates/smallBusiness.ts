@@ -89,7 +89,9 @@ export const SAMPLE_CONTENT: SiteContent = {
 };
 
 /** The region of the page that a preview opens at. A sandboxed preview cannot be scrolled from outside, so the page itself starts there. */
-export const MOCKUP_FOCUSES = ['top', 'facts', 'services', 'fees', 'about', 'contact'] as const;
+export const MOCKUP_FOCUSES = ['top', 'facts', 'services', 'fees', 'about', 'contact', 'buttons', 'box'] as const;
+/** The two close-ups: one part of the page and nothing else. They serve the small pictures on a card; the others are regions of the page. */
+export const MOCKUP_CLOSE_UPS = ['buttons', 'box'] as const;
 export type MockupFocus = (typeof MOCKUP_FOCUSES)[number];
 
 export interface MockupInput {
@@ -402,9 +404,25 @@ body[data-signature="corner-tag"] .tag { display: inline-block; background: var(
 
 /* Preview regions: start the page at the section where the current change shows. */
 body[data-focus]:not([data-focus="top"]) { display: block; min-height: 0; }
-body[data-focus]:not([data-focus="top"]) .site-header, body[data-focus]:not([data-focus="top"]) .hero { display: none; }
+body[data-focus]:not([data-focus="top"]) .site-header, body[data-focus]:not([data-focus="top"]):not([data-focus="buttons"]) .hero { display: none; }
 body[data-focus="services"] .facts, body[data-focus="fees"] .facts, body[data-focus="about"] .facts, body[data-focus="contact"] .facts { display: none; }
 body[data-focus="about"] .services, body[data-focus="contact"] .services, body[data-focus="contact"] .about { display: none; }
+
+/* Close-ups, for the small pictures on a card. A whole region shrunk to card size left the changed part out of the picture
+   or made it too small to see: four cards for the button's look were the same picture, without a button in it (finding U2-08,
+   measured 2026-11-14). A close-up shows one part and nothing else.
+   "buttons": the line above the headline, the main button, and the link beside it, on the first screen's background. */
+body[data-focus="buttons"] main > :not(.hero), body[data-focus="buttons"] .site-footer, body[data-focus="buttons"] .hero-media,
+body[data-focus="buttons"] .hero h1, body[data-focus="buttons"] .hero .lede, body[data-focus="buttons"] .hero-facts { display: none; }
+body[data-focus="buttons"] .hero { min-height: 100vh; padding-block: var(--space-5); display: grid; align-content: center; }
+body[data-focus="buttons"] .hero-grid, body[data-focus="buttons"] .hero-copy, body[data-focus="buttons"] .hero-sub { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); border: 0; margin: 0; max-width: none; text-align: left; justify-items: start; }
+body[data-focus="buttons"] .hero-copy, body[data-focus="buttons"] .hero-sub { padding: 0; }
+body[data-focus="buttons"] .hero .actions { justify-content: flex-start; align-items: center; }
+body[data-focus="buttons"] .hero .actions .btn { flex: 0 0 auto; width: auto; }
+/* "box": the one box of the "about" part. */
+body[data-focus="box"] main > :not(.about), body[data-focus="box"] .site-footer, body[data-focus="box"] .about-grid > :first-child { display: none; }
+body[data-focus="box"] .about { padding-block: var(--space-5); margin: 0; }
+body[data-focus="box"] .about-grid { display: block; }
 body[data-focus="fees"] .services .section-head, body[data-focus="fees"] .services .service-list { display: none; }
 body[data-focus="fees"] .fees { margin-top: 0; }
 

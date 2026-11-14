@@ -727,6 +727,10 @@ export const useStudio = create<StudioState>((set, get) => {
         });
       }
       set({ ready: true });
+      // Another tab may have saved while this one was still opening (the page's database can take seconds to answer). This
+      // tab holds the copy it read at the start; it must not show that older project under "Saved". It stops saving and
+      // says so, as it does when another tab saves later (found on 2026-11-14 by writing the saving table).
+      if (get().saved !== 'held' && storedCopyChangedElsewhere()) stopForOtherTab();
       if (storeOnceOpen) {
         storeOnceOpen = false;
         void saveNow(true);

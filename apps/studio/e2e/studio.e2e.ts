@@ -312,7 +312,7 @@ describe('Studio: the Step flow keeps the design the person chose', () => {
     expect(project.direction).toBe('midnight-aurora');
     expect(Object.keys(project.decisions)).toHaveLength(STEPS.length);
     expect(Object.values(project.decisions).every((d) => d.kind === 'kept')).toBe(true);
-    expect(labels.filter((l) => l === 'Keep my design and continue').length).toBeGreaterThan(3);
+    expect(labels.filter((l) => l === 'Keep “Your design now” and continue').length).toBeGreaterThan(3);
     expect(await page.locator('.summary-main').innerText()).toContain(`You have decided ${STEPS.length} of ${STEPS.length} Steps`);
     expect(errors).toEqual([]);
     // The walk through every Step asked no outside address for anything.
@@ -365,7 +365,7 @@ describe('Studio: the Step flow keeps the design the person chose', () => {
     await waitForStep(page, 'Menu (navigation)');
     await page.locator('label.option', { hasText: 'Links in a left column' }).click();
     expect(await mainButton(page)).toBe('Pick “Links in a left column” and continue');
-    await page.locator('.rail a', { hasText: 'First screen' }).click();
+    await page.locator('.rail a[href="#hero"]').click();
     await waitForStep(page, 'First screen');
     expect(await page.locator('.banner').innerText()).toContain('On the Step “Menu (navigation)” you looked at “Links in a left column” but did not pick it. Your design did not change.');
     await settle(page);
@@ -379,7 +379,7 @@ describe('Studio: the Step flow keeps the design the person chose', () => {
     await page.locator('label.option', { hasText: 'Deep red' }).click();
     await page.getByRole('button', { name: 'Show small variations of “Deep red”' }).click();
     const titles = await page.locator('.option .option-title').allInnerTexts();
-    expect(titles[0]).toContain('As it was');
+    expect(titles[0]).toContain('Starting point');
     expect(titles.join(' | ')).toMatch(/Color \(hue\): a little toward (orange|pink)/);
     expect(titles.join(' | ')).not.toMatch(/: (less|more)(\s|$)/);
     await page.getByRole('button', { name: 'Back to the standard Options' }).click();
@@ -1828,7 +1828,8 @@ describe('Studio: what the third round of campaign 4 found', () => {
     for (const viewport of [{ width: 320, height: 480 }, { width: 640, height: 360 }]) {
       const { context, page } = await open({ viewport, storage: { [LOCAL_KEY]: '{"savedAt":"x","mark":"y","project":"{not json' } });
       await page.locator('.banner.hold').waitFor();
-      await page.getByRole('button', { name: 'Start from Marquee Deco' }).click();
+      // (A Direction of the first group: on a narrow window only that group is open.)
+      await page.getByRole('button', { name: 'Start from Soft Daylight' }).click();
       await page.waitForSelector('.cards');
       await page.locator('.actions.sticky .primary').click();
       await page.locator('.top').getByRole('button', { name: 'Undo', exact: true }).click();
@@ -1847,6 +1848,172 @@ describe('Studio: what the third round of campaign 4 found', () => {
       await expect.poll(inside, { timeout: 3000, message: `${viewport.width}x${viewport.height}` }).toBe(true);
       await context.close();
     }
+  });
+});
+
+describe('Studio: a person can choose by eye (findings U2-08, U2-06, U3-05; measured 2026-11-14)', () => {
+  it('gives the cards of "Button style", "Corners", "Main color", and "Box edges and shadows" a close-up that shows the part the Step changes', async () => {
+    const { context, page } = await open({ hash: '#button-finish', storage: { [LOCAL_KEY]: envelope(JSON.parse(JSON.stringify(applyDirection(createProject('Close-ups'), 'soft-daylight')))) } });
+    for (const [hash, part] of [['#button-finish', 'buttons'], ['#radius', 'buttons'], ['#accent', 'buttons'], ['#elevation', 'box']] as const) {
+      await page.goto(`${pageUrl}${hash}`);
+      await page.waitForSelector('.tiles iframe');
+      // Every card's picture is the close-up; the large preview is not.
+      // (The part is read from the page's own opening tag; the stylesheet names every part.)
+      const parts = await page.evaluate(() => [...document.querySelectorAll('.tiles iframe')].map((frame) => /<body [^>]*data-focus="([a-z]+)"/.exec(frame.getAttribute('srcdoc') ?? '')?.[1] ?? ''));
+      expect([...new Set(parts)], hash).toEqual([part]);
+      expect(/<body [^>]*data-focus="([a-z]+)"/.exec(await page.locator('.large-preview iframe').getAttribute('srcdoc') ?? '')?.[1], hash).not.toBe(part);
+    }
+    // On "Button style" the four pictures used to be the same picture, with no button in it. Each picture now holds the
+    // main button, and no two pictures are alike.
+    await page.goto(`${pageUrl}#button-finish`);
+    await page.waitForSelector('.tiles iframe');
+    const frames = page.locator('.tiles label.option .thumb');
+    const count = await frames.count();
+    expect(count).toBeGreaterThanOrEqual(4);
+    for (let i = 0; i < count; i++) expect(await page.frameLocator('.tiles iframe').nth(i).locator('.hero .actions .btn-primary').isVisible(), `card ${i + 1}`).toBe(true);
+    await page.waitForTimeout(600);
+    const shots: string[] = [];
+    for (let i = 0; i < count; i++) shots.push((await frames.nth(i).screenshot()).toString('base64'));
+    expect(new Set(shots).size).toBe(count);
+    await context.close();
+  });
+
+  it('keeps only the main button in view over the cards, and brings a chosen card to rest above it', async () => {
+    const { context, page } = await open({ hash: '#accent', viewport: { width: 1100, height: 620 }, storage: { [LOCAL_KEY]: envelope(JSON.parse(JSON.stringify(applyDirection(createProject('Bar'), 'soft-daylight')))) } });
+    await page.waitForSelector('.tiles iframe');
+    const bar = page.locator('.actions.sticky');
+    expect(await bar.locator('button').count()).toBe(1);
+    expect((await bar.boundingBox())!.height).toBeLessThan(80);
+    // The ninth card, chosen with its number key, is brought into view; its whole name lies above the bar.
+    await page.locator('#main').focus();
+    await page.keyboard.press('9');
+    await page.waitForTimeout(400);
+    const clear = await page.evaluate(() => {
+      const title = document.querySelector('.option[data-shown] .option-title')!.getBoundingClientRect();
+      const top = document.querySelector('.actions.sticky')!.getBoundingClientRect().top;
+      return title.bottom <= top + 1;
+    });
+    expect(clear).toBe(true);
+    await context.close();
+  });
+
+  it('lists the Directions in four groups; a narrow window opens the first group only, and a link opens another', async () => {
+    const wide = await open({ hash: '#directions' });
+    await wide.page.waitForSelector('.direction');
+    expect(await wide.page.locator('.direction-group > summary h2').allTextContents()).toEqual(['Light and calm', 'Dark and dramatic', 'Warm and nostalgic', 'Bold and playful']);
+    expect(await wide.page.evaluate(() => [...document.querySelectorAll<HTMLDetailsElement>('.direction-group')].map((g) => g.open))).toEqual([true, true, true, true]);
+    await wide.context.close();
+    const narrow = await open({ hash: '#directions', viewport: { width: 375, height: 760 } });
+    await narrow.page.waitForSelector('.direction');
+    const openGroups = (): Promise<boolean[]> => narrow.page.evaluate(() => [...document.querySelectorAll<HTMLDetailsElement>('.direction-group')].map((g) => g.open));
+    expect(await openGroups()).toEqual([true, false, false, false]);
+    await narrow.page.locator('.group-links a', { hasText: 'Dark and dramatic' }).click();
+    expect(await openGroups()).toEqual([true, true, false, false]);
+    await narrow.page.getByRole('button', { name: 'Start from Midnight Aurora', exact: true }).click();
+    await narrow.page.waitForSelector('.cards');
+    await narrow.context.close();
+  });
+
+  it('uses one name for the card of the current values, and one for the card that small variations start from', async () => {
+    const { context, page } = await open({ hash: '#accent', storage: { [LOCAL_KEY]: envelope(JSON.parse(JSON.stringify(applyDirection(createProject('Names'), 'soft-daylight')))) } });
+    await page.waitForSelector('.tiles iframe');
+    expect(await page.locator('.option-title').first().innerText()).toContain('Your design now');
+    expect(await mainButton(page)).toBe('Keep “Your design now” and continue');
+    await page.getByRole('button', { name: /^Show small variations/ }).click();
+    expect(await page.locator('.option-title').first().innerText()).toContain('Starting point');
+    expect(await mainButton(page)).toBe('Keep the starting point and continue');
+    expect(await page.locator('main, aside').allInnerTexts().then((texts) => texts.join(' '))).not.toMatch(/my design|As it was/);
+    await context.close();
+  });
+});
+
+describe('Studio: the saving table, cells that had no test (docs/reference/saving-table.md)', () => {
+  const state = (page: Page): Promise<string> => page.locator('.save-state').innerText();
+  const toBackground = (page: Page): Promise<void> =>
+    page.evaluate(() => {
+      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+  /** Ask the page whether it wants the browser's "leave this page?" question, as a closing page is asked. */
+  const asksBeforeLeaving = (page: Page): Promise<boolean> =>
+    page.evaluate(() => {
+      const event = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(event);
+      return event.defaultPrevented;
+    });
+
+  it('opening, and another tab saves meanwhile: the tab does not say "Saved" over a project that storage no longer holds', async () => {
+    // This tab's page database answers after 1.5 seconds, so the tab is still opening while the second tab saves.
+    const { context, page } = await open({ storage: { [LOCAL_KEY]: envelope(worked('Shared project')) }, pageDb: { doc: null, getDelay: 1500 }, dontWaitUntilOpen: true });
+    const other = await context.newPage();
+    await other.goto(pageUrl);
+    await other.waitForSelector('.cards');
+    await other.locator('#project-name').fill('Saved by the other tab while the first one opened');
+    await settle(other);
+    await page.waitForSelector('main:not(.loading)');
+    await settle(page);
+    expect((await stored(page))?.name).toBe('Saved by the other tab while the first one opened');
+    // Either the tab shows the project that storage holds, or it says that it is not saving. It must not show the older
+    // project under "Saved".
+    const shown = await page.locator('#project-name').inputValue();
+    const status = await state(page);
+    expect(shown === 'Saved by the other tab while the first one opened' || status.startsWith('Not saving'), `shown “${shown}”, status “${status}”`).toBe(true);
+    await context.close();
+  });
+
+  it('saved, and the tab goes to the background: nothing is written and nothing is kept', async () => {
+    const { context, page } = await open({ storage: { [LOCAL_KEY]: envelope(worked('Quiet')) } });
+    await page.waitForSelector('.cards');
+    await settle(page);
+    const before = await rawStored(page, LOCAL_KEY);
+    await toBackground(page);
+    await settle(page);
+    expect(await rawStored(page, LOCAL_KEY)).toBe(before);
+    expect(await keptCopies(page)).toEqual([]);
+    await context.close();
+  });
+
+  it('a save failed, and the tab goes to the background or is asked to close: the work stays on screen, the status stays true, and the browser is asked to ask', async () => {
+    const { context, page } = await open({ storage: { [LOCAL_KEY]: envelope(worked('A')) } });
+    await page.waitForSelector('.cards');
+    expect(await fillStorage(page, 0)).toBe(true);
+    await page.locator('#project-name').fill('A, with a longer name that does not fit');
+    await settle(page);
+    expect(await state(page)).toContain('Cannot save here');
+    await toBackground(page);
+    await settle(page);
+    expect(await state(page)).toContain('Cannot save here');
+    expect(await page.locator('#project-name').inputValue()).toBe('A, with a longer name that does not fit');
+    expect((await stored(page))?.name).toBe('A');
+    // Neither saved nor kept: the Studio asks the browser to put its "leave this page?" question.
+    expect(await asksBeforeLeaving(page)).toBe(true);
+    expect(await state(page)).toContain('Cannot save here');
+    // With room again, the same request to close saves the work, and no question is needed.
+    await page.evaluate(() => window.localStorage.removeItem('test.capacity'));
+    expect(await asksBeforeLeaving(page)).toBe(false);
+    expect((await stored(page))?.name).toBe('A, with a longer name that does not fit');
+    await context.close();
+  });
+
+  it('not saving, and the other tab saves a second time: "Keep this tab’s copy" keeps the other tab’s newest copy, not its first', async () => {
+    const { context, page } = await open({ storage: { [LOCAL_KEY]: envelope(worked('Shared project')) } });
+    await page.waitForSelector('.cards');
+    const other = await context.newPage();
+    await other.goto(pageUrl);
+    await other.waitForSelector('.cards');
+    await other.locator('#project-name').fill('Other tab, first save');
+    await page.locator('.banner.hold').waitFor();
+    await page.locator('#project-name').fill('This tab’s work');
+    await other.locator('#project-name').fill('Other tab, second save');
+    await settle(other);
+    await page.locator('.banner.hold').getByRole('button', { name: 'Keep this tab’s copy' }).click();
+    await settle(page);
+    expect((await stored(page))?.name).toBe('This tab’s work');
+    const kept = (await keptCopies(page)).map((copy) => (JSON.parse(copy.text) as Project).name);
+    expect(kept).toContain('Other tab, second save');
+    await context.close();
   });
 });
 
@@ -1989,7 +2156,7 @@ describe('Studio: its own interface', () => {
     const { context, page } = await open({ hash: '#nav' });
     await waitForStep(page, 'Menu (navigation)');
     await page.locator('label.option', { hasText: 'Links in a left column' }).click();
-    await page.locator('.rail a', { hasText: 'First screen' }).click();
+    await page.locator('.rail a[href="#hero"]').click();
     const banner = page.locator('.banner');
     await banner.waitFor();
     const box = (await banner.boundingBox())!;
@@ -2098,7 +2265,7 @@ describe('Studio: layout', () => {
   it('carries a change of the preview width to the large preview and to every card’s picture, and leaves a fixed-width Step’s cards alone', async () => {
     // The cards' pictures follow the large preview at lower priority (measured 2026-11-14: together they held the page for
     // 70 to 110 milliseconds). They must still arrive, all of them, and the grid of cards with them.
-    const { context, page } = await open({ hash: '#accent', storage: { [LOCAL_KEY]: envelope(JSON.parse(JSON.stringify(worked('Width')))) } });
+    const { context, page } = await open({ hash: '#typeface', storage: { [LOCAL_KEY]: envelope(JSON.parse(JSON.stringify(worked('Width')))) } });
     await page.waitForSelector('.tiles iframe');
     const widths = (): Promise<{ large: string; cards: string[]; grid: string | null }> =>
       page.evaluate(() => ({
@@ -2112,12 +2279,12 @@ describe('Studio: layout', () => {
       expect(await stage.locator('button[aria-pressed="true"]').innerText(), 'the pressed button answers at once').toBe(name);
       await expect.poll(widths, { timeout: 4000 }).toEqual({ large: px, cards: [px], grid: device });
     }
-    // A Step that draws its cards at a width of its own ("Corners": 440 pixels) keeps that width; only the large preview changes.
+    // A Step that draws its cards at a width of its own ("Corners": a close-up of the button, 280 pixels) keeps that width; only the large preview changes.
     await page.goto(`${pageUrl}#radius`);
     await waitForStep(page, 'Corners');
     await page.waitForSelector('.tiles iframe');
     await stage.getByRole('button', { name: 'Tablet', exact: true }).click();
-    await expect.poll(widths, { timeout: 4000 }).toEqual({ large: '768px', cards: ['440px'], grid: 'detail' });
+    await expect.poll(widths, { timeout: 4000 }).toEqual({ large: '768px', cards: ['280px'], grid: 'detail' });
     await context.close();
   });
 });
