@@ -1,6 +1,8 @@
 # Plan: "Refraction" — your personal design studio and fitter for LLM-built frontends
 
-"Refraction" is a placeholder name (the eye-exam procedure). You can rename it at any time.
+**Version 2, 2026-11-14.** Version 1 (2026-11-13) is in the repository's history. Section 10 lists what changed and why. "Refraction" is a placeholder name (the eye-exam procedure). You can rename it at any time.
+
+**How to read this plan.** Sections 1 to 3 say why the tool exists. Section 4 is the map of the forest: every part of the tool and its state today. Sections 5 to 7 say what it is built from. Section 8 holds the milestones. Section 9 lists what can go wrong. Each statement about the present says "built", "being built", or "not built".
 
 ## 1. Context
 
@@ -12,238 +14,222 @@
 - **The Studio** (a web app) fixes the decision problem. You pick; it writes the **Prescription**.
 - **The Fitter** (a Claude Code plugin) fixes the feedback-loop problem. It makes Claude build from the Prescription, look at the rendered result, measure it, and repair it before reporting.
 
-**Who it is for.** You alone. No licensing, accounts, payments, or marketing. You own what you build with it. The tool earns nothing by itself; it raises the quality of what you sell. Therefore the plan puts a real, sellable project through the tool as early as possible (milestone M8).
+**Who it is for.** You alone. No licensing, accounts, payments, or marketing. The tool earns nothing by itself; it raises the quality of what you sell. Therefore the plan puts a real, sellable project through the tool as early as possible (milestone M8).
 
-**An honest market note.** Lovable, Google Stitch, v0, and Claude now ship design features, and free "anti-slop" skills are popular. The research found no product that does one decision at a time, on your own content, with a measured fit check afterward. For a personal tool, competitors do not matter; their open formats help us (section 6).
+**Where it stands today, in one paragraph.** The Studio's choosing half is built: 35 starting looks, 23 decisions, a live preview, reliable saving, and a project file. The Studio does not yet hand you anything you can build from (the Prescription is milestone M6), and the Fitter does not exist (M7). Milestone M4 is open and waits for one thing that only you can do: try the Studio (`docs/trial-guide.md`).
+
+**Your standing wish (2026-11-14).** Simple, effective, useful features; no giant heap of slop. Every part of this plan is held to that: each feature in its smallest useful form, and a plain statement of what was left out.
 
 ## 2. The metaphor: the eye exam and the fitting
 
-| Eye care | Refraction |
-|---|---|
-| "Which is clearer, 1 or 2?" | Each **Step** shows 3–4 **Options** |
-| Each comparison changes one lens only | Each Step changes one design variable; all else stays fixed |
-| You read the same letter chart every time | Every Option renders on the same **Mockup**, with your real content |
-| You need no knowledge of optics | You need no design vocabulary; each Step teaches its concept in plain words |
-| No lens that harms you is ever offered | No Option that fails an accessibility floor is ever offered |
-| The written prescription | The **Prescription**: a Markdown prompt plus token files |
-| The lab grinds the lenses | Claude Code builds the frontend |
-| The optician fits the glasses, has you read the chart again, and adjusts | The **Fitter** renders the build, measures it against the Prescription, and repairs |
+| Eye care | Refraction | State |
+|---|---|---|
+| You try on a few finished frames first | A **Direction**: a complete starting look | built (35) |
+| The same frame in another color | A **Skin**: pre-built colors and color fades for a Direction | being built |
+| "Which is clearer, 1 or 2?" | Each **Step** shows several **Options** | built (23 Steps) |
+| Each comparison changes one lens only | Each Step changes one design variable; all else stays fixed | built |
+| You read the same letter chart every time | Every Option renders on the same **Mockup** | built with sample content; your own content is M5 |
+| You need no knowledge of optics | Each Step teaches its concept in plain words | built |
+| Coatings and extras: anti-glare, a case | An **Overlay**: a small helper over the page (a tooltip, an "Are you sure?" question) | being built |
+| No lens that harms you is offered | Contrast checks warn or repair, as you choose | built |
+| The written prescription | The **Prescription**: a Markdown prompt plus token files | not built (M6) |
+| The optician fits the glasses and has you read the chart again | The **Fitter** renders the build, measures it, and repairs | not built (M7) |
 
-This complements your restaurant metaphor: the restaurant describes the product you design; the eye exam describes how the tool obtains and verifies each decision. In your forest terms: a Step is a tree, a design dimension is a species, section 4 maps the forest, and section 9 lists what can go wrong.
+In your forest terms: a Step is a tree, a design dimension is a species, section 4 maps the forest, and section 9 lists what can go wrong.
 
-## 3. What the best human-built frontends do (research summary)
+## 3. What the tool rests on
 
-Full findings, with sources and the claims I saw only as search snippets, go into `docs/research/` at M1. The pattern across Linear, Stripe, Vercel, Apple, GOV.UK, Shopify Polaris, IBM Carbon, Radix, Superhuman, Raycast, and the published rule sets of Emil Kowalski, Jakub Krehel, and Vercel:
+### 3.1 What the best human-built frontends do
+The pattern across the published rule sets and design systems that were read (GOV.UK, Radix, Vercel, Emil Kowalski, Jakub Krehel) and the company posts seen only as search summaries (Linear, Stripe, Apple, and others):
 
-1. **A few inputs generate the whole system.** Linear derives every theme color from three inputs (base, accent, contrast) in a perceptual color space. Stripe's palette guarantees contrast by construction. → The Studio derives full token sets from a few picks, in OKLCH, with contrast guaranteed.
-2. **Every value has a job.** Radix assigns each of 12 color steps a role (backgrounds, component states, borders, solid fills, text). → Tokens are semantic, never raw.
-3. **Bespoke feel lives in details that nobody asks for.** Tabular numerals, balanced headings, concentric corner radii, layered tinted shadows, press feedback of 0.96–0.97 scale, ease-out curves under 300 ms, no animation on actions done hundreds of times a day, spinners that wait before they appear, focus rings that sticky headers never cover, state kept in the URL. → The **craft layer** (section 4.3) writes about 50 such rules into every Prescription automatically.
-4. **Restraint and one signature move.** Each exemplar has one memorable element and little else decorative. → One signature-element Step; the anti-default warnings.
-5. **The exemplars disagree** (dense versus generous; springs versus none; sentence case versus title case). → Those disagreements are exactly the Steps: each becomes a pick, not a rule.
+1. **A few inputs generate the whole system.** → The Studio derives every color and size from a few picks, in a perceptual color space (OKLCH), with contrast measured on the colors as they are drawn.
+2. **Every value has a job.** → Tokens are named for their role, never raw.
+3. **Bespoke feel lives in details that nobody asks for** (even-width numerals, balanced headings, corner radii that nest, press feedback, short ease-out motion). → The **craft layer** writes such rules into every Prescription automatically (M5).
+4. **Restraint and one signature move.** → One Step for "one special touch"; warnings for looks that many AI-made pages share.
+5. **The exemplars disagree** (dense versus generous; motion versus none). → Those disagreements are exactly the Steps.
 
-Caveat: most craft rules are expert opinion, not tested evidence. The measured items are contrast thresholds, target sizes, and response-time limits. The catalog labels each rule's evidence grade, as your living reference does.
+### 3.2 The research base
+The repository holds a knowledge base (`docs/knowledge/`): 138 records on perception, attention, memory, typography, color, first impressions, trust, and satisfaction. Each record states a rule, its mechanism, how to check it, its sources, and an evidence grade from A (a law, a standard, or a replicated experiment) to D (folklore). Research helpers wrote the records; nobody has reviewed them, and many rest on abstracts or search summaries. On 2026-11-14 four more parts were commissioned: language and reading; the mathematics of proportion, scale, and color; eye-tracking and the science of visual preference; Japanese minimalism and design.
+
+**What research can and cannot do.** It can rule out bad choices: text too small, lines too long, contrast too low, targets too small. It cannot prove that a look is beautiful; that stays your judgment. The tool therefore uses research in two ways only:
+- as **research rules**: checks that a program can measure, each with its record and its grade, shown on the Summary as "holds" or "does not hold";
+- as the plain-language teaching text of a Step.
+A rule graded C or D is shown as opinion or folklore, never as science.
 
 ## 4. How the tool works (map of the forest)
 
-### 4.1 Rules that hold at every Step
+### 4.1 The path through the Studio
+
+| # | Screen | What you do there | State |
+|---|---|---|---|
+| 1 | Directions | Pick a complete starting look from four groups (light and calm; dark and dramatic; warm and nostalgic; bold and playful), or let the Studio compose six more at random, or start plain | built |
+| 1a | Skin | On a Direction's card, pick one of its pre-built skins: other colors, with or without a color fade in the headline | being built |
+| 2 | Steps | 23 Steps in two stages (6 for layout, in gray; 17 for look and feel). On each: compare cards, pick one, fine-tune with sliders, ask for small variations, write a reason, decide later, undo, or put the Step back | built |
+| 3 | Overlays | Switch small helpers on or off; the preview draws each one open, in your design | being built |
+| 4 | Summary | Read every Decision back; see the contrast notes and the research rules; download or open a project file; manage kept copies | built, except the research rules |
+| 5 | Export | Receive the Prescription | not built (M6) |
+
+### 4.2 Rules that hold at every Step
 1. One variable per Step. Apples to apples.
-2. Structure before decoration. The Mockup stays grayscale until Stage 3.
-3. Every Option carries plain-language text: what it is, choose it when, its risk, and which exemplar uses it.
-4. The convention for your audience is the marked default ("intuitive" means familiar to that audience). A departure is a "bold choice"; the tool recommends spending bold choices in one place.
-5. Floor checks run before display: contrast (4.5:1 text; 3:1 large text and controls), target size (24 px floor; 44 px default), focus visibility. The tool repairs or withholds a failing Option.
-6. Anti-default warnings warn; they never forbid. Your rule governs: "the brief always wins." Each warning names a replacement.
-7. Each Option previews at phone and desktop width, and in light and dark when you picked both.
-8. Four actions: **Pick**; **Closer to this one** (new Options near the picked one, by continuous variation of its parameters; repeatable); **Skip** (takes the default; recorded as defaulted); **Back** (reopens a Step; the tool re-checks later Decisions and flags each conflict).
-9. The tool records each **Decision**: picked Option, rejected Options, reason.
+2. Structure before decoration: layout Steps show the page in gray.
+3. Every Option carries plain-language text: what it is, when to pick it, and what to watch for. A source and an evidence grade stand behind every Step (hard rule 5). An exemplar is named only where a research record supports it.
+4. Plain words (decision D38): a trade word appears only in round brackets, as a word to learn. One name per thing; a test refuses a second name.
+5. A card's small picture shows the part of the page that the Step changes, at close range where needed. Where a difference stays small at card size, the Step says so.
+6. Contrast checks are your choice per project (decision D13): Off, Warn me, or Fix for me. The Studio never calls its output "compliant" or "accessible"; it states what it checked and what a person must still check.
+7. Warnings warn; they never forbid. "The brief always wins."
+8. The Studio records each **Decision**: the Option, the rejected Options, your reason. It never changes a Decision silently; when it removes or changes something, it says so and offers the way back.
+9. Every preview is a locked frame with no script (hard rule 6).
 
-### 4.2 Stages and Steps (about 30 Steps per template)
+### 4.3 Stages and Steps
 
-| Stage | Steps | Seed content |
+| Stage | Content | State |
 |---|---|---|
-| 1. Brief (words only) | product and audience · the one primary job · real content · brand tensions as either/or picks · anti-goals · references. The tool refuses "modern and clean" and asks a concrete either/or. | Your brief template §§2–5; 24-question intake |
-| 2. Structure (grayscale) | page type · navigation · layout skeleton · content width · what the eye finds first · density | Your navigation and layout tables; the plugin's 5 structural forks |
-| 3. Feel | typeface personality · heading treatment · base size and scale · number style · neutral temperature · accent strategy · light, dark, or both · radius · elevation language · border weight · icon set · one signature element | Exemplar research; your type, color, and style catalogs |
-| 4. Behavior | motion budget · curve character · loading style · mutation style (confirm versus optimistic with undo) · form validation · focus style · empty and error states · voice, capitalization, error tone | Exemplar research; your state lists and error formula |
-| 5. Checks | automatic accessibility and intuitiveness report; each check that a machine cannot perform becomes an acceptance criterion | Your 11-question protocol; WCAG 2.2 |
-| 6. Read-back and export | the tool reads back every Decision (your standing rule), then exports | ClearPath selection record |
+| 1. Brief | your product, audience, primary job, and real content; brand tensions as either/or picks | not built (M5, first item: your own words in every preview) |
+| 2. Structure | menu · first screen · list of services · page width · what stands out first · spacing | built |
+| 3. Feel | letter style · heading style · text size · number style · tint of the grays · main color · amount of color · light or dark · text contrast · background of the first screen · corners · box edges and shadows · line thickness · button style · headline color · one special touch · motion | built |
+| 4. Behavior | **Overlays** (first set of six: tooltip, "Are you sure?" question, notice after an action, error message beside a field, loading placeholder, main button that stays in view on a phone) | being built |
+|  | the rest of behavior: motion curves, focus style, empty and error states, voice and tone | not built (M5) |
+| 5. Checks | contrast notes (built); **research rules** (being built); the list of what no machine checked (built for contrast) | partly built |
+| 6. Read-back and export | read-back on the Summary (built); export (M6) | partly built |
 
-### 4.3 The Prescription (export bundle), in three layers
-1. **Your Decisions:** each pick with its rejected Options and exact token values.
-2. **The craft layer (automatic):** about 50 invisible-detail rules, each parameterized by your Decisions (for example, your motion budget sets the durations). Written in our own words, with sources cited.
-3. **The floors (automatic, not overridable):**
-   - *Accessibility:* WCAG 2.2 AA criteria as testable acceptance checks. The tool never claims "compliant"; it states what it checked and what a person must still check.
-   - *Security:* no secrets in browser code; the server enforces every permission; database row-level rules on; all input untrusted and never inserted as raw HTML; a Content Security Policy; HTTPS; verify each dependency before installing.
-   - *Search (public pages):* one `h1`; semantic HTML; unique title and meta description; descriptive links; image `alt` and dimensions; canonical URL; Open Graph tags; structured data; content present in delivered HTML.
-   - *Performance:* LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1; sized images; self-hosted fonts with metric-matched fallbacks.
+### 4.4 The Prescription (export bundle), in three layers (M6)
+1. **Your Decisions:** each pick with its rejected Options, your reason, the Skin, the Overlays, and exact token values.
+2. **The craft layer (automatic):** invisible-detail rules, each set by your Decisions, in our own words, with sources and evidence grades.
+3. **The floors (automatic, not overridable):** accessibility checks as testable acceptance criteria; security rules; search rules for public pages; performance limits.
 
-Files: `PRESCRIPTION.md` (your master prompt §12, filled in; it starts at "implement one complete vertical slice" because you already chose the direction), `DESIGN.md` (Google Labs format, checked with its own lint tool), `tokens.json` (Design Tokens 2025.10), `tokens.css`, a shadcn theme file, `mockup.html` (the visual reference), and `FONTS.md` (which open-licensed fonts to self-host, and how).
+Files: `PRESCRIPTION.md`, `DESIGN.md`, `tokens.json`, `tokens.css`, a shadcn theme file, `mockup.html`, and `FONTS.md`.
 
-### 4.4 The Fitter (Claude Code plugin)
-- `/fit-build`: Claude reads the Prescription and builds one screen at a time, starting with a "kitchen sink" page that shows every component in every state.
-- `/fit-check`: scripts render the build at 375, 768, and 1280 px, in each theme, and measure:
-  - *Token fit:* every rendered color, font size, radius, and spacing value must exist in `tokens.json` (read from computed styles, not from keywords in source).
-  - *Reference fit:* side-by-side and pixel-difference against `mockup.html`.
-  - *Accessibility:* axe, a scripted keyboard walk, measured target sizes, 200% zoom, reduced-motion.
-  - *Craft rules:* each machine-checkable rule (for example, no `transition: all`; focus ring visible; tabular numerals on tables).
-  - *States:* every required state reachable and rendered.
-- `/fit-repair`: Claude receives the measured failures plus the screenshots, critiques against your scorecard, repairs the smallest thing, and re-checks. Budget: 3 rounds, then it reports.
-- *Honest receipt:* every report separates "measured," "judged by the model," and "still needs a person" (screen reader, real users). No claim exceeds its evidence.
-- `/fit-suggest`: Claude proposes new Options as catalog records; the Studio imports them only if they pass the schema and the floor checks. (No API key ever sits in the browser.)
+### 4.5 The Fitter (Claude Code plugin) (M7)
+- `/fit-build`: Claude reads the Prescription and builds one screen at a time.
+- `/fit-check`: scripts render the build at 375, 768, and 1280 px and measure token fit, reference fit against `mockup.html`, accessibility, craft rules, and states.
+- `/fit-repair`: Claude receives the measured failures and the screenshots, repairs the smallest thing, and re-checks. Budget: 3 rounds.
+- *Honest receipt:* every report separates "measured", "judged by the model", and "still needs a person".
+- `/fit-suggest`: Claude proposes new Options as Catalog records; the Studio imports them only if they pass the schema and the checks.
 
-This replaces your `luminous-cognitive-ui` plugin, whose checks pass on keywords in source code. I reuse its sound parts: the color math, the five structural forks, and the "honest receipt" idea.
-
-### 4.5 Protection against your own sameness
-Because one person will build many products with one tool, the tool keeps a **taste ledger**: the Decisions of every past project. When a new project repeats a past combination, the Studio says so and offers the nearest unused alternatives.
+### 4.6 Protection against your own sameness (M12)
+A **taste ledger** records the Decisions of every past project. When a new project repeats a past combination, the Studio says so and offers the nearest unused alternatives. The random Directions (built) and the Skins (being built) already widen the range.
 
 ## 5. Templates (Mockup families) and their order
 
-You selected all four kinds. I build them in this order; you can change the order in `DECISIONS.md`.
-1. **Small-business website** (home, inner page, contact or booking form) — the quickest product for you to sell.
-2. **Guided intake flow** (one question per step, summary) — your ClearPath example supplies the content.
-3. **Dense operational app** (table, filters, detail pane, form, schedule) — where LLM output is weakest.
-4. **Consumer or SaaS app** (landing page, onboarding, main screen, settings).
+1. **Small-business website**: the home page is built; an inner page is M5.
+2. **Guided intake flow** (M9).
+3. **Dense operational app** (M10).
+4. **Consumer or SaaS app** (M11). The Direction "Steady Steps" shows a look for such an app on the sample website only; the true app screens come with this Template.
 
-## 6. Form, coding languages, and what we borrow
+## 6. Form, coding languages, and what the tool is built from
 
-**Form.** A web app for the Studio, because the Mockup must be real HTML and CSS. A Claude Code plugin for the Fitter, because Claude Code is your builder. One repository holds both and a shared core.
+**Form.** One repository: `packages/core` (pure TypeScript: Catalog, engine, exporters), `apps/studio` (the web app), `plugin/` (the Fitter, later).
 
-**Stack** (versions checked against the npm registry on 2026-11-13): TypeScript 7.0; React 19.3 + Vite 8.3 (static single-page app); React Aria Components 1.22 for the Studio's own controls; Zustand 5; Zod 4; plain semantic HTML + CSS custom properties for Mockups in a sandboxed iframe; IndexedDB storage plus file export; Vitest 5; Playwright 1.65; axe-core 4.14.
+**Stack as decided.** TypeScript 6.0 (D16) · React 19.3 · Vite 8.3 · native HTML controls (D22) · Zustand 5 · Zod 4 · the Studio's own color math, about 250 lines (D17) · its own fluid-type formula (D30) · browser storage, plus the page database on the private page (D21, D29) · Vitest 5 · Playwright · axe-core 4.14 · Node 22. Versions are pinned exactly, and a version is pinned only 7 days or more after its release (D27). You merged six dependency updates on 2026-11-14 (among them Playwright 1.65.0 and Vite 8.3.7); the records of D27 and D28 must be brought in line with them.
 
-**Borrowed, with licenses verified (all permit your use and your commercial outputs):**
+**In use from others, licenses checked:** Fontsource fonts (MIT; fonts mostly OFL), axe-core (MPL-2.0, unmodified), Playwright, dependency-cruiser. **Planned for the export (M6):** the Design Tokens format, the `DESIGN.md` format and its lint tool, the shadcn theme format. **Decided against:** `apca-w3` (its license prohibits commercial use), `culori`, `utopia-core`, React Aria (unless a control needs it), IndexedDB.
 
-| Need | Source | License |
-|---|---|---|
-| Color math, OKLCH | culori | MIT |
-| Colors generated to hit a target contrast | Adobe Leonardo | Apache-2.0 |
-| Role-based 12-step scales (model and presets) | Radix Colors | MIT |
-| Fluid type and spacing scales | utopia-core | ISC |
-| Text trim and metric-matched fallback fonts | Capsize | MIT |
-| Self-hosted open fonts | Fontsource (fonts mostly OFL) | MIT + per-font |
-| Token validation | Terrazzo parser | MIT |
-| DESIGN.md format and lint | `@google/design.md` (alpha; pinned) | Apache-2.0 |
-| Component markup conventions for Mockups and export | shadcn/ui theme and registry format | MIT |
-| Icons | Lucide (ISC), Tabler (MIT) | permissive |
-| Craft rules (restated in our words, cited) | Vercel Web Interface Guidelines; Emil Kowalski skills; Jakub Krehel skills | MIT |
-| Anti-default rules | Anthropic frontend-design skill; Impeccable (62 rules) | Apache-2.0 (keep notices) |
-| Few-shot critique examples for `/fit-repair` | UICrit dataset | CC-BY-4.0 |
-| Checks | axe-core (MPL-2.0, unmodified), Playwright, html-validate, stylelint, size-limit, dependency-cruiser | permissive |
-
-**Rejected:** `apca-w3` (its license prohibits commercial use; WCAG 2 contrast is the legal standard anyway); Realtime Colors code (non-commercial license); unDraw; unlicensed repositories; open website-generation models on Hugging Face (they generate whole sites and score below the model you already use); open vision models for critique (Claude, already in your loop, is stronger). `tokens.json` and `DESIGN.md` being open standards means your Prescription also works in Stitch, Lovable, v0, and Cursor if you ever want them.
-
-**Where the Studio runs.** During the build I publish each working version as a private page on claude.ai so that you can use it with no setup. At M8 you choose its permanent home: that private page, a free static host with access control, or your own PC.
+**Where the Studio runs.** A private page on claude.ai, republished after each unit of work. At M8 you choose its permanent home.
 
 ## 7. Security and codebase quality of the tool itself
 
-| Threat | Control |
-|---|---|
-| Pasted content or an imported file carries script | Zod validates every import against a versioned schema; text renders as text; no `innerHTML` (lint rule) |
-| The Mockup iframe attacks the app | `sandbox` without `allow-scripts` and without `allow-same-origin`; Mockups contain no script |
-| Injected script from any source | Strict Content Security Policy and Trusted Types wherever the host lets us set headers |
-| A compromised npm package | Few dependencies; exact pins; lockfile and `npm ci`; install scripts off; `npm audit` and Dependabot in CI; Actions pinned by commit hash |
-| Third-party tracking or outage | No CDN scripts, remote fonts, or analytics; all assets self-hosted |
-| Pasted content manipulates the LLM that reads the Prescription | The exporter fences your content as quoted data labeled "content, not instructions" |
-| `/fit-suggest` output is hostile or malformed | It must parse as catalog data and pass floor checks; never rendered as markup |
-
-Codebase rules:
-- **Strictness:** TypeScript `strict` and `noUncheckedIndexedAccess`; ESLint with zero warnings; Prettier.
-- **Boundaries:** `core` (catalog data → pure engine → exporters; no React, no browser APIs) is shared by `studio` and `fitter`. dependency-cruiser rejects any import that points the wrong way.
-- **Catalog as data:** a new Step, Option, or craft rule is a data record. A schema test rejects a record without plain-language text, source, evidence grade, review date, or a passing floor check.
-- **Saved projects:** every file carries a schema version; migrations upgrade old files; a test loads a file from each past version.
-- **Resilience:** error boundaries; autosave after every Decision; "export my project" always available.
-- **The tool obeys what it teaches:** the Studio's own UI uses its own tokens, the craft layer, and the floors. At M4 we choose the Studio's look with the Studio itself.
-
-## 8. Build governance: milestones, backstops, waypoints, red team
-
-**Milestones.** I do not start a milestone until the previous one meets its exit test.
-
-| # | Milestone | Exit test |
+| Threat | Control | State |
 |---|---|---|
-| M0 | Proof experiment: ClearPath built from a vague prompt versus a hand-made Prescription, same model, fresh sessions | Screenshots, axe results, and scorecard reported; you judge blind; you confirm the gate |
-| M1 | Repository skeleton, CI, governance files, research files, session setup script | CI green; boundary rule and hostile-import test in place |
-| M2 | Core engine: Steps, Decisions, dependency re-checks, floor checks, token derivation | Unit tests pass; `core` imports no React |
-| M3 | Preview and Template 1 Mockup | One token change alters exactly one variable (pixel-difference test) |
-| M4 | Step screen with Stages 2 and 3 | You use it on the private page; keyboard-only pass; you pick the Studio's own look |
-| M5 | Full catalog for Template 1; craft layer; floors | End-to-end test walks every Step; axe finds no serious violation in any Option |
-| M6 | Export bundle | Snapshot tests; `tokens.json` and `DESIGN.md` pass their validators |
-| M7 | Fitter: build, check, repair | On a deliberately flawed build, `/fit-check` finds every planted defect and no false blocker |
-| M8 | **Your first real project, end to end** (a small-business site you can sell); hardening | You judge the result; red-team blockers at zero; M0 comparison repeated with a tool-made Prescription |
-| M9–M11 | Templates 2, 3, 4 | Same tests as M5–M7 per template |
-| M12 | Taste ledger; `/fit-suggest` | Repeat-combination warning works across two projects |
+| An opened file carries script or markup | A schema checks every file; text renders as text; a lint rule and a source scan forbid every way to turn text into markup | built; three break-it rounds ran no code and injected no markup |
+| The Mockup frame attacks the Studio | A locked frame with no script | built |
+| An opened file corrupts work or lies | Opening states only what is true, never adds to a Decision, brings no value the Studio cannot set, and keeps a copy of whatever it replaces | built |
+| Work is lost between tabs, at closing, or when storage is full | The saving table (`docs/reference/saving-table.md`): every situation and event, with a test for each cell | built; no judge has retested the newest repairs |
+| A compromised package | Few dependencies; exact pins; install scripts off; Dependabot | built |
+| Third-party tracking | No CDN scripts, remote fonts, or analytics | built |
+| Pasted content manipulates the LLM that reads the Prescription | The exporter fences your content as quoted data | M6 |
 
-**Backstops against drift.**
-- `PLAN.md` (this plan) and `CLAUDE.md` (defined terms, stack, boundaries, "no work outside the current milestone") live in the repository; every session reads both first.
-- `DECISIONS.md` records each departure from the plan, with the reason and your approval. I obtain your approval before I change scope, stack, or a defined term.
-- `PROGRESS.md` states the current milestone, what is done, what is next, and what is unverified, so that a fresh session resumes without guessing.
-- CI is the mechanical backstop: type check, lint, boundary rule, unit and end-to-end tests, axe, bundle budget, dependency audit. I do not mark a milestone complete on a red run, and I do not skip or disable a test to get green.
+**Codebase rules.**
+- Strict TypeScript; lint with zero warnings; the core imports no React and no browser API (a tool enforces it).
+- The Catalog is data: a Step, Option, Direction, Skin, Overlay, craft rule, research rule, or floor is a record with plain text, a source, an evidence grade, and a review date.
+- **Your verification rules (2026-11-14):** after any code change, `npm run check`; after a change to screens, the Mockup, or saving, `npm run e2e` as well; nothing is finished or committed until every check passes.
+- **Design before code for risky areas.** Anything that stores data or spans several tabs is first written down as a table of situations and events, then tested cell by cell. (Six of the serious findings came from patching such an area case by case.)
+- **Guarantees reference** (`docs/reference/guarantees.md`): each promise the Studio makes, with the test behind it.
 
-**Waypoints (saved and backed up).**
-- After every completed unit of work: commit and push to `claude/brave-mayer-sawqz9` (GitHub is the primary backup; my container is temporary).
-- At every milestone: update `PROGRESS.md`, record the commit hash in `WAYPOINTS.md`, and upload a zip snapshot to a `Claude/backups` folder in your Google Drive. I ask you once before the first upload.
-- Rollback: any waypoint restores with one `git checkout` of its recorded hash.
+## 8. Build governance: milestones, backstops, waypoints, reviews
 
-**Red-team swarm (three adversarial reviewers).** They run in the background at the end of every unit of work and at every milestone gate. They receive the code and the running app, not my conclusions. This is frequent checkpoint review, not second-by-second monitoring.
-1. *Security attacker:* script injection through pasted content and imports; sandbox and policy probes; dependency audit.
-2. *Confused first-time user:* drives the Studio with Playwright, keyboard only and at 200% zoom, with no design vocabulary; reports every confusion, jargon term, and dead end.
-3. *Drift and truth auditor:* compares the repository with `PLAN.md`; hunts scope creep, untested claims, unsourced catalog rules, and inconsistent defined terms.
+**Milestones.** A milestone is complete only when its exit test passes.
 
-Findings go to `redteam/FINDINGS.md` with severity (blocker, major, minor), evidence, and status. A blocker stops the milestone. I report the open-findings count at each milestone.
+| # | Milestone | Exit test | State on 2026-11-14 |
+|---|---|---|---|
+| M0 | Proof experiment | You judged the result | met |
+| M1 | Repository skeleton, CI, governance files | CI green | met |
+| M2 | Core engine | Unit tests pass; the core imports no React | met (163 unit tests) |
+| M3 | Preview and Template 1 Mockup | One change alters one variable (pixel test) | met; one part open: nobody has confirmed that the private page shows the pictures |
+| M4 | Step screen; Directions; Skins | You use it on the private page; keyboard-only pass; you pick the Studio's own look | **open: waits for your trial** |
+| M5 | Full Catalog for Template 1: your own content (Brief), Overlays, research rules, craft layer, floors, an inner page | A test walks every Step; axe finds no serious violation in any Option | Overlays and research rules were started early at your request (decision D52) |
+| M6 | Export bundle (the Prescription) | Snapshot tests; the token and design files pass their validators | not started |
+| M7 | Fitter: build, check, repair | On a deliberately flawed build, `/fit-check` finds every planted defect and no false blocker | not started |
+| M8 | **Your first real project, end to end**; hardening | You judge the result; red-team blockers at zero | not started |
+| M9–M11 | Templates 2, 3, 4 | Same tests as M5–M7 per Template | not started |
+| M12 | Taste ledger; `/fit-suggest` | The repeat-combination warning works across two projects | not started |
+
+**Backstops against drift.** `PLAN.md` (this plan), `CLAUDE.md` (standing rules and defined terms), `DECISIONS.md` (every departure, with your approval), `PROGRESS.md` (where the work stands and what is unverified), `WAYPOINTS.md` (commits to return to). CI runs type check, lint, the boundary rule, unit tests, and browser tests on every push. No milestone is marked complete on a red run, and no test is skipped or weakened to get green.
+
+**Reviews, as practiced.**
+- *The three reviewers* (security attacker, confused first-time user, drift and truth auditor) at each unit of work and each milestone gate (hard rule 12). They receive the code and the running Studio, not conclusions.
+- *Break-it campaigns* for the riskiest areas: a written charter, independent attackers with one kind of attack each, a separate judge who reproduces every claim and never sees who made it, findings filed unchanged before any reply.
+- *Code review swarms* for code quality: reviewers per area, a second set that tries to refute each finding, repairs only for what survives.
+- *What these cost:* rounds 1 and 2 of the campaign used about 1.0 and 0.7 million tokens (measured); round 3 about 0.75 million (0.33 million measured after a restart, the rest estimated); the nine-reviewer code review about 1.8 million (measured). Reviewers and judges are AI agents; their grades are judgments, not measurements.
+
+**Waypoints.** After every unit of work: commit and push to `claude/brave-mayer-sawqz9`. At every milestone: a row in `WAYPOINTS.md`. The Drive backup (D26) has not worked so far: the file is larger than the connector accepts; you decide whether to split it, skip it, or rely on GitHub.
 
 ## 9. What can go wrong, and the response
 
 | Risk | Response |
 |---|---|
-| The Prescription does not improve Claude's output | M0 tests this before any app code; if it fails, we revise the format first |
-| The build drifts from the Prescription over a long session | The Fitter measures computed styles against tokens on every check; fresh sessions re-read the Prescription |
-| Too many Steps | Skip takes the default; autosave; a "quick fit" path of about 8 Steps |
-| All your products start to look alike | Taste ledger; "closer to this one"; `/fit-suggest`; versioned catalog |
+| The Prescription does not improve Claude's output | M0 tested this before any app code; M8 repeats the comparison with a tool-made Prescription |
+| The tool grows into a heap of features | Each feature in its smallest useful form; the plan states what is left out; your trial decides what stays |
+| Bugs gather in one area and are patched one by one | Design before code: a table of situations and events, a test per cell (section 7) |
+| A test passes on one machine and fails on another | CI runs every push; a red run is read and repaired at its cause before anything else |
+| Reviews find faults late | Tests first for risky work; the three reviewers at each unit, not only at the end |
+| Research is thinner than it looks | Every record states how each source was seen; a rule shows its grade; weak rules are labeled opinion |
+| A look honors a person or a brand without approval | No Direction or Skin carries the name of a person, a show, a book, or a brand |
+| Too many choices | Groups for Directions; "Decide later"; a later "quick fit" path of about 8 Steps |
+| All your products start to look alike | Random Directions, Skins, and (M12) the taste ledger |
 | An upstream change breaks later Decisions | The engine re-checks dependents and flags each conflict; it never changes a Decision silently |
-| Automated checks miss accessibility problems | Manual checks become explicit acceptance criteria; the honest receipt names what no machine checked |
-| A craft rule is opinion presented as fact | Each rule carries an evidence grade and a source; you can switch off any opinion-grade rule per project |
-| Unverified claims in source files (2026 arXiv numbers, psychophysics rules) | The catalog admits sourced, durable rules only |
-| `@google/design.md` is alpha and changes | Version pinned; `tokens.json` remains the source of truth |
-| The private-page host restricts the iframe or policy headers | Verified at M3; fallback is a static host where we control headers |
-| I lose context between sessions | `PROGRESS.md`, `CLAUDE.md`, waypoints, and a saved session setup script |
+| Automated checks miss accessibility problems | The Studio names what no machine checked; the Fitter's honest receipt will do the same |
+| The private page's host restricts something | Unknown until you confirm that the pictures appear there; fallback: a static host |
+| I lose context between sessions | `PROGRESS.md`, `CLAUDE.md`, waypoints |
+| This session's network blocks most websites | Research rests partly on search summaries, and says so; you can allow hosts in the environment's settings |
 
-## 10. Re-evaluation: what the earlier drafts missed (now fixed)
+## 10. What changed from version 1, and why
 
-1. They deferred the feedback loop to "Phase 2." It is half of the problem; the Fitter is now core (4.4).
-2. They had no craft layer; picks alone do not produce a bespoke feel (3, 4.3).
-3. They did not ground Options in named exemplars (3, 4.1).
-4. They borrowed code without a license review (6).
-5. They planned two templates; you build four kinds of product (5).
-6. They ignored the Studio's own design quality (7).
-7. They ignored sameness across your own projects (4.5).
-8. They left hosting unspecified (6).
-9. They omitted font licensing and loading in your outputs (`FONTS.md`).
-10. They omitted phone-width and dark previews of each Option (4.1).
-11. They named APCA contrast without checking its license (6).
-12. They placed a real project after the tool was "finished"; it is now M8.
-13. They carried commercial machinery (accounts, payments) that you do not need; removed.
-14. They did not say how a new session resumes fast; added a setup script and `PROGRESS.md` (8).
+| Change | Why | Decision |
+|---|---|---|
+| Directions come before the Steps | You asked for ways to close the gap in look; your own process calls for "genuinely different directions before code" | D23, D42, D51 |
+| Contrast checks are a per-project choice, not a fixed floor | You build private-use apps where accessibility standards do not bind; sites for clients can choose "Warn me" or "Fix for me" | D13 |
+| "Skip" keeps the current value; it does not apply a default | After a Direction was picked, the earlier skip silently replaced the Direction's values | D31 |
+| The Studio's own color math and type formula; native controls; browser storage | Fewer dependencies; each replaced library was small to write and test | D17, D22, D29, D30 |
+| TypeScript 6.0, not 7.0 | The lint tool supports TypeScript below 6.1 only | D16 |
+| Plain words everywhere, enforced by tests | A reviewer with no design vocabulary could not follow the first texts | D38 |
+| Saving became a designed area with a table | Six serious findings came from it | D40, D44, D46, D50, and section 7 |
+| Break-it campaigns and code review swarms joined the three reviewers | You asked to test the Studio to break it | D43, D48 |
+| Skins, Overlays, Japanese minimalism, and research rules enter the plan; Overlays and research rules start before M4's exit test | You asked for them on 2026-11-14 | D52 |
+| Your verification rules | You stated them on 2026-11-14 | D52 |
 
 ## 11. File and research status
 
-- **Read in full:** all 15 Drive files and every text file in both zip archives (`map.pdf` read visually).
-- **Read in part:** four small plugin scripts (function lists) and three large HTML exemplars (structure).
-- **Your five links:** I read `champi-dev/front-end-best-practices` (its single-source-of-truth and separation-by-responsibility rules are in section 7). This session's network blocks `netguru.com`, `dev.to`, `docs.gitlab.com`, and `sitepoint.com`; I saw search summaries only.
-- **Exemplar research:** the published rule sets (Vercel, Emil Kowalski, Jakub Krehel, GOV.UK, Radix) were read in full on GitHub. The company posts (Linear, Stripe, Apple, and others) were seen as search snippets, because the network blocks those hosts.
-- **Absent from your folder:** `blueprint-v1.md`, `hugging-face-llm-review.md`, the `research/` files, and the deep-dive folders that your files cite.
-- **Could not reach:** your PC's Downloads folder; the hosts named above.
+- **Your source files:** all 15 Drive files and every text file in both archives were read in full for version 1.
+- **Knowledge base:** 138 records, written by research helpers, not reviewed; four more parts in progress. Three records of search summaries stand behind three Directions.
+- **Not reachable from this session:** most websites (the network allows few hosts), your PC's Downloads folder.
+- **Absent from your folder:** `blueprint-v1.md`, `hugging-face-llm-review.md`, and the research folders that your files cite.
 
 ## 12. Verification
 
-1. `npm run test`: contrast math, token derivation, dependency re-checks, migrations, export snapshots.
-2. `npm run e2e`: Playwright walks every Step on each template and exports; validators pass on `tokens.json` and `DESIGN.md`.
-3. axe scan of the Studio and of every Option of every Step.
-4. Keyboard-only walkthrough of the Studio.
-5. Security: a hostile import (script in every text field) renders as inert text; the Mockup iframe cannot reach the parent; `npm audit` reports no high or critical issue.
-6. Fitter: on a build with planted defects (off-token color, missing focus ring, missing empty state, small target), `/fit-check` reports each one.
-7. M0 and M8 comparisons, judged blind by you.
-8. `redteam/FINDINGS.md` shows zero open blockers at each milestone.
+1. `npm run check`: type check, lint, the boundary rule, and the unit tests (color math, token derivation, the engine, project files, the Catalog's rules).
+2. `npm run e2e`: the browser tests (the Studio's screens, saving in every cell of the saving table, the Mockup at four widths, stored pictures of every Direction).
+3. axe on the Studio's screens (serious and critical findings).
+4. A keyboard-only walk of the Studio (automated).
+5. Hostile files and hostile text render as inert text; the Mockup frame cannot reach the Studio.
+6. At M7: on a build with planted defects, `/fit-check` reports each one.
+7. Your own trial at M4 and your blind comparison at M8.
+8. `redteam/FINDINGS.md` shows no open blocker at a milestone.
 
-## 13. First actions after approval
+**What no check covers today:** any browser but Chromium; a screen reader; the real private page with its database; whether a look is good for your customers.
 
-1. Request network access to the blocked hosts (your four links; the exemplar sites; `stitch.withgoogle.com`), read each in full, and record any resulting change in `DECISIONS.md`.
-2. Commit the governance and research files as the first waypoint; open a draft pull request.
-3. Run M0 and report to you.
-4. On your confirmation, proceed M1 through M4 with the red team running, and put a working Step screen in front of you.
+## 13. Next actions
+
+1. **Now (this unit of work):** Skins; Japanese minimalism as Directions and Skins; the first six Overlays; research rules from the knowledge base; then the review swarm, a judge for the round-3 repairs, and the three reviewers.
+2. **You:** the trial (`docs/trial-guide.md`), and your yes or no on the open decisions listed in `PROGRESS.md`.
+3. **Then M5:** your own content in every preview; the craft layer; the floors; an inner page.
+4. **Then M6:** the Prescription. From that point the Studio produces something you can build from.

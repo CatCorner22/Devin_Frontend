@@ -26,6 +26,8 @@ The tool is for the owner alone. Do not add accounts, payments, analytics, or ma
 | Prescription | The export bundle: `PRESCRIPTION.md`, `DESIGN.md`, `tokens.json`, `tokens.css`, shadcn theme, `mockup.html`, `FONTS.md` |
 | Fit check | The Fitter's measurement of a build against a Prescription |
 | Honest receipt | A report that separates "measured," "judged by the model," and "still needs a person" |
+| Skin | Pre-built colors and color fades for a Direction; a Skin changes colors only (the owner's term, 2026-11-14) |
+| Overlay | A small helper that appears over the page and that the owner switches on or off for any Direction: a tooltip, an "Are you sure?" question, a notice (the owner's term, 2026-11-14) |
 | Taste ledger | The record of Decisions across the owner's past projects |
 | Waypoint | A pushed commit recorded in `WAYPOINTS.md` |
 
