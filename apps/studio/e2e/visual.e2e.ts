@@ -8,7 +8,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_PARAMS, DIRECTIONS, FONTS, SAMPLE_CONTENT, STEPS, deriveTokens, renderSmallBusiness, resolvePatch, type DesignParams, type FontId, type MockupFocus } from '@refraction/core';
 import { chromium, type Browser, type Page } from 'playwright';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const baselineDir = fileURLToPath(new URL('./baselines/', import.meta.url));
@@ -54,11 +54,17 @@ afterAll(async () => {
   await browser.close();
 });
 
-async function show(html: string): Promise<void> {
-  await page.setContent(html, { waitUntil: 'load' });
+async function loopPage(): Promise<Page> {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
+  onTestFinished(() => context.close());
+  return context.newPage();
+}
+
+async function show(html: string, target: Page = page): Promise<void> {
+  await target.setContent(html, { waitUntil: 'load' });
   // Load every declared typeface before any picture or measurement. Waiting for `document.fonts.ready` alone is not enough:
   // a browser starts to load a typeface only when it first lays the page out, so a slow machine could take the picture too early.
-  await page.evaluate(async () => {
+  await target.evaluate(async () => {
     await Promise.all([...document.fonts].map((face) => face.load()));
     await document.fonts.ready;
   });
@@ -180,11 +186,12 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
   }
 
   it('never makes the page wider than a phone, whatever the Direction, the type Options, or the slider ends', async () => {
+    const page = await loopPage();
     await page.setViewportSize({ width: 375, height: 800 });
     const wide: string[] = [];
     for (const direction of [{ name: 'plain start', params: DEFAULT_PARAMS }, ...DIRECTIONS]) {
       for (const design of reachable(direction.params)) {
-        await show(mockup(design.params, 'top'));
+        await show(mockup(design.params, 'top'), page);
         const report = await page.evaluate(() => {
           const limit = document.documentElement.clientWidth;
           if (document.documentElement.scrollWidth <= limit) return null;
@@ -202,6 +209,7 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
   }, 240_000);
 
   it('fits the window at other widths as well: a small phone, the width at which two columns begin, and wider (code review of 2026-11-13, finding "tokens 4")', async () => {
+    const page = await loopPage();
     const wide: string[] = [];
     for (const width of [320, 860, 1024, 1280]) {
       await page.setViewportSize({ width, height: 800 });
@@ -211,7 +219,7 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
         const designs = reachable(direction.params, ['size-scale']).filter((design) => !design.label.startsWith('Option') || design.label.includes('Very large'));
         for (const design of designs) {
           for (const focus of ['top'] as const) {
-            await show(mockup(design.params, focus));
+            await show(mockup(design.params, focus), page);
             const over = await page.evaluate(() => {
               const limit = document.documentElement.clientWidth;
               const by = document.documentElement.scrollWidth - limit;
@@ -248,6 +256,7 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
   });
 
   it('keeps the main headline the largest text: above the reading text and above every section heading, at phone, tablet, and desktop widths', async () => {
+    const page = await loopPage();
     const small: string[] = [];
     for (const viewport of [{ width: 375, height: 800 }, { width: 768, height: 900 }, { width: 1280, height: 800 }]) {
       await page.setViewportSize(viewport);
