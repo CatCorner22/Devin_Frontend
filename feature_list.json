@@ -1,0 +1,29 @@
+{
+  "features": [
+    {
+      "id": "F001",
+      "description": "A tab that closes or goes to the background within 2 seconds after its own save keeps its work in an entry of its own, so that another tab's write in the same moment cannot lose it (finding C4-F18).",
+      "spec_section": "SPEC.md section 2.1",
+      "steps": [
+        "Open the Studio with a saved project, change the project's name, wait until the status line says Saved, and close the tab at once",
+        "Look at the browser's storage from a blank page: one entry in the state 'leaving' holds the changed project, and the saved project holds it too",
+        "Open the Studio again: the entry is gone and no notice appears",
+        "Repeat, but replace the saved project with another project before the Studio opens again: the Studio shows a notice, and the Summary lists the changed project as a kept copy"
+      ],
+      "passes": false
+    },
+    {
+      "id": "F002",
+      "description": "The Studio draws headings in Playfair and reading text in Literata in place of the two typefaces that reserve their names, and a saved project that names a replaced typeface opens with the replacement, a notice, and a kept copy.",
+      "spec_section": "SPEC.md section 2.2",
+      "steps": [
+        "Start a project, go to the Step 'Letter style', and pick 'Elegant thick-and-thin headings': the heading in the preview is drawn in Playfair",
+        "Pick 'Letters with small feet throughout': headings and reading text are drawn in Literata",
+        "Open the Licences screen: it lists Playfair and Literata, and lists neither Playfair Display nor Source Serif 4",
+        "Open the Studio on a stored project that names 'playfair-display' and 'source-serif-4': a notice names both swaps, and the Summary lists the project as it was among the kept copies",
+        "Reload: no notice appears"
+      ],
+      "passes": false
+    }
+  ]
+}

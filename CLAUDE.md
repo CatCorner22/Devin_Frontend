@@ -23,7 +23,7 @@ The tool is for the owner alone. Do not add accounts, payments, analytics, or ma
 | Template | A Mockup family (small-business website, guided intake flow, dense operational app, consumer or SaaS app) |
 | Catalog | The typed data that defines every Step, Option, craft rule, and floor |
 | Craft rule | An invisible-detail rule that the exporter writes into every Prescription automatically |
-| Floor | A requirement that the exporter writes into every Prescription (accessibility, security, search, performance). The owner chooses the accessibility Floor per project (decision D13); the other Floors are not overridable |
+| Floor | A requirement that the exporter writes into the Prescription (accessibility, security, search, performance). The security, search, and performance Floors are not overridable; the owner chooses per project whether the accessibility Floor applies (decision D13) |
 | Research rule | A check, drawn from a research record, that the Studio measures on the open design and shows as "Holds" or "Does not hold" (added with the owner's approval, 2026-11-15) |
 | Prescription | The export bundle: `PRESCRIPTION.md`, `DESIGN.md`, `tokens.json`, `tokens.css`, shadcn theme, `mockup.html`, `FONTS.md` |
 | Fit check | The Fitter's measurement of a build against a Prescription |
