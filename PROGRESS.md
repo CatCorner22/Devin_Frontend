@@ -2,6 +2,15 @@
 
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
+## Browser-test isolation (2026-11-15)
+
+- Each of the three long Mockup loop tests now owns a browser context. Vitest closes that context when the test finishes, including after a timeout. The stored-picture tests keep their separate page. No loop, assertion, threshold, or timeout changed.
+- `npm run check`: 6 test files and 190 tests passed; type check, lint, and boundary checks passed.
+- The visual file: 158 passed, 1 failed in 659.45 seconds. Every stored-picture test passed after the phone-width loop timed out at its unchanged 240-second limit. That loop also timed out alone (240.74 seconds). The other-widths loop passed alone in 69.61 seconds; the headline loop passed alone in 201.25 seconds.
+- Full `npm run e2e` did not run: the owner asked for it only if the visual file passed. The owner asked to commit this isolation repair even if a loop still timed out honestly; this is not a green browser suite or a milestone completion.
+- Playwright 1.65.0 expects Chromium revision 1254 (158.0.8127.18). This machine used the requested installed revision 1255 (159.0.8154.6), not the expected revision. No browser was installed.
+- Independent red-team reviewers did not run: this session has no reviewer-agent tool. See `redteam/FINDINGS.md`, ISO-01. No Studio behavior or screen changed.
+
 ## Start here (written 2026-11-14, checked on 2026-11-15, for the next session)
 
 **The one-minute picture.** The Studio lets the owner pick a starting look (38 Directions, most of them in several Skins), refine it over 23 Steps, switch on Overlays, and read the result back on a Summary with five research rules. It saves reliably. It does not yet export anything to build from (milestone M6) and has no Fitter (M7). Milestone M4 is open and waits for one thing that only the owner can do: the trial in `docs/trial-guide.md`.
