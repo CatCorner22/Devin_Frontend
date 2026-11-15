@@ -54,6 +54,9 @@ afterAll(async () => {
   await browser.close();
 });
 
+// A test that changes the window width or draws many pages gets a page of its own. Vitest closes that page's context when the
+// test finishes, even after a timeout or a failed check, so the test can never leave the shared `page` at the wrong width or
+// keep drawing on it while the stored-picture tests run.
 async function loopPage(): Promise<Page> {
   const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   onTestFinished(() => context.close());
@@ -142,10 +145,11 @@ describe('Mockup: one variable per Step, measured in the browser', () => {
 
 describe('Mockup: targets and structure in the browser', () => {
   it('gives every link, button, and field a target of at least 24 by 24 pixels, at phone and desktop widths', async () => {
+    const page = await loopPage();
     for (const viewport of [{ width: 375, height: 800 }, { width: 1280, height: 800 }]) {
       await page.setViewportSize(viewport);
       for (const params of [DEFAULT_PARAMS, ...['midnight-aurora', 'control-room', 'sticker-pop', 'quiet-luxury'].map((id) => DIRECTIONS.find((d) => d.id === id)!.params)]) {
-        await show(mockup(params, 'top'));
+        await show(mockup(params, 'top'), page);
         const small = await page.evaluate(() =>
           [...document.querySelectorAll<HTMLElement>('a, button, input, textarea')]
             .filter((el) => el.getClientRects().length > 0 && !el.classList.contains('skip'))
@@ -240,11 +244,12 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
   }, 600_000);
 
   it('shows the telephone number in the contact part on a phone, whatever the menu (code review of 2026-11-13, finding "tokens 1")', async () => {
+    const page = await loopPage();
     await page.setViewportSize({ width: 375, height: 800 });
     const nav = STEPS.find((step) => step.id === 'nav')!;
     for (const base of [DEFAULT_PARAMS, ...['midnight-aurora', 'galactic-goth'].map((id) => DIRECTIONS.find((d) => d.id === id)!.params)]) {
       for (const option of nav.options) {
-        await show(mockup({ ...base, ...resolvePatch(option, base) }, 'contact'));
+        await show(mockup({ ...base, ...resolvePatch(option, base) }, 'contact'), page);
         const shown = await page.evaluate(() => {
           const phone = document.querySelector<HTMLElement>('address .phone');
           return phone !== null && phone.getClientRects().length > 0 && (phone.textContent ?? '').trim().length > 0;
