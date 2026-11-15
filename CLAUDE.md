@@ -79,3 +79,15 @@ docs/sources/    The owner's source files (text only; added on request)
 phase0/          The M0 proof experiment
 redteam/         Red-team reports, the findings log, and the defect-planting tool
 ```
+
+## Verified build loop (the owner's skill, set up on 2026-11-15, decision D56)
+
+Hooks (small programs that Claude Code runs by itself) enforce the checks; these lines say how to work.
+- Start every session: read `PROGRESS.md` ("Build log", newest entry first), run `git log --oneline -5`, run `bash init.sh`.
+- Build one feature at a time: the first feature in `feature_list.json` with `"passes": false`. Its requirement is in `SPEC.md`, which points to `PLAN.md`.
+- Write the feature's tests first, and confirm that they fail because the feature is missing. The protected list in `.claude/verify.json` stays empty until the owner says otherwise (a cloud session gives the owner no terminal for "unlock").
+- After implementing, have the `reviewer` subagent compare the changes with `SPEC.md`; ask the owner first, as before each helper (decision D55). Fix correctness gaps; skip style.
+- Set `"passes": true` only after the full checks pass. The Stop hook runs them again.
+- Finish with a commit, an entry in the "Build log" of `PROGRESS.md`, and an evidence report (the commands run and their output).
+- Never change a hook file, a check in `.claude/verify.json`, or a feature's fields other than `"passes"`. If one is wrong, stop and ask the owner.
+- Check commands: fast `npm run check`; full `npm run e2e` (on this kind of machine the hook finds the installed browser by itself); lint after an edit `npx eslint --max-warnings 0 <file>`.
