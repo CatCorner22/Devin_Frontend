@@ -16,13 +16,15 @@ The tool is for the owner alone. Do not add accounts, payments, analytics, or ma
 | Term | Meaning |
 |---|---|
 | Step | One screen of the Studio that asks for one design decision |
-| Option | One of the 3–4 concrete choices that a Step offers |
-| Decision | The recorded result of a Step: picked Option, rejected Options, reason |
-| Mockup | The HTML and CSS page on which every Option renders |
+| Direction | A complete starting look that the owner picks before the Steps (added with the owner's approval, 2026-11-15) |
+| Option | One of the several concrete choices that a Step offers |
+| Decision | The recorded result of a Step: picked Option, rejected Options, and a reason if the owner wrote one |
+| Mockup | The HTML and CSS page on which every Option renders. The Studio's screen calls it "Sample website"; code and records say "Mockup" |
 | Template | A Mockup family (small-business website, guided intake flow, dense operational app, consumer or SaaS app) |
 | Catalog | The typed data that defines every Step, Option, craft rule, and floor |
 | Craft rule | An invisible-detail rule that the exporter writes into every Prescription automatically |
-| Floor | A non-overridable requirement (accessibility, security, search, performance) |
+| Floor | A requirement that the exporter writes into every Prescription (accessibility, security, search, performance). The owner chooses the accessibility Floor per project (decision D13); the other Floors are not overridable |
+| Research rule | A check, drawn from a research record, that the Studio measures on the open design and shows as "Holds" or "Does not hold" (added with the owner's approval, 2026-11-15) |
 | Prescription | The export bundle: `PRESCRIPTION.md`, `DESIGN.md`, `tokens.json`, `tokens.css`, shadcn theme, `mockup.html`, `FONTS.md` |
 | Fit check | The Fitter's measurement of a build against a Prescription |
 | Honest receipt | A report that separates "measured," "judged by the model," and "still needs a person" |
@@ -70,7 +72,8 @@ packages/core/   Catalog, engine, exporters (pure TypeScript)
 apps/studio/     The Studio web app
 plugin/          The Fitter (Claude Code plugin)
 docs/research/   Research records
-docs/knowledge/  The knowledge base (research helpers wrote it; not yet reviewed)
+docs/knowledge/  The knowledge base (research helpers wrote it; not yet reviewed); INDEX.md is its index
+docs/reference/  The guarantees reference and the saving table
 scripts/         Build checks (size budget, licence notices)
 docs/sources/    The owner's source files (text only; added on request)
 phase0/          The M0 proof experiment

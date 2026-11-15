@@ -171,7 +171,7 @@ A **taste ledger** records the Decisions of every past project. When a new proje
 - *Code review swarms* for code quality: reviewers per area, a second set that tries to refute each finding, repairs only for what survives.
 - *What these cost:* rounds 1 and 2 of the campaign used about 1.0 and 0.7 million tokens (measured); round 3 about 0.75 million (0.33 million measured after a restart, the rest estimated); the nine-reviewer code review about 1.8 million (measured). Reviewers and judges are AI agents; their grades are judgments, not measurements.
 
-**Waypoints.** After every unit of work: commit and push to `claude/brave-mayer-sawqz9`. At every milestone: a row in `WAYPOINTS.md`. The Drive backup (D26) has not worked so far: the file is larger than the connector accepts; you decide whether to split it, skip it, or rely on GitHub.
+**Waypoints.** After every unit of work: commit and push to `claude/brave-mayer-sawqz9`. At every milestone: a row in `WAYPOINTS.md`. You retired the Drive backup (D26) on 2026-11-15: GitHub is the only backup (decision D55).
 
 ## 9. What can go wrong, and the response
 
@@ -230,6 +230,6 @@ A **taste ledger** records the Decisions of every past project. When a new proje
 ## 13. Next actions
 
 1. **Now (this unit of work):** Skins; Japanese minimalism as Directions and Skins; the first six Overlays; research rules from the knowledge base; then the review swarm, a judge for the round-3 repairs, and the three reviewers.
-2. **You:** the trial (`docs/trial-guide.md`), and your yes or no on the open decisions listed in `PROGRESS.md`.
+2. **You:** the trial (`docs/trial-guide.md`). You settled the open decisions on 2026-11-15 (decision D55).
 3. **Then M5:** your own content in every preview; the craft layer; the floors; an inner page.
 4. **Then M6:** the Prescription. From that point the Studio produces something you can build from.
