@@ -35,6 +35,12 @@ export interface Direction {
   reviewed: string | null;
   /** The skins this Direction offers besides its own colors, by identifier (see `skins.ts`). A generated Direction offers none. */
   skins?: string[];
+  /**
+   * The research rules that this Direction departs from on purpose, each with the reason in plain words. The Summary shows
+   * the reason beside "Does not hold", so that a start that was made this way does not look like a fault (finding U5-16,
+   * decisions D53 and D55). A unit test refuses a departure without such a record, and a record without a departure.
+   */
+  departs?: { ruleId: string; why: string }[];
 }
 
 const REVIEWED = '2026-11-13';
@@ -216,6 +222,7 @@ export const DIRECTIONS: Direction[] = [
     mood: 'An instrument panel: dense, exact, numbers first.',
     bestFor: 'Dashboards, operations tools, technical services.',
     risk: 'Too tightly packed for a public information site; made for people who work in it all day.',
+    departs: [{ ruleId: 'reading-size', why: 'It is a working screen for people who use it all day: its reading text is 15 pixels tall, so that more rows are in view at once. For a public website the rule’s advice stands.' }],
     ...record,
     params: d({
       nav: 'side-rail', hero: 'text-left', sections: 'stacked', contentWidth: 'wide', emphasis: 'proof', density: 0.86,

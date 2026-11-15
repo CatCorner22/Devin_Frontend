@@ -92,13 +92,21 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 - **Set-up.** The branch `claude/festive-mendel-lfnahh` started at the main line's newest commit (`9c5cbe4`); 330 files; `npm run check` passed (190 unit tests).
 - **The owner's decisions (D55).** 24 questions in the chat; the owner chose the recommended answer in each. `CLAUDE.md` now defines "Direction" and "Research rule", says that an Option is one of several, that a reason is optional, that the accessibility Floor is a choice per project, and that the screen calls the Mockup "Sample website". Decision D26 (the Drive backup) is retired.
-- **Work that the answers created:** the status line after an Undo (F-23); a kept Decision stays "kept" (F-24); one sentence on the Summary for "Control Room" (U5-16); Dependabot's cooldown, if verified (S2-06); a proposal for two typefaces; a proposal for C4-F18.
+- **Repairs of 2026-11-15.** The status line after an Undo back to the stored project (F-23); a kept Decision stays "kept" and names no Option by coincidence (F-24; a new rule in the engine, `heldOptionId`); the Summary says that "Control Room" departs from the text-size rule on purpose (U5-16); Dependabot waits 7 days (S2-06). 191 unit tests and 266 browser tests; the full browser run of 2026-11-15 passed with 265, and the 266th (for F-24) was added afterwards and passed alone.
+- **The verified build loop (decision D56).** The owner's skill is in `.claude/skills/verified-build-loop/`. `SPEC.md` and `feature_list.json` hold the work in hand: F001 (the C4-F18 repair) and F002 (the typefaces Playfair and Literata). The skill's hand-over entries go below, under "Build log".
+- **Plan, version 3.** The Direction Creator is milestone M4D, straight after M4 (`PLAN.md` section 4.7).
+- **A code review that the owner started with `/code-review` was stopped by the owner before it reported.** No review of the repairs of 2026-11-15 exists yet.
+
+## Build log (verified build loop; newest entry first)
+
+No feature session has ended yet. Next feature to build: F001.
 
 ## Next
 
 1. **The owner tries the Studio** with `docs/trial-guide.md` and sends the ten answers. M4 closes on the owner's word (hard rule 1).
 2. **Repair what the trial names as serious, and decide the open findings of 2026-11-14** (rows "Open" and "Fixed in part" among S5, DT, U5, and C4-F18 to C4-F25 in `redteam/FINDINGS.md`). The first to weigh: the rare loss when several tabs close in the same instant (C4-F18). Then have a reviewer look at the repairs of this unit, which no reviewer has seen (hard rule 12).
-3. **M5**, in this order: the Brief (the owner's product, audience, and real content, so that every preview shows the owner's words); the craft layer and the floors from the knowledge base; the rest of the behavior Steps; an inner page for Template 1. A Skin's name stored in the project, and a change of Skin inside a project, belong here too.
+3. **M4D:** the Direction Creator (`PLAN.md` section 4.7).
+3a. **M5**, in this order: the Brief (the owner's product, audience, and real content, so that every preview shows the owner's words); the craft layer and the floors from the knowledge base; the rest of the behavior Steps; an inner page for Template 1. A Skin's name stored in the project, and a change of Skin inside a project, belong here too.
 4. **M6**: the export bundle (the Prescription). **M7**: the Fitter.
 
 ## Waiting on the owner

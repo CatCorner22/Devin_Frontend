@@ -1,6 +1,6 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
-  DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, keep, matchingOptionId,
+  DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, heldOptionId, keep, matchingOptionId,
   nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, startPlain, tune,
   type A11yProfile, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type Skin, type Step,
 } from '@refraction/core';
@@ -225,6 +225,8 @@ let saveTimer: ReturnType<typeof setTimeout> | undefined;
 let lastSavedText: string | null = null;
 /** The result of the last save attempt, or `idle` before the first one. */
 let lastOutcome: SaveState = 'idle';
+/** Where the save that wrote `lastSavedText` put it. The status line says this when the screen is back at exactly that text. */
+let lastSavedWhere: 'page' | 'browser' | null = null;
 /** True once the owner chose to reload: the leave-page question is then not asked a second time. */
 let leavingOnPurpose = false;
 /** True between opening and the first screen, when the project as opened differs from the stored copy and that copy is kept. */
@@ -391,16 +393,20 @@ export const useStudio = create<StudioState>((set, get) => {
     const text = JSON.stringify(get().project);
     if (text === lastSavedText && !force) {
       // Nothing to write: the project is back at its last saved state, for example after an Undo. The status line must still
-      // settle. It repeats the result of the last attempt, so that a "cannot save" statement stays while it is still true
-      // (campaign 4, finding F-7: the line stayed at "Saving…" for good).
-      if (get().saved === 'saving') set({ saved: lastOutcome });
+      // settle (campaign 4, finding F-7: the line stayed at "Saving…" for good). It says where that state is saved, also
+      // when a later save failed: the work on screen is the saved work again, and "Cannot save here" would be untrue of it
+      // (finding F-23; the owner's decision D55). The next change that cannot be saved brings the statement back.
+      if (get().saved === 'saving') set({ saved: lastSavedWhere ?? lastOutcome });
       return;
     }
     const outcome = await saveProject(text);
     if (get().saved === 'held') {
       // While the save ran, this tab stopped saving (another tab changed the project). The state "not saving" stands; a
       // finished save must not write "Saved" over it.
-      if (outcome === 'page' || outcome === 'browser') lastSavedText = text;
+      if (outcome === 'page' || outcome === 'browser') {
+        lastSavedText = text;
+        lastSavedWhere = outcome;
+      }
       return;
     }
     if (outcome === 'conflict') {
@@ -419,6 +425,7 @@ export const useStudio = create<StudioState>((set, get) => {
     }
     if (outcome !== 'failed') {
       lastSavedText = text;
+      lastSavedWhere = outcome;
       // This page lives and its work is saved: an entry that it wrote while it seemed to be leaving has done its work.
       if (!seemsToLeave) dropLeavingCopy();
     }
@@ -556,6 +563,7 @@ export const useStudio = create<StudioState>((set, get) => {
       lastSavedText = JSON.stringify(chosen.result.project);
       saved = chosen.where;
       lastOutcome = chosen.where;
+      lastSavedWhere = chosen.where;
       notes.push(...chosen.result.notes);
       // Opening can change a saved copy (an older version, a Step this Catalog lacks, a detail it cannot keep). The next save would then
       // replace the original, so the Studio keeps the original first and says so (finding S2-02).
@@ -793,7 +801,9 @@ export const useStudio = create<StudioState>((set, get) => {
         // design holds a fixed value there. The button names the Option, so the owner chooses it, and it follows from now
         // on. As a mere keep it stopped matching at the next change of the main color, without a word (campaign 4, round 3).
         const onShow = step.options.find((o) => o.id === shownId);
-        if (onShow?.derive && !project.decisions[stepId] && matchingOptionId(project.base, step) !== onShow.id) commit(pick(project, stepId, onShow.id));
+        // The same holds when a Decision of another kind stands (the owner kept the Step earlier, or set it by hand) and the
+        // design does not hold the Option on show: only a pick makes it hold (finding F-24, the owner's decision D55).
+        if (onShow?.derive && heldOptionId(project, step) !== onShow.id) commit(pick(project, stepId, onShow.id));
         else commit(keep(project, stepId));
       } else {
         commit(pick(project, stepId, shownId));

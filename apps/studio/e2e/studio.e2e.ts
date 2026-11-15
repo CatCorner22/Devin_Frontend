@@ -1014,7 +1014,7 @@ describe('Studio: a stopped save stays answerable, and no tab loses its work to 
     await context.close();
   });
 
-  it('settles the status line when a save has nothing to write, and keeps saying that storage is full while it is (finding F-7)', async () => {
+  it('settles the status line when a save has nothing to write, and after a failed save says “Saved” again once an Undo brings back the saved state (findings F-7 and F-23)', async () => {
     const { context, page } = await open({ storage: { [LOCAL_KEY]: envelope(worked('A')) } });
     await page.waitForSelector('.cards');
     // An edit and its Undo, faster than the save delay: nothing to write, and the line must not stay at "Saving…".
@@ -1024,12 +1024,19 @@ describe('Studio: a stopped save stays answerable, and no tab loses its work to 
     expect(await page.locator('.banner:not(.hold)').innerText()).toContain('Undone: the project’s name is “A” again.');
     await settle(page);
     expect(await state(page)).toBe('Saved in this browser, on this computer');
-    // Storage full, in the browser's real storage: the save fails and says so; an Undo back to the saved state keeps that statement.
+    // Storage full, in the browser's real storage: the save fails and says so. An Undo back to the saved state brings back
+    // exactly what is stored, so the line says "Saved" again (the owner's decision D55), and the retry button goes.
     expect(await fillRealStorage(page, 0)).toBeGreaterThan(100_000);
     await page.locator('#project-name').fill('A, with a much longer name than before, so that it cannot fit');
     await settle(page);
     expect(await state(page)).toContain('Cannot save here');
     await topUndo(page).click();
+    await settle(page);
+    expect(await state(page)).toBe('Saved in this browser, on this computer');
+    expect(await page.getByRole('button', { name: 'Try to save again' }).count()).toBe(0);
+    expect((await stored(page))?.name).toBe('A');
+    // Storage is still full: the next change that cannot be saved brings the statement back.
+    await page.locator('#project-name').fill('A, with another long name that cannot fit either');
     await settle(page);
     expect(await state(page)).toContain('Cannot save here');
     expect((await stored(page))?.name).toBe('A');
@@ -1651,24 +1658,31 @@ describe('Studio: what the third round of campaign 4 found', () => {
     await context.close();
   });
 
-  it('really tries when "Try to save again" is pressed after an Undo back to the saved state', async () => {
+  it('says “Saved” without a press of "Try to save again" after an Undo back to the saved state, and really tries when a later save fails', async () => {
     const { context, page } = await open({ storage: { [LOCAL_KEY]: envelope(worked('A')) } });
     await page.waitForSelector('.cards');
     expect(await fillStorage(page, 0)).toBe(true);
     await page.locator('#project-name').fill('A, with a longer name that does not fit');
     await settle(page);
     expect(await state(page)).toContain('Cannot save here');
-    await page.locator('.top').getByRole('button', { name: 'Undo', exact: true }).click();
-    await settle(page);
-    expect(await state(page)).toContain('Cannot save here');
-    // Room again: one press makes a real attempt, the statement goes, and so does the button.
-    await page.evaluate(() => window.localStorage.removeItem('test.capacity'));
     const again = page.getByRole('button', { name: 'Try to save again' });
-    await again.click();
+    expect(await again.count()).toBe(1);
+    // The Undo brings back exactly what is stored: the line says so by itself, and the button goes (finding F-23, decision D55).
+    await page.locator('.top').getByRole('button', { name: 'Undo', exact: true }).click();
     await settle(page);
     expect(await state(page)).toBe('Saved in this browser, on this computer');
     expect(await again.count()).toBe(0);
     expect((await stored(page))?.name).toBe('A');
+    // A new change still does not fit: the statement and the button come back. With room again, one press makes a real attempt.
+    await page.locator('#project-name').fill('A, with a second long name that does not fit');
+    await settle(page);
+    expect(await state(page)).toContain('Cannot save here');
+    await page.evaluate(() => window.localStorage.removeItem('test.capacity'));
+    await again.click();
+    await settle(page);
+    expect(await state(page)).toBe('Saved in this browser, on this computer');
+    expect(await again.count()).toBe(0);
+    expect((await stored(page))?.name).toBe('A, with a second long name that does not fit');
     await context.close();
   });
 
@@ -1723,6 +1737,30 @@ describe('Studio: what the third round of campaign 4 found', () => {
     const after = (await stored(page))!;
     expect(after.params.accent2Hue).toBe((after.params.accentHue + 120) % 360);
     expect(after.decisions['color-strategy']).toMatchObject({ kind: 'picked', optionId: 'duo-triad' });
+    await context.close();
+  });
+
+  it('keeps a kept Step as kept, in the record and in words, when its fixed second color matches a following Option for a moment (finding F-24)', async () => {
+    // "Galactic Goth" starts with a fixed red second color (18 degrees). The owner keeps "Amount of color" as it is, on a first pass.
+    const { context, page } = await open();
+    await page.getByRole('button', { name: 'Start from Galactic Goth' }).click();
+    await page.waitForSelector('.cards');
+    await page.goto(`${pageUrl}#color-strategy`);
+    await waitForStep(page, 'Amount of color');
+    await page.locator('.actions.sticky .primary').click();
+    await settle(page);
+    expect((await stored(page))?.decisions['color-strategy']).toMatchObject({ kind: 'kept', optionId: null });
+    // With the main color at 258 degrees the red stands a third of the wheel away: the design matches the Option and does not hold it.
+    await page.goto(`${pageUrl}#accent`);
+    await waitForStep(page, 'Main color');
+    await page.locator('label.option', { hasText: 'Deep blue' }).click();
+    await page.locator('.actions.sticky .primary').click();
+    await settle(page);
+    const after = (await stored(page))!;
+    expect(after.params.accent2Hue).toBe(18);
+    expect(after.decisions['color-strategy']).toMatchObject({ kind: 'kept', optionId: null });
+    const status = await page.locator('.rail a[href="#color-strategy"] small').innerText();
+    expect(status).toBe('Kept: close to “Two colors: a third of the wheel apart”: second color stays red (18° on the color wheel) and does not follow the main color');
     await context.close();
   });
 
@@ -2225,6 +2263,8 @@ describe('Studio: research rules on the Summary (decision D52)', () => {
     const row = rows(page).filter({ hasText: 'Reading text is at least 16 pixels tall' });
     expect(await row.getAttribute('data-holds')).toBe('false');
     expect(await row.locator('summary').textContent()).toBe('Does not hold: Reading text is at least 16 pixels tall. Reading text is 15 pixels tall.');
+    // The start was made this way, and the row says so without being opened (finding U5-16).
+    expect(await row.locator('.on-purpose').innerText()).toBe('This project’s start, Control Room, is made this way on purpose. It is a working screen for people who use it all day: its reading text is 15 pixels tall, so that more rows are in view at once. For a public website the rule’s advice stands.');
     // The mark of a rule that does not hold is not color alone: the words say it, and the row has a wider edge.
     expect(await row.evaluate((el) => getComputedStyle(el).borderLeftWidth)).toBe('4px');
     await row.locator('summary').click();
@@ -2236,6 +2276,7 @@ describe('Studio: research rules on the Summary (decision D52)', () => {
     await page.evaluate(() => { window.location.hash = '#summary'; });
     await page.waitForSelector('.research-list');
     expect(await row.locator('summary').textContent()).toBe('Holds: Reading text is at least 16 pixels tall. Reading text is 17 pixels tall.');
+    expect(await page.locator('.on-purpose').count()).toBe(0);
     expect(await rows(page).evaluateAll((items) => items.filter((item) => item.getAttribute('data-holds') === 'false').length)).toBe(0);
     await context.close();
   });

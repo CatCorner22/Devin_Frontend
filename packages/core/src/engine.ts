@@ -106,6 +106,31 @@ export function matchingOptionId(params: DesignParams, step: Step): string | nul
   return null;
 }
 
+/**
+ * The Option that a Step holds: the Option that the design matches, unless the match is a coincidence.
+ *
+ * An Option such as "Two colors: a third of the wheel apart" is a relation: its second color follows the main color. A design
+ * with a fixed second color can match that relation for one hue of the main color and stop matching at the next change. Such a
+ * design does not hold the Option. A kept Decision used to be recorded and shown under the Option's name for that moment, and
+ * lost the name again at the next change of the main color, both times without a word (campaign 4, finding F-24; the owner's
+ * decision D55: a kept Decision stays as kept until the owner picks an Option).
+ *
+ * The design holds a following Option in two cases only, the same two in which `rederive` makes it follow: the owner picked on
+ * that Step, or there is no hand-set Decision and the starting design matches the same Option.
+ */
+function heldId(params: DesignParams, base: DesignParams, kind: DecisionKind | undefined, step: Step): string | null {
+  const id = matchingOptionId(params, step);
+  if (id === null || !step.options.find((o) => o.id === id)?.derive) return id;
+  if (kind === 'picked') return id;
+  if (kind === 'tuned') return null;
+  return matchingOptionId(base, step) === id ? id : null;
+}
+
+/** The Option that a Step of this project holds (see `heldId`), or null when the Step's values are the owner's own or a fixed value. */
+export function heldOptionId(project: Pick<Project, 'params' | 'base' | 'decisions'>, step: Step): string | null {
+  return heldId(project.params, project.base, project.decisions[step.id]?.kind, step);
+}
+
 const WIREFRAME: Partial<DesignParams> = {
   fontHeading: 'system-sans',
   fontBody: 'system-sans',
@@ -203,11 +228,11 @@ function rederive(before: Project, after: Project, actedStepId: string): Project
     params = { ...params, [derive.key]: value };
     changed = true;
   }
-  // Every Decision names the Option that the design matches now, and holds the values that the design has now.
+  // Every Decision names the Option that the design holds now, and holds the values that the design has now.
   for (const [stepId, decision] of Object.entries(decisions)) {
     const step = findStep(stepId);
     if (!step) continue;
-    const optionId = matchingOptionId(params, step);
+    const optionId = heldId(params, after.base, decision.kind, step);
     const values = ownedValues(step, params);
     // A Decision never lists as rejected the Option that it holds. A slider moved onto the exact value of an Option that was
     // rejected earlier would otherwise leave a record that contradicts itself; opening the saved project then "corrected" it
@@ -221,7 +246,7 @@ function rederive(before: Project, after: Project, actedStepId: string): Project
 }
 
 function withDecision(project: Project, step: Step, params: DesignParams, decision: Omit<Decision, 'stepId' | 'values' | 'optionId'>): Project {
-  const full: Decision = { ...decision, stepId: step.id, optionId: matchingOptionId(params, step), values: ownedValues(step, params) };
+  const full: Decision = { ...decision, stepId: step.id, optionId: heldId(params, project.base, decision.kind, step), values: ownedValues(step, params) };
   return rederive(project, { ...project, params, decisions: { ...project.decisions, [step.id]: full } }, step.id);
 }
 
@@ -318,6 +343,17 @@ export function revert(project: Project, stepId: string): Project {
   if (follows) params = { ...params, [follows.key]: hueTurn(params[follows.from], follows.turn) };
   const decisions = Object.fromEntries(Object.entries(project.decisions).filter(([id]) => id !== stepId));
   return rederive(project, { ...project, params, decisions }, stepId);
+}
+
+/**
+ * Why this project's start departs from a research rule on purpose, in plain words; null when it does not. It answers only
+ * while the Step's values that the start gave still stand: once the owner changes them, the result is the owner's own.
+ */
+export function startDeparture(project: Pick<Project, 'direction' | 'params' | 'base'>, ruleId: string, ownedBy: Step | undefined): string | null {
+  const why = (project.direction ? findDirection(project.direction) : undefined)?.departs?.find((d) => d.ruleId === ruleId)?.why;
+  if (!why) return null;
+  if (ownedBy && JSON.stringify(ownedValues(ownedBy, project.params)) !== JSON.stringify(ownedValues(ownedBy, project.base))) return null;
+  return why;
 }
 
 /** The Overlays that are switched on, in the Catalog's order. */
@@ -818,7 +854,7 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
       continue;
     }
     const optionIds = step.options.map((o) => o.id);
-    const optionId = matchingOptionId(params, step);
+    const optionId = heldId(params, base, d.kind, step);
     let kind: DecisionKind = d.kind;
     if (kind === 'picked' && optionId === null) {
       // The file records a pick, and its design values match no Option: the picked Option no longer exists in the Catalog, or

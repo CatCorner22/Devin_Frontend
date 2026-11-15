@@ -1,6 +1,6 @@
 # [00] Studio guarantees: living reference
 
-Version 1.5. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
+Version 1.6. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
 
 Stale-after: 90
 
@@ -131,11 +131,11 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 - **Rule.** After each change the Studio writes the project to the browser's storage, and it writes at once when the page goes to the background. [S3]
 - **Elements.** The browser allows storage, and storage has room.
-- **Exceptions.** When storage is full or blocked, the status line says that saving failed and why. On the private page, the Studio also saves to the page's own database.
+- **Exceptions.** When storage is full or blocked, the status line says that saving failed and why. When an Undo then brings back exactly what is stored, the status line says "Saved" again, because the work on screen is the stored work (finding F-23; the owner's decision D55); the next change that cannot be saved brings the statement back. On the private page, the Studio also saves to the page's own database.
 - **Test.** "saves at once when the page goes to the background (finding P-06)"; "saves to both stores on the private page and says so".
 - **Policy.** The owner must never need a "Save" button to keep work.
 - **Open.** Only the Chromium browser is tested. Nobody has tested Safari, Firefox, or a phone's browser.
-- Last verified: 2026-11-13
+- Last verified: 2026-11-15
 
 ### [10.02] The Studio never saves over a copy that it could not keep, until the owner decides
 
@@ -443,10 +443,11 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 <!-- index: Decision | record; pick; see also: project file -->
 
-- **Rule.** After any sequence of picks, slider moves, Undo, new Directions, and reloads, each recorded Decision names the Option and the values that the design really has. [S9]
-- **Test.** "keeps every Decision true to the design through 400 random sequences of actions, and through save and reload".
+- **Rule.** After any sequence of picks, slider moves, Undo, new Directions, and reloads, each recorded Decision names the Option that the design holds and the values that the design really has. [S9]
+- **Elements.** A design holds an Option when its values match the Option. One kind of Option is a relation: its second color follows the main color ("Two colors: a third of the wheel apart"). A design holds such an Option only when its second color really follows: the owner picked the Option, or the starting design matches it and no hand-set Decision stands. A fixed second color that matches the relation for one main color does not hold the Option; a kept Decision then stays "kept" and names no Option (finding F-24; the owner's decision D55).
+- **Test.** "keeps every Decision true to the design through 400 random sequences of actions, and through save and reload"; "keeps a kept Decision as kept when its fixed second color matches a following Option for a moment (finding F-24, decision D55)".
 - **Policy.** The Prescription is written from the Decisions; a Decision that drifts from the design would prescribe the wrong thing.
-- Last verified: 2026-11-13
+- Last verified: 2026-11-15
 
 ### [50.02] A Step changes only the values that it owns
 
@@ -549,8 +550,8 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Rule.** The Summary measures each research rule on the open design and shows "Holds" or "Does not hold" with the number; four of the five rules hold on every Direction and on every Skin, a missing value never passes, and a rule whose value the sample website fixes says so. [S1 at D53]
 - **Test.** "holds every binding rule on every Direction and on every Skin of every Direction"; "says "does not hold", with the number, when a design breaks a rule"; "says which rules a design can change and which the Template fixes, and names in words what a fixed rule leaves out"; "names the Directions that depart from a rule that does not bind, so that a new departure is a decision and not an accident". [S8]
 - **Test.** "measures every research rule on the open design and says "Holds" or "Does not hold" with the number, as the core computes it"; "says so when a design does not hold a rule, leads to the Step that changes it, and follows the change". [S3]
-- **Exceptions.** The rule "Reading text is at least 16 pixels tall" does not bind: the Direction "Control Room" uses 15 pixels on purpose. A rule measures values of the design, not the built website, and each rule states what a person must still check.
-- Last verified: 2026-11-14
+- **Exceptions.** The rule "Reading text is at least 16 pixels tall" does not bind: the Direction "Control Room" uses 15 pixels on purpose. The Direction's record states that reason, a unit test refuses a departure without such a record, and the Summary shows the reason beside "Does not hold" while the start's text size stands (finding U5-16; test "names the Directions that depart from a rule that does not bind, so that a new departure is a decision and not an accident"). A rule measures values of the design, not the built website, and each rule states what a person must still check.
+- Last verified: 2026-11-15
 
 ## [70] How the Studio is built
 
@@ -580,8 +581,8 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Rule.** The project pins exact dependency versions, records a check of each direct dependency, and adopts a version only 7 days or more after its release. [S1 at D27]
 - **Policy.** Hard rule 7. [S10 at hard rule 7]
 - **Exceptions.** The owner merged six of Dependabot's updates on 2026-11-14 (among them Playwright 1.65.0 and Vite 8.3.7). Nobody checked those six versions against the 7-day wait, and their rows in the package-check table still show the versions of 2026-11-13 (review of 2026-11-14, finding DT-03).
-- **Open.** Registry signatures are unverified in this environment (stated in `DECISIONS.md`). No automatic test enforces the 7-day wait.
-- Last verified: 2026-11-14
+- **Open.** Registry signatures are unverified in this environment (stated in `DECISIONS.md`). No automatic test enforces the 7-day wait. Since 2026-11-15 Dependabot's "cooldown" setting (7 days, in `.github/dependabot.yml`) keeps it from proposing a version update earlier; the setting's form was read in GitHub's options reference, and nobody has yet seen Dependabot act on it in this repository. A security update is proposed at once, which is the exception that D27 names.
+- Last verified: 2026-11-15
 
 ### [70.04] Every browser test fails when the page meets an error
 
@@ -619,6 +620,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 ## [85] Changelog
 
+- 2026-11-15 v1.6: after the owner's decisions of 2026-11-15 (decision D55): §10.01 states the status line after an Undo back to the stored project; §50.01 states when a design holds an Option whose second color follows, and names the new test; §60.04 states how a departure on purpose is recorded and shown; §70.03 names Dependabot's cooldown. 49 guarantees.
 - 2026-11-14 v1.5: after the reviews of 2026-11-14 (decision D54): §20.06 covers look-alike marks and invisible direction signs; §20.07 says which original is kept; §50.07 states the rule for offering a Skin; §70.03 states its exception. 49 guarantees.
 - 2026-11-14 v1.4: after the saving table, Skins, Overlays, and research rules (decisions D52, D53): added §10.14, §20.07, §30.06, §50.07, §50.08, §60.03, §60.04; §60.01 names the test under its new name. 49 guarantees.
 - 2026-11-14 v1.3: after round 3 of campaign 4: added §10.12, §10.13, §20.05, §20.06, §50.06. 42 guarantees.
