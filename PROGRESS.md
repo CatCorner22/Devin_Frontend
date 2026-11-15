@@ -2,7 +2,7 @@
 
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
-## Start here (written 2026-11-14 for the next session)
+## Start here (written 2026-11-14, checked on 2026-11-15, for the next session)
 
 **The one-minute picture.** The Studio lets the owner pick a starting look (38 Directions, most of them in several Skins), refine it over 23 Steps, switch on Overlays, and read the result back on a Summary with five research rules. It saves reliably. It does not yet export anything to build from (milestone M6) and has no Fitter (M7). Milestone M4 is open and waits for one thing that only the owner can do: the trial in `docs/trial-guide.md`.
 
@@ -23,7 +23,17 @@ A fresh session reads this file to learn where the project stands. Update it aft
 - A new screen changes the path: tests that walk from the last Step to the Summary pass through the Overlays.
 - Four links in the top bar do not fit a 320-pixel window side by side; the row wraps.
 
-**What the next session should do first.** Look at the result of CI run 92 (commit `a6c82ee`): it was still running when this was written; if it failed, repair the cause before anything else. Then read "Next" and "Waiting on the owner" below. If the owner has sent the ten trial answers, turn each named problem into a row in `redteam/FINDINGS.md` and repair the serious ones; M4 then closes on the owner's word and M5 starts with the Brief (the owner's own words in every preview).
+**What does not travel to a new chat.**
+- The earlier chat's memory and its scratch folder are gone. Everything needed is in this repository.
+- The reviewers' own test scripts lived in that scratch folder and are gone. Their reports are in `redteam/reports/2026-11-14-*`, and every finding has a row in `redteam/FINDINGS.md`.
+- No background job is running, and no pull request is open.
+- The private page keeps its address. A new chat republishes to it by passing that address; the address and the version number are in `WAYPOINTS.md`.
+- The cloud environment is named "engine" (see "Environment notes" at the end of this file). Another environment may block hosts that this one allows.
+- If a new chat is given a branch of its own, it starts from `claude/brave-mayer-sawqz9` and opens a draft pull request into it.
+- The owner's standing preferences (active voice, one term per concept, every step and contingency explained) are in `CLAUDE.md`, section "Writing style".
+- Three ready first messages for a new chat are in `docs/new-chat-first-message.md`.
+
+**What the next session should do first.** CI runs 92 and 93 passed on 2026-11-14 (commits `a6c82ee` and `3908189`), so the main line is green. Read "Next" and "Waiting on the owner" below. If the owner has sent the ten trial answers, turn each named problem into a row in `redteam/FINDINGS.md` and repair the serious ones; M4 then closes on the owner's word and M5 starts with the Brief (the owner's own words in every preview).
 
 ## Current milestone: M4 (Step screen). Not complete.
 
