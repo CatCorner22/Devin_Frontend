@@ -23,16 +23,18 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 - The owner answered "please fix all issues" (D56). Commit `6a600aa` splits the phone-width test into 39 tests, one per starting design (the plain start and the 38 Directions), each with the same checks and the unchanged 240-second limit. It also replaces the shared page after any failed or timed-out test (ISO-03) and makes `loopPage()` register its cleanup before its first wait (ISO-08, note 1). No assertion, threshold, limit, or stored picture changed.
 - `npm run check`: 190 tests passed. `npm run e2e`: `Test Files  2 passed (2)`, `Tests  303 passed (303)`, 688.40 seconds, with Chromium revision 1255 through `PW_CHROMIUM`. Every browser test passed in this run.
-- Proof for ISO-03, with the nine paint-only tests forced to a 100 ms limit: before `13 failed | 113 passed`, after `9 failed | 117 passed` (only the nine forced tests fail).
-- No red-team reviewer has examined this second repair; the owner has not yet approved a run for it (ISO-09).
-- The owner turned GitHub Actions on for `Devin_Frontend` on 2026-11-16 (ISO-08, note 5). The CI workflow is now active; the first runs (on commit `6e2668d`, runs 43893704086 for the push and 43893721730 for the pull request) both passed every step: type check, lint, boundaries, unit tests, licence notices, the browser tests (2 test files passed, 459 seconds, on the browser Playwright 1.65 expects: revision 1254), and the dependency audit.
+- Proof for ISO-03, with the nine paint-only tests forced to a 100 ms limit: after the repair, `9 failed | 117 passed` in every run (only the nine forced tests fail). Before the repair the result varied from run to run: the builder saw `13 failed | 113 passed` once and recorded neither the command nor the number of runs; the second review's judge got 9 failed in five runs of six and 12 failed in one (ISO-12). The command is in `redteam/reports/2026-11-16-iso2-judge.md`, F-3.
+- The owner approved a red-team review of this second repair on 2026-11-16 (D57). Three reviewers and a separate judge ran it: 39 attempts, 5 confirmed findings (3 minor, 2 note), no blocker and no major (ISO-10 to ISO-14; `redteam/reports/2026-11-16-iso2-judge.md`). ISO-09 is closed.
+- Repair after that review (ISO-10): leftover code of a timed-out test that waits on a timer, not on the browser, could still draw on the replacement page; the judge showed it only with an edited test. Each shared-page test now runs through `itShared`, and `sharedPage()` refuses code whose test has ended in failure. Measured with the judge's added test, 3 runs: before `2 failed | 116 passed`, after `1 failed | 117 passed` (only the added test fails).
+- One reviewer saw the keyboard-focus test in `studio.e2e.ts` fail in 3 of 4 full runs on its machine (`expected 'INPUT::option-borders' to contain 'BUTTON:Undo'`). The judge (4 full runs), the builder, and CI did not see it. It is logged as ISO-15, observed once, open.
+- The owner turned GitHub Actions on for `Devin_Frontend` on 2026-11-16 (ISO-08, note 5). The CI workflow is now active; the first runs (on commit `6e2668d`, runs 43893704086 for the push and 43893721730 for the pull request) both passed every step: type check, lint, boundaries, unit tests, licence notices, the browser tests (2 test files passed, in 441.60 seconds for the push and 459.44 seconds for the pull request, on the browser Playwright 1.65 expects: revision 1254), and the dependency audit.
 - Still open: Notes 2 to 4 of ISO-08 stay open; none changes a test result. The trial in `docs/trial-guide.md` (M4) still waits for the owner.
 
 ## Start here (written 2026-11-14, checked on 2026-11-15, for the next session)
 
 **The one-minute picture.** The Studio lets the owner pick a starting look (38 Directions, most of them in several Skins), refine it over 23 Steps, switch on Overlays, and read the result back on a Summary with five research rules. It saves reliably. It does not yet export anything to build from (milestone M6) and has no Fitter (M7). Milestone M4 is open and waits for one thing that only the owner can do: the trial in `docs/trial-guide.md`.
 
-**Where the work is.** One branch holds everything: `claude/brave-mayer-sawqz9` (the main line; pull request 4 was merged on 2026-11-15, and none is open). The private page is https://claude.ai/artifact/PexMgowEAEAHZ9vpHw3uXc; its version number is in `WAYPOINTS.md`.
+**Where the work is.** One branch holds everything: `claude/brave-mayer-sawqz9` (the main line; pull request 4 was merged on 2026-11-15). Pull request 5 is open from the branch `devin/1794769950-iso-review-findings`, which holds the isolation review and its repairs until the owner merges it. The private page is https://claude.ai/artifact/PexMgowEAEAHZ9vpHw3uXc; its version number is in `WAYPOINTS.md`.
 
 **First commands of a new session.**
 1. `npm ci --ignore-scripts` (about 5 seconds).
@@ -52,7 +54,7 @@ A fresh session reads this file to learn where the project stands. Update it aft
 **What does not travel to a new chat.**
 - The earlier chat's memory and its scratch folder are gone. Everything needed is in this repository.
 - The reviewers' own test scripts lived in that scratch folder and are gone. Their reports are in `redteam/reports/2026-11-14-*`, and every finding has a row in `redteam/FINDINGS.md`.
-- No background job is running. Pull request 4 was merged on 2026-11-15; none is open.
+- No background job is running. Pull request 4 was merged on 2026-11-15; pull request 5 is open (branch `devin/1794769950-iso-review-findings`).
 - The private page keeps its address. A new chat republishes to it by passing that address; the address and the version number are in `WAYPOINTS.md`.
 - The cloud environment is named "engine" (see "Environment notes" at the end of this file). Another environment may block hosts that this one allows.
 - If a new chat is given a branch of its own, it starts from `claude/brave-mayer-sawqz9` and opens a draft pull request into it.
@@ -79,7 +81,7 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 - **Core** (`packages/core`): 23 Steps (6 Layout, 17 Look and feel), 38 Directions in four groups and a Direction generator, 12 Skins, 6 Overlays, 5 research rules, 12 conflict rules and 11 harmony rules as Catalog records, token derivation with 29 measured contrast pairs, the Mockup for Template 1 (one page), saved-project format version 2 with a migration from version 1.
 - **Studio** (`apps/studio`): Directions, Steps, Overlays, Summary, and Licences screens; storage that reads both saved copies and never overwrites what it cannot read; Undo; confirmations before work is replaced.
-- **Checks in CI:** type check, lint, boundary rule, 190 unit tests, licence-notices check, 265 browser tests (on the Studio and on the Mockup; among them one stored-picture comparison per Direction and page part), bundle-size budget, dependency audit. After each Studio browser test, a check fails the test if the page met an error.
+- **Checks in CI:** type check, lint, boundary rule, 190 unit tests, licence-notices check, 303 browser tests (on the Studio and on the Mockup; among them one stored-picture comparison per Direction and page part), bundle-size budget, dependency audit. After each Studio browser test, a check fails the test if the page met an error.
 - **Red team:** first review on 2026-11-13: 137 findings (6 blockers, 55 major, 56 minor, 20 notes). Every finding has a status in `redteam/FINDINGS.md`. `redteam/tools/plant-defects.py` plants 39 defects; the unit suite catches 38.
 - **Private page:** https://claude.ai/artifact/PexMgowEAEAHZ9vpHw3uXc (the version number is in `WAYPOINTS.md`).
 - **Literal names (2026-11-13).** Every Step, Option, and slider in the Catalog now carries a name that says what a person sees (for example "Ring and whisper" became "Thin outline with a faint shadow"; "Accent color" became "Main color"). The "Contrast checks" choices read "Off", "Warn me", "Fix for me". Identifiers did not change, so saved projects open as before. No red-team review covered this change (D33).

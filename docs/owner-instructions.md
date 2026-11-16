@@ -28,7 +28,7 @@
 | 2026-11-14, time not recorded | "Please also generate another updated version of the overall plan." and "Once you finish your work, please update the files I need to start a new session seamlessly." | `PLAN.md` version 2 (D52); the section "Start here" in `PROGRESS.md` |
 | 2026-11-14, through the plan-approval step | The owner approved the plan "close milestone M4 properly, then make the Studio useful", which named the update of decision D28 and of the stack line in `CLAUDE.md`. | D53, point 6 |
 | 2026-11-15, 12:22 and 12:23 EST | "Please fix the issue.  I would prefer to approve the red-team run" and "fix it" (about the missing reviews of pull request 4). | D55 |
-| 2026-11-16, 07:58 EST | "please fix all issues" (after the builder asked whether to split the phone-width test into one test per Direction). | D56 |
+| 2026-11-16, 07:58 EST | "please fix all issues" (after the builder asked whether to split the phone-width test into one test per starting design: the plain start and each Direction). | D56 |
 | 2026-11-16, 11:15 EST | "run it" (after the builder asked whether to run the three red-team reviewers and a judge on the second isolation repair, finding ISO-09). | D57 |
 
 **Entries with no owner statement behind them.** D8, D9, D10, D11, D15, D20, D21, D24, D25, D27, D28 (replaced by D53), D29, D30, D31, D32, D35, D36, D37. `DECISIONS.md` marks each as "Recorded" or "Pending the owner".
