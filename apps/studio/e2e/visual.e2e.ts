@@ -7,8 +7,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_PARAMS, DIRECTIONS, FONTS, SAMPLE_CONTENT, STEPS, deriveTokens, renderSmallBusiness, resolvePatch, type DesignParams, type FontId, type MockupFocus } from '@refraction/core';
-import { chromium, type Browser, type Page } from 'playwright';
-import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const baselineDir = fileURLToPath(new URL('./baselines/', import.meta.url));
@@ -41,14 +41,22 @@ function mockup(params: DesignParams, focus: MockupFocus): string {
 
 // A machine whose installed browser is older than this Playwright version names its browser here; CI sets nothing.
 const LOCAL_BROWSER = process.env['PW_CHROMIUM'] ? { executablePath: process.env['PW_CHROMIUM'] } : {};
+const CONTEXT = { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' } as const;
 let browser: Browser;
 let page: Page;
 beforeAll(async () => {
   // Pin how the browser draws text, so that the same picture comes out on every machine. By default the browser takes font "hinting" from the
   // machine's own settings; with hinting on, it also rounds each letter's width to whole pixels, so lines wrap at different words (CI runs 11 and 27).
   browser = await chromium.launch({ ...LOCAL_BROWSER, args: ['--font-render-hinting=none', '--disable-lcd-text'] });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
-  page = await context.newPage();
+  page = await (await browser.newContext(CONTEXT)).newPage();
+});
+// A failed or timed-out test may have left the shared `page` changed, and after a timeout its code keeps running. Closing the page
+// stops that code at its next browser call; the next test then starts on a fresh page (finding ISO-03). The old page closes before
+// `page` names the new one, so the stopped test's code can never reach the new page.
+afterEach(async ({ task }) => {
+  if (task.result?.state !== 'fail') return;
+  await page.context().close();
+  page = await (await browser.newContext(CONTEXT)).newPage();
 });
 afterAll(async () => {
   await browser.close();
@@ -58,9 +66,11 @@ afterAll(async () => {
 // test finishes, even after a timeout or a failed check, so the test can never leave the shared `page` at the wrong width or
 // keep drawing on it while the stored-picture tests run.
 async function loopPage(): Promise<Page> {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
-  onTestFinished(() => context.close());
-  return context.newPage();
+  // Register the closing first: after an `await`, a test that already timed out would register it on the next test (finding ISO-08).
+  const own: { context?: BrowserContext } = {};
+  onTestFinished(async () => own.context?.close());
+  own.context = await browser.newContext(CONTEXT);
+  return own.context.newPage();
 }
 
 async function show(html: string, target: Page = page): Promise<void> {
@@ -189,11 +199,13 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
     return out;
   }
 
-  it('never makes the page wider than a phone, whatever the Direction, the type Options, or the slider ends', async () => {
-    const page = await loopPage();
-    await page.setViewportSize({ width: 375, height: 800 });
-    const wide: string[] = [];
-    for (const direction of [{ name: 'plain start', params: DEFAULT_PARAMS }, ...DIRECTIONS]) {
+  // One test per Direction, each with the limit the single test had: the single test drew every Direction in one 240-second
+  // limit and ran out of time on a slow machine (finding ISO-06; the owner approved the split, D56). Every check is the same.
+  for (const direction of [{ name: 'plain start', params: DEFAULT_PARAMS }, ...DIRECTIONS]) {
+    it(`never makes the page wider than a phone: ${direction.name}, whatever the type Options or the slider ends`, async () => {
+      const page = await loopPage();
+      await page.setViewportSize({ width: 375, height: 800 });
+      const wide: string[] = [];
       for (const design of reachable(direction.params)) {
         await show(mockup(design.params, 'top'), page);
         const report = await page.evaluate(() => {
@@ -207,10 +219,10 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
         });
         if (report) wide.push(`${direction.name}, ${design.label}: ${report}`);
       }
-    }
-    await page.setViewportSize({ width: 1280, height: 800 });
-    expect(wide).toEqual([]);
-  }, 240_000);
+      await page.setViewportSize({ width: 1280, height: 800 });
+      expect(wide).toEqual([]);
+    }, 240_000);
+  }
 
   it('fits the window at other widths as well: a small phone, the width at which two columns begin, and wider (code review of 2026-11-13, finding "tokens 4")', async () => {
     const page = await loopPage();
