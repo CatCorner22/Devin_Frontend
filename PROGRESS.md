@@ -25,7 +25,8 @@ A fresh session reads this file to learn where the project stands. Update it aft
 - `npm run check`: 190 tests passed. `npm run e2e`: `Test Files  2 passed (2)`, `Tests  303 passed (303)`, 688.40 seconds, with Chromium revision 1255 through `PW_CHROMIUM`. Every browser test passed in this run.
 - Proof for ISO-03, with the nine paint-only tests forced to a 100 ms limit: before `13 failed | 113 passed`, after `9 failed | 117 passed` (only the nine forced tests fail).
 - No red-team reviewer has examined this second repair; the owner has not yet approved a run for it (ISO-09).
-- Still open: GitHub Actions is off for `Devin_Frontend`, so CI has not checked any of this; only the owner can turn it on (ISO-08, note 5). Notes 2 to 4 of ISO-08 stay open; none changes a test result. The trial in `docs/trial-guide.md` (M4) still waits for the owner.
+- The owner turned GitHub Actions on for `Devin_Frontend` on 2026-11-16 (ISO-08, note 5). The CI workflow is now active; the first run starts with the push of this line, and its result is not yet known.
+- Still open: Notes 2 to 4 of ISO-08 stay open; none changes a test result. The trial in `docs/trial-guide.md` (M4) still waits for the owner.
 
 ## Start here (written 2026-11-14, checked on 2026-11-15, for the next session)
 
