@@ -111,6 +111,12 @@ describe('grade', () => {
     expect(grade([...withPerson, fails('tell-a')], RULES).grade).toBe('Crafted');
     expect(grade(withPerson, RULES).grade).toBe('Crafted');
   });
+  it('a finding under a rule id that no record holds gives "Not graded", and the receipt names it (review of 2026-11-18, F-19)', () => {
+    const slip = grade([...allHold, holds('person-a'), fails('floor-a ')], RULES);
+    expect(slip).toMatchObject({ grade: 'Not graded', unknownRules: ['floor-a '] });
+    expect(slip.reason).toMatch(/1 finding\(s\) name a rule that this set of rules does not hold/);
+    expect(receipt([fails('made-up-floor')], RULES).notMeasured.find((line) => line.ruleId === '‹made-up-floor›')?.result).toMatch(/status "fails"/);
+  });
   it('a floor that only a person can check, while open, holds the grade at "Meets floor", and the reason says so (D59)', () => {
     expect(grade(allHold, RULES)).toMatchObject({ grade: 'Meets floor', floorsForAPerson: ['person-a'] });
     expect(grade(allHold, RULES).reason).toMatch(/"Crafted" waits for a person/);

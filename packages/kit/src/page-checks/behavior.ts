@@ -117,9 +117,11 @@ export function targetSize(doc: Document): Finding[] {
 export function controlsHaveNames(doc: Document): Finding[] {
   const ruleId = 'behavior-control-name';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-  const controls = [...doc.querySelectorAll<HTMLElement>('a[href], button, [role="button"], [role="link"], [role="tab"], [role="menuitem"]')].filter((el) => el.getClientRects().length > 0);
+  const controls = [...doc.querySelectorAll<HTMLElement>('a[href], button, input[type="button"], input[type="submit"], input[type="reset"], input[type="image"], [role="button"], [role="link"], [role="tab"], [role="menuitem"]')].filter((el) => el.getClientRects().length > 0);
   if (controls.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
+  // Letters that draw nothing (zero-width spaces and joiners, the soft hyphen, the byte-order mark) are no name.
+  const unseen = new RegExp('[\\u200b-\\u200f\\u2060-\\u2064\\u00ad\\ufeff]', 'g');
   for (const el of controls) {
     const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join('');
     // Only what a screen reader is given counts: nothing inside a part marked aria-hidden, and nothing that is not drawn.
@@ -134,7 +136,10 @@ export function controlsHaveNames(doc: Document): Finding[] {
       range.selectNodeContents(node);
       if (node.parentElement.closest('svg') !== null || range.getClientRects().length > 0) text += node.textContent ?? '';
     }
-    const said = [el.getAttribute('aria-label') ?? '', byId, text, pictures, el.getAttribute('title') ?? ''].join('').trim();
+    // A button made with `input`: its name is its `value` (Submit and Reset have a name from the browser); a picture button needs `alt`.
+    const type = el.tagName === 'INPUT' ? (el.getAttribute('type') ?? '').toLowerCase() : '';
+    const own = type === 'image' ? (el.getAttribute('alt') ?? '') : type === 'submit' || type === 'reset' ? (el.hasAttribute('value') ? (el.getAttribute('value') ?? '') : type) : type === 'button' ? (el.getAttribute('value') ?? '') : '';
+    const said = [el.getAttribute('aria-label') ?? '', byId, text, pictures, own, el.getAttribute('title') ?? ''].join('').replace(unseen, '').trim();
     if (said === '') out.push({ ruleId, status: 'fails', where: name(el), measured: 'no name: no text, no label', required: 'a name that says what the control does', fix: 'Add visible text, or an aria-label that says what the control does.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

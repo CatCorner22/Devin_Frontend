@@ -40,8 +40,14 @@ import { KIT_RULES, grade, receipt, receiptText, repairPlan, designId } from '@r
 import * as checks from '@refraction/kit/src/page-checks/index.js';
 
 // In a browser page (Playwright): send each check into the page as text, so that it runs there.
+// `tokenFit` also takes the design's tokens. `noSidewaysScroll` answers only when the window is 320 pixels wide.
 const findings = [];
-for (const fn of Object.keys(checks)) findings.push(...await page.evaluate(`(${checks[fn]})(document)`));
+for (const fn of Object.keys(checks)) {
+  if (fn === 'noSidewaysScroll') await page.setViewportSize({ width: 320, height: 800 });
+  const more = fn === 'tokenFit' ? `, ${JSON.stringify(tokens)}` : '';
+  findings.push(...await page.evaluate(`(${checks[fn]})(document${more})`));
+  if (fn === 'noSidewaysScroll') await page.setViewportSize({ width: 1280, height: 800 });
+}
 
 grade(findings, KIT_RULES);               // { grade: 'Below floor' | 'Meets floor' | 'Crafted' | 'Not graded', ... }
 repairPlan([findings], KIT_RULES);        // what to repair next, floors first; stops after 3 rounds

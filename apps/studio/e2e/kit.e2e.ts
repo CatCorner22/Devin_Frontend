@@ -251,6 +251,18 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(`<h1>Shop</h1><p>Text.</p><div style="${layer}; pointer-events: none; z-index: -1"></div>`, 'dialogsAreMarked')).toEqual(['not-applicable']);
     });
 
+    it('F-24: a button made with input and a button named by a letter that draws nothing have no name', async () => {
+      const where = async (html: string): Promise<(string | undefined)[]> => {
+        const page = await pageOf(html);
+        const out = (await run(page, 'controlsHaveNames')).filter((f) => f.status === 'fails').map((f) => f.where);
+        await page.context().close();
+        return out;
+      };
+      const gif = 'data:image/gif;base64,R0lGODlhAQABAAAAACw=';
+      expect(await where(`<input type="image" id="pic" src="${gif}" style="width:30px;height:30px"><input type="button" id="bare" style="width:30px;height:30px"><button id="zw">\u200b</button>`)).toEqual(['input#pic', 'input#bare', 'button#zw']);
+      expect(await where(`<input type="image" alt="Search" src="${gif}" style="width:30px;height:30px"><input type="button" value="Add"><input type="submit"><input type="reset">`)).toEqual([]);
+    });
+
     it('F-9: a banner that a script turns every two seconds fails; a still page and a page with a pause button hold', async () => {
       const turn = () => { let n = 0; setInterval(() => { const el = document.getElementById('slide'); if (el) el.textContent = `Offer ${++n}`; }, 2000); };
       const page = await pageOf('<h1>Shop</h1><p id="slide">Offer 0</p>');

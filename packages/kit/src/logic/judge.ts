@@ -7,7 +7,7 @@ export type Grade = 'Not graded' | 'Below floor' | 'Meets floor' | 'Crafted';
  * the grade is at most "Meets floor": "Crafted" says that every floor holds, and a program cannot say that alone
  * (finding F-18 of 2026-11-18; the owner's delegation, decision D59). A person's answer is a finding under the floor's rule id.
  */
-export interface GradeResult { grade: Grade; reason: string; failedFloors: string[]; failedRules: string[]; unmeasuredFloors: string[]; floorsForAPerson: string[] }
+export interface GradeResult { grade: Grade; reason: string; failedFloors: string[]; failedRules: string[]; unmeasuredFloors: string[]; floorsForAPerson: string[]; /** Rule ids that findings name and no record holds. Text from outside: print it only through `fromPage`. */ unknownRules: string[] }
 
 const unique = (list: string[]): string[] => [...new Set(list)];
 const byId = (rules: readonly RuleRecord[]): Map<string, RuleRecord> => new Map(rules.map((rule) => [rule.id, rule]));
@@ -29,8 +29,12 @@ export function grade(findings: readonly Finding[], rules: readonly RuleRecord[]
   // A person's answer enters as a finding like any other: `holds`, `fails`, or `not-applicable` under the floor's rule id.
   const floorsForAPerson = rules.filter((rule) => rule.level === 'floor' && rule.check.kind === 'person' && (!answered.has(rule.id) || refused.has(rule.id))).map((rule) => rule.id);
   const open = floorsForAPerson.length > 0 ? ` ${floorsForAPerson.length} floor(s) that only a person can check are still open.` : '';
-  const result = (grade: Grade, reason: string): GradeResult => ({ grade, reason: reason + open, failedFloors, failedRules, unmeasuredFloors, floorsForAPerson });
+  // A finding under a rule id that no record has (a slip of the keyboard, a rule of another set) is never dropped in silence:
+  // it may be a failed floor under a wrong name, so the page gets no grade (finding F-19 of 2026-11-18).
+  const unknownRules = unique(findings.filter((f) => !record.has(f.ruleId)).map((f) => f.ruleId));
+  const result = (grade: Grade, reason: string): GradeResult => ({ grade, reason: reason + open, failedFloors, failedRules, unmeasuredFloors, floorsForAPerson, unknownRules });
   if (failedFloors.length > 0) return result('Below floor', `${failedFloors.length} floor(s) fail.`);
+  if (unknownRules.length > 0) return result('Not graded', `${unknownRules.length} finding(s) name a rule that this set of rules does not hold.`);
   if (unmeasuredFloors.length > 0) return result('Not graded', `${unmeasuredFloors.length} floor(s) were not measured.`);
   if (failedRules.length > 0) return result('Meets floor', `Every measured floor holds; ${failedRules.length} rule(s) fail.`);
   if (floorsForAPerson.length > 0) return result('Meets floor', 'Every measured floor and rule holds. The grade "Crafted" waits for a person.');
@@ -128,6 +132,8 @@ export function receipt(findings: readonly Finding[], rules: readonly RuleRecord
       measured.push({ ruleId: rule.id, plain: rule.plain, result: `${f.status === 'fails' ? 'Fails' : f.status === 'holds' ? 'Holds' : 'Does not apply to this page'}${detail ? ` (${detail})` : ''}` });
     }
   }
+  const known = new Set(rules.map((rule) => rule.id));
+  for (const f of findings) if (!known.has(f.ruleId)) notMeasured.push({ ruleId: fromPage(f.ruleId) ?? '', plain: 'No rule of this set has this id.', result: `A finding with the status "${f.status}" names it. Check the spelling of the id.` });
   return { measured, notMeasured, forAPerson: [...forAPerson, ...ALWAYS_FOR_A_PERSON], grade: grade(findings, rules) };
 }
 
