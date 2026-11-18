@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Harbor Street Plumbing</title>
+<style>
+:root { --ink: #1a1a1a; --paper: #ffffff; --accent: #0b5fff; --line: #d0d5dd; --radius: 8px; --radius-in: 4px; --font-body: Georgia, serif; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 24px; font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--ink); background: var(--paper); }
+h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0 0 12px; }
+h1 { font-size: 32px; } h2 { font-size: 24px; } h3 { font-size: 20px; }
+p, li { max-width: 60ch; margin: 0 0 16px; }
+a { color: var(--accent); }
+button, input, select { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius-in); padding: 8px 12px; min-height: 44px; transition: background-color 150ms ease-out; }
+button.main { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+label { display: block; margin-bottom: 4px; }
+section { margin-bottom: 32px; }
+table { border-collapse: collapse; } td, th { padding: 4px 12px; text-align: left; } td.n { font-variant-numeric: tabular-nums; text-align: right; }
+img { max-width: 100%; height: auto; }
+dialog { color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+.card { border-radius: var(--radius); padding: 4px; background: var(--accent); max-width: 320px; }
+.card .in { border-radius: var(--radius-in); background: var(--paper); padding: 12px; }
+[role="tablist"] { display: flex; gap: 8px; flex-wrap: wrap; }
+[role="tab"][aria-selected="true"] { font-weight: bold; text-decoration: underline; }
+
+</style>
+</head>
+<body>
+<main>
+<h1>Harbor Street Plumbing</h1>
+<p>We repair and install pipes, heaters, and drains in homes around Portland. A plumber stands at your door within two hours of your call, by day and by night, and tells you the price before the work begins.</p>
+<p>Read what <a href="#proof">our customers say</a> or call us now.</p>
+<section aria-labelledby="t1"><h2 id="t1">Prices</h2>
+<table><thead><tr><th>Work</th><th>Price</th></tr></thead><tbody><tr><td>Leak repair</td><td class="n">$120.00</td></tr><tr><td>Water heater</td><td class="n">$1,480.00</td></tr></tbody></table></section>
+<section aria-labelledby="t2"><h2 id="t2">Ask for a visit</h2>
+<form><label for="name">Your name</label><input id="name" name="name" autocomplete="name">
+<label for="phone">Your telephone number</label><input id="phone" name="phone" type="tel" autocomplete="tel">
+<p><button class="main" type="button" id="send">Ask for a visit</button></p></form></section>
+<section aria-labelledby="t3"><h2 id="t3">Your visits</h2>
+<ul id="visits"></ul><p data-empty>You have no visits yet. Ask for a visit above.</p>
+<div data-loading aria-busy="true" style="height: 48px">Loading your visits</div></section>
+<section aria-labelledby="t4"><h2 id="t4">Our work</h2>
+<div role="tablist" aria-label="Kinds of work"><button role="tab" id="tab-a" aria-selected="true" tabindex="0">Leaks</button><button role="tab" id="tab-b" aria-selected="false" tabindex="-1">Heaters</button><button role="tab" id="tab-c" aria-selected="false" tabindex="-1">Drains</button></div>
+<div class="card"><div class="in"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%230b5fff'/%3E%3C/svg%3E" width="80" height="80" alt="A blue square that stands for a photograph of our van"><h3 id="proof">Dana R., Sellwood</h3><p>“They came at midnight and the floor was dry by one.”</p></div></div></section>
+<section><video controls width="160" height="90"></video>
+<p><button type="button" id="open">Cancel a visit</button></p>
+<dialog id="box" aria-labelledby="box-title"><h2 id="box-title">Cancel the visit?</h2><p>We will not come on Tuesday.</p><button type="button" id="keep">Keep the visit</button> <button type="button" id="cancel">Cancel the visit</button></dialog></section>
+</main>
+<script>
+const tabs = [...document.querySelectorAll('[role="tab"]')];
+const choose = (tab) => { for (const t of tabs) { t.setAttribute('aria-selected', String(t === tab)); t.tabIndex = t === tab ? 0 : -1; } };
+for (const [i, tab] of tabs.entries()) {
+  tab.addEventListener('click', () => choose(tab));
+  tab.addEventListener('keydown', (event) => {
+    const to = event.key === 'ArrowRight' ? (i + 1) % tabs.length : event.key === 'ArrowLeft' ? (i - 1 + tabs.length) % tabs.length : event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : -1;
+    if (to >= 0) { event.preventDefault(); tabs[to].focus(); }
+  });
+}
+const box = document.getElementById('box');
+document.getElementById('open').addEventListener('click', () => box.showModal());
+document.getElementById('keep').addEventListener('click', () => box.close());
+document.getElementById('cancel').addEventListener('click', () => box.close());
+
+</script>
+</body>
+</html>

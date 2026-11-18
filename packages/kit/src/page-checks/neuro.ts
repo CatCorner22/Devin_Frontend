@@ -1,0 +1,254 @@
+// Page checks for reading comfort and for the floors that protect people who are easily distracted, overloaded, or slowed by a page.
+// Each function is self-contained: a checker sends its text into a browser page, so it may use nothing from outside its own body.
+import type { Finding } from '../shapes.js';
+
+/** Sound or video that starts by itself. */
+export function noAutoplay(doc: Document): Finding[] {
+  const ruleId = 'neuro-no-autoplay';
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const media = [...doc.querySelectorAll<HTMLMediaElement>('video, audio')];
+  if (media.length === 0) return [{ ruleId, status: 'not-applicable' }];
+  const out: Finding[] = [];
+  for (const el of media) {
+    const silentVideo = el.tagName === 'VIDEO' && el.muted;
+    // The record says that nothing starts by itself, so a silent video with controls fails too (finding F-10).
+    if (el.autoplay && silentVideo && !(el.loop && !el.controls)) out.push({ ruleId, status: 'fails', where: name(el), measured: 'silent video that starts by itself', required: 'starts only when the person asks', fix: 'Remove the autoplay attribute, so that the person starts the video.' });
+    else if (el.autoplay && !silentVideo) out.push({ ruleId, status: 'fails', where: name(el), measured: 'starts by itself, with sound', required: 'starts only when the person asks', fix: 'Remove the autoplay attribute, so that the person starts the sound or video.' });
+    else if (el.autoplay && el.loop && !el.controls) out.push({ ruleId, status: 'fails', where: name(el), measured: 'silent video that starts by itself, repeats, and has no controls', required: 'a way to pause it', fix: 'Add the controls attribute, or remove autoplay and loop.' });
+  }
+  return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
+}
+
+/** Movement that runs for more than five seconds, or without end, with no way to stop it. */
+export function noEndlessMotion(doc: Document): Finding[] {
+  const ruleId = 'neuro-motion-can-stop';
+  const view = doc.defaultView;
+  if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const seconds = (text: string): number => (text.endsWith('ms') ? parseFloat(text) / 1000 : parseFloat(text));
+  const out: Finding[] = [];
+  for (const el of doc.querySelectorAll('marquee, blink')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'text that moves or blinks without end', required: 'still text', fix: 'Replace the moving text with still text.' });
+  // A pause control counts only if a person can see it.
+  // Only a visible button that the builder marked for this job counts. A label that merely holds the word "stop" does not (finding F-6).
+  const hasPause = [...doc.querySelectorAll('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
+  for (const el of doc.querySelectorAll('body *')) {
+    const style = view.getComputedStyle(el);
+    if (style.animationName === 'none' || style.display === 'none' || style.visibility === 'hidden') continue;
+    const names = style.animationName.split(',');
+    const durations = style.animationDuration.split(',').map((t) => seconds(t.trim()));
+    const counts = style.animationIterationCount.split(',').map((t) => t.trim());
+    for (let i = 0; i < names.length; i++) {
+      const duration = durations[i % durations.length] ?? 0;
+      const count = counts[i % counts.length] ?? '1';
+      const total = count === 'infinite' ? Infinity : duration * parseFloat(count);
+      if (duration > 0 && total > 5 && !hasPause) {
+        out.push({ ruleId, status: 'fails', where: name(el), measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it.' });
+        break;
+      }
+    }
+  }
+  return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
+}
+
+/** A page that reloads or moves the person elsewhere on a timer. */
+export function noTimedReload(doc: Document): Finding[] {
+  const ruleId = 'neuro-no-time-limit';
+  const refresh = doc.querySelector('meta[http-equiv="refresh" i]');
+  if (!refresh) return [{ ruleId, status: 'holds' }];
+  return [{ ruleId, status: 'fails', where: 'meta[http-equiv="refresh"]', measured: `the page reloads or moves by itself (${refresh.getAttribute('content') ?? ''})`, required: 'no time limit, or a limit that the person can extend', fix: 'Remove the timed reload, so that the person decides when to move on.' }];
+}
+
+/** Reading text: size, line height, line length, and alignment. */
+export function readingComfort(doc: Document): Finding[] {
+  const view = doc.defaultView;
+  if (!view) return [{ ruleId: 'neuro-line-length', status: 'could-not-measure', measured: 'the page has no window' }];
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const blocks = [...doc.querySelectorAll<HTMLElement>('p, li, dd, blockquote')].filter((el) => (el.textContent ?? '').trim().length >= 120 && el.getClientRects().length > 0);
+  const ids = ['neuro-line-length', 'neuro-line-height', 'neuro-text-size', 'neuro-no-justified-text'] as const;
+  if (blocks.length === 0) return ids.map((ruleId) => ({ ruleId, status: 'not-applicable' as const }));
+  const fails: Finding[] = [];
+  const probe = doc.createElement('span');
+  probe.textContent = '0000000000';
+  probe.style.visibility = 'hidden';
+  probe.style.position = 'absolute';
+  for (const el of blocks) {
+    const style = view.getComputedStyle(el);
+    const size = parseFloat(style.fontSize);
+    el.appendChild(probe);
+    const letter = probe.getBoundingClientRect().width / 10;
+    probe.remove();
+    const width = el.getBoundingClientRect().width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    const letters = letter > 0 ? Math.round(width / letter) : 0;
+    if (letters > 80) fails.push({ ruleId: 'neuro-line-length', status: 'fails', where: name(el), measured: `about ${letters} letters in a line`, required: 'at most 80', fix: 'Give the text a max-width of about 65ch.' });
+    const lineHeight = style.lineHeight === 'normal' ? 1.2 : parseFloat(style.lineHeight) / size;
+    if (lineHeight < 1.5) fails.push({ ruleId: 'neuro-line-height', status: 'fails', where: name(el), measured: `line height ${lineHeight.toFixed(2)}${style.lineHeight === 'normal' ? ' (the browser\'s default, taken as 1.2)' : ''}`, required: 'at least 1.5', fix: 'Set line-height to 1.5 or more on reading text.' });
+    if (size < 16) fails.push({ ruleId: 'neuro-text-size', status: 'fails', where: name(el), measured: `${size} px`, required: 'at least 16 px', fix: 'Set reading text to 1rem or larger.' });
+    if (style.textAlign === 'justify') fails.push({ ruleId: 'neuro-no-justified-text', status: 'fails', where: name(el), measured: 'justified text', required: 'text aligned to one side', fix: 'Set text-align to start.' });
+  }
+  return ids.flatMap((ruleId) => { const found = fails.filter((f) => f.ruleId === ruleId); return found.length > 0 ? found : [{ ruleId, status: 'holds' as const }]; });
+}
+
+/** A field whose only name is the pale text inside it, which disappears at the first letter typed. */
+export function visibleLabels(doc: Document): Finding[] {
+  const ruleId = 'neuro-visible-label';
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.getAttribute('name') ? '[name=' + el.getAttribute('name') + ']' : ''}`;
+  const view = doc.defaultView;
+  if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
+  // Text that a builder hides on purpose for screen readers: a box of one pixel, clipped away, or moved off the page (F-12, F-13).
+  const tiny = (el: Element): boolean => {
+    const box = el.getBoundingClientRect();
+    const computed = view.getComputedStyle(el);
+    return box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath);
+  };
+  const seen = (el: Element): boolean => el.getClientRects().length > 0 && !tiny(el) && view.getComputedStyle(el).visibility === 'visible' && parseFloat(view.getComputedStyle(el).opacity) > 0 && (el.textContent ?? '').trim().length > 0;
+  const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0);
+  if (fields.length === 0) return [{ ruleId, status: 'not-applicable' }];
+  const out: Finding[] = [];
+  for (const el of fields) {
+    const labels = [...(el.labels ?? [])].filter(seen);
+    const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)).filter((ref) => ref !== null && seen(ref));
+    if (labels.length === 0 && byId.length === 0) out.push({ ruleId, status: 'fails', where: name(el), measured: el.getAttribute('placeholder') ? 'only pale text inside the field names it' : 'no visible name', required: 'a visible label that stays while the person types', fix: 'Add a <label> element with visible text and tie it to the field with for and id.' });
+  }
+  return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
+}
+
+/** The text-spacing test of WCAG 1.4.12: with wider spacing set by the reader, no text may be cut off. The function sets the spacing, measures, and removes it. */
+export function survivesTextSpacing(doc: Document): Finding[] {
+  const ruleId = 'neuro-text-spacing';
+  const view = doc.defaultView;
+  if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  // Text that a builder hides on purpose for screen readers: a box of one pixel, clipped away, or moved off the page (F-12, F-13).
+  const tiny = (el: Element): boolean => {
+    const box = el.getBoundingClientRect();
+    const computed = view.getComputedStyle(el);
+    return box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath);
+  };
+  const style = doc.createElement('style');
+  style.textContent = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
+  doc.head.appendChild(style);
+  const out: Finding[] = [];
+  const seen = new Set<HTMLElement>();
+  for (const el of doc.querySelectorAll<HTMLElement>('body *')) {
+    // Every element that holds text of its own, also beside a line break or another element.
+    if (el.getClientRects().length === 0 || ![...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '')) continue;
+    const hides = (value: string): boolean => value === 'hidden' || value === 'clip';
+    // The box that cuts the text off is the text's own box or one around it.
+    let box: HTMLElement | null = el;
+    let cutAcross = false;
+    let cutDown = false;
+    for (; box && box !== doc.body && !cutAcross && !cutDown; box = cutAcross || cutDown ? box : box.parentElement) {
+      const computed: CSSStyleDeclaration = view.getComputedStyle(box);
+      cutAcross = hides(computed.overflowX) && box.scrollWidth > box.clientWidth + 1;
+      cutDown = hides(computed.overflowY) && box.scrollHeight > box.clientHeight + 1;
+    }
+    if (box && box !== doc.body && (cutAcross || cutDown) && !tiny(box) && !tiny(el) && !seen.has(box) && seen.add(box)) out.push({ ruleId, status: 'fails', where: name(box), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
+  }
+  style.remove();
+  return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
+}
+
+/** Sideways scrolling at the present window width. The checker sets the width (320 pixels for the reflow floor) before it calls this. */
+export function noSidewaysScroll(doc: Document): Finding[] {
+  const ruleId = 'neuro-reflow';
+  const root = doc.documentElement;
+  const limit = root.clientWidth;
+  // The floor is defined at 320 pixels. At any other width the answer would say nothing about it (finding F-2 of 2026-11-18).
+  const windowWidth = doc.defaultView?.innerWidth ?? 0;
+  if (windowWidth !== 320) return [{ ruleId, status: 'could-not-measure', measured: `the window is ${windowWidth} px wide; this floor is measured at 320 px` }];
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const view = doc.defaultView;
+  // A page that hides its sideways overflow does not scroll, and what lies beyond the edge is lost instead (finding F-11).
+  // Only parts in the ordinary flow count: a drawer or a slide that waits beside the page is placed there on purpose.
+  const clips = (el: Element): boolean => ['hidden', 'clip'].includes(view?.getComputedStyle(el).overflowX ?? '');
+  if (view && root.scrollWidth <= limit && (clips(root) || clips(doc.body))) {
+    const inFlow = (el: Element): boolean => {
+      for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
+        const computed = view.getComputedStyle(at);
+        if (computed.position === 'absolute' || computed.position === 'fixed' || computed.transform !== 'none' || computed.visibility !== 'visible' || (at !== el && ['auto', 'scroll'].includes(computed.overflowX))) return false;
+      }
+      return true;
+    };
+    const holdsContent = (el: Element): boolean => ['IMG', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'VIDEO'].includes(el.tagName) || [...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '');
+    const lost = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5 && holdsContent(el) && inFlow(el)).slice(0, 3);
+    if (lost.length > 0) return [{ ruleId, status: 'fails', where: lost.map(name).join(', '), measured: `content lies beyond the right edge of a window of ${limit} px, and the page hides it instead of scrolling`, required: 'all content within the width of the window', fix: 'Let the named parts wrap or shrink. Do not hide the overflow of the page: it cuts content off.' }];
+  }
+  if (root.scrollWidth <= limit) return [{ ruleId, status: 'holds', measured: `${limit} px wide` }];
+  const culprits = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5).slice(0, 3);
+  return [{ ruleId, status: 'fails', where: culprits.map(name).join(', '), measured: `the page is ${root.scrollWidth} px wide in a window of ${limit} px`, required: 'no sideways scrolling', fix: 'Let the named parts wrap or shrink: remove fixed widths and add max-width: 100%.' }];
+}
+
+/**
+ * Movement that a script drives (the usual carousel) leaves no mark in the style sheet. This check watches the page for 11 seconds
+ * and fails when parts of the page change at two moments or more, the last of them after the 5-second mark, and no pause control is in view
+ * (finding F-9 of 2026-11-18). It cannot see movement drawn on a canvas, or a change that comes less often than every 5 seconds.
+ */
+export function noScriptedMotion(doc: Document): Promise<Finding[]> {
+  const ruleId = 'neuro-motion-can-stop';
+  const view = doc.defaultView as (Window & { MutationObserver?: typeof MutationObserver }) | null;
+  if (!view || !view.MutationObserver) return Promise.resolve([{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }]);
+  const hasPause = [...doc.querySelectorAll('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
+  if (hasPause) return Promise.resolve([{ ruleId, status: 'holds', measured: 'a pause control is in view' }]);
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const start = view.performance.now();
+  // Movement is one part that changes again and again. Two parts that each change once (content that arrives late) are not movement.
+  const momentsOf = new Map<Element, number[]>();
+  const wasDrawn = new Set<Element>();
+  // Drawn: the part has a box, or (a part with `display: contents` has none) what it holds has one.
+  const isDrawn = (el: Element): boolean => {
+    if (el.getClientRects().length > 0) return true;
+    const range = doc.createRange();
+    range.selectNodeContents(el);
+    return range.getClientRects().length > 0;
+  };
+  for (const el of doc.querySelectorAll('body *')) if (isDrawn(el)) wasDrawn.add(el);
+  const observer = new view.MutationObserver((records) => {
+    const now = (view.performance.now() - start) / 1000;
+    const seenNow = new Set<Element>();
+    for (const r of records) {
+      const el = r.target.nodeType === 1 ? (r.target as Element) : r.target.parentElement;
+      // A part that a script has just hidden counts too: a slide that is shown at one moment and hidden at the next has changed
+      // twice, and so a show of slides is found even when no slide is shown twice. A part that was hidden before the change
+      // and is hidden after it has changed nothing that a person sees, and does not count.
+      const drawnNow = el !== null && isDrawn(el);
+      const drawn = el !== null && (drawnNow || wasDrawn.has(el));
+      // A part that is hidden takes all that it holds out of sight with it, and brings it back when it is shown again.
+      if (el && drawnNow !== wasDrawn.has(el)) {
+        if (drawnNow) { wasDrawn.add(el); for (const inner of el.querySelectorAll('*')) if (isDrawn(inner)) wasDrawn.add(inner); }
+        else { wasDrawn.delete(el); for (const inner of el.querySelectorAll('*')) wasDrawn.delete(inner); }
+      }
+      if (!el || seenNow.has(el) || !drawn || el.tagName === 'STYLE' || el.tagName === 'SCRIPT' || el.tagName === 'HEAD') continue;
+      seenNow.add(el);
+      const moments = momentsOf.get(el) ?? [];
+      if (moments.length === 0 || now - (moments[moments.length - 1] ?? 0) >= 0.9) moments.push(now);
+      momentsOf.set(el, moments);
+    }
+  });
+  observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style', 'class', 'src', 'hidden'] });
+  return new Promise((resolve) => {
+    view.setTimeout(() => {
+      observer.disconnect();
+      const moving = [...momentsOf].find(([, moments]) => moments.length >= 2 && (moments[moments.length - 1] ?? 0) > 5);
+      if (moving) resolve([{ ruleId, status: 'fails', where: name(moving[0]), measured: `a script changed this part at ${moving[1].length} moments in 11 s, the last after ${(moving[1][moving[1].length - 1] ?? 0).toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with data-pause-motion.' }]);
+      else resolve([{ ruleId, status: 'holds', measured: 'no repeated change in 11 s' }]);
+    }, 11000);
+  });
+}
+
+/**
+ * Parts of the page that no check of this kit looks into: a frame, and the inside of a web component (a shadow root).
+ * A fault there is invisible to every other check, so this check answers "could not measure" for every floor that a page check
+ * measures, and the grade is then "Not graded" (finding F-5 of 2026-11-18).
+ */
+export function unseenParts(doc: Document): Finding[] {
+  const floors = ['neuro-no-autoplay', 'neuro-motion-can-stop', 'neuro-no-time-limit', 'neuro-visible-label', 'neuro-text-spacing', 'neuro-reflow', 'behavior-keyboard-reach', 'behavior-focus-visible', 'behavior-target-size', 'behavior-control-name', 'behavior-dialog-marked', 'craft-picture-alt'];
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}`;
+  const parts: string[] = [];
+  for (const el of doc.querySelectorAll('iframe, frame, object, embed')) if (el.getClientRects().length > 0) parts.push(name(el));
+  // Only a part that the other checks cannot read counts. A web component without a shadow root keeps its content in the page,
+  // where every check reads it. A closed shadow root cannot be told from none; a component that uses one goes unreported.
+  for (const el of doc.querySelectorAll('body *')) if (el.shadowRoot) parts.push(name(el));
+  if (parts.length === 0) return [];
+  const measured = `the checks cannot see inside ${parts.slice(0, 5).join(', ')}${parts.length > 5 ? ` and ${parts.length - 5} more` : ''}`;
+  return floors.map((ruleId) => ({ ruleId, status: 'could-not-measure' as const, where: parts[0], measured }));
+}
