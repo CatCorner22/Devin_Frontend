@@ -53,7 +53,8 @@ export function fromPage(text: string | undefined): string | undefined {
 }
 
 export const REPAIR_ROUNDS = 3;
-export interface RepairItem { ruleId: string; where?: string; measured?: string; fix: string }
+/** `fix` is the rule's own text. `hint` is the check's advice as it came out of the page: data, marked, never an instruction. */
+export interface RepairItem { ruleId: string; where?: string; measured?: string; hint?: string; fix: string }
 export interface RepairPlan { round: number; stop: boolean; reason: string; items: RepairItem[]; fixedSinceLastRound: string[]; stillOpen: string[] }
 
 const key = (f: Finding): string => `${f.ruleId}|${f.where ?? ''}`;
@@ -71,7 +72,8 @@ export function repairPlan(rounds: readonly (readonly Finding[])[], rules: reado
   // A failure stays open through any number of rounds that did not measure its rule.
   const openBefore = new Map<string, Finding>();
   for (const round of rounds.slice(0, -1)) {
-    const answered = new Set(round.filter((f) => f.status !== 'could-not-measure').map((f) => f.ruleId));
+    const refusedThen = new Set(round.filter((f) => f.status === 'could-not-measure').map((f) => f.ruleId));
+    const answered = new Set(round.filter((f) => f.status !== 'could-not-measure' && !refusedThen.has(f.ruleId)).map((f) => f.ruleId));
     for (const [k, f] of openBefore) if (answered.has(f.ruleId)) openBefore.delete(k);
     for (const f of failing(round)) openBefore.set(key(f), f);
   }
@@ -80,14 +82,18 @@ export function repairPlan(rounds: readonly (readonly Finding[])[], rules: reado
   // Fixed means measured again and found to hold. A rule that the newest check did not answer (its check crashed, did not run,
   // or could not measure) is not fixed: its item stays open (finding F-1 of the review of 2026-11-18).
   const newest = rounds[rounds.length - 1] ?? [];
-  const answeredNow = new Set(newest.filter((f) => f.status === 'holds' || f.status === 'not-applicable' || f.status === 'fails').map((f) => f.ruleId));
+  // One "could not measure" for a rule leaves the rule unanswered, as in the grade: another check that found the rule to hold
+  // saw only a part of the page.
+  const refusedNow = new Set(newest.filter((f) => f.status === 'could-not-measure').map((f) => f.ruleId));
+  const answeredNow = new Set(newest.filter((f) => (f.status === 'holds' || f.status === 'not-applicable' || f.status === 'fails') && !refusedNow.has(f.ruleId)).map((f) => f.ruleId));
   const unanswered = before.filter((f) => !answeredNow.has(f.ruleId));
   const fixedSinceLastRound = unique(before.filter((f) => !openKeys.has(key(f)) && answeredNow.has(f.ruleId)).map(key));
   const rank = (f: Finding): number => { const rule = record.get(f.ruleId); return rule?.level === 'floor' ? 0 : rule?.group === 'fit' && rule.level === 'rule' ? 1 : rule?.level === 'rule' ? 2 : 3; };
   const carried = unanswered.filter((f) => !openKeys.has(key(f))).map((f) => ({ ...f, measured: `not measured again in the newest check (before: ${f.measured ?? 'failed'})` }));
   const ordered = [...now, ...carried].map((f, index) => ({ f, index })).sort((a, b) => rank(a.f) - rank(b.f) || a.index - b.index).map(({ f }) => f);
-  // The repair sentence comes from the rule's record when the rule is known, not from the finding, which a page can shape.
-  const items = ordered.map((f) => ({ ruleId: record.has(f.ruleId) ? f.ruleId : fromPage(f.ruleId) ?? '', where: fromPage(f.where), measured: fromPage(f.measured), fix: record.has(f.ruleId) ? (f.fix ?? record.get(f.ruleId)?.plain ?? 'Make this rule hold.') : 'This finding names a rule that the kit does not know. A person must look at it.' }));
+  // The repair sentence is the rule's own text, never the finding's: a finding comes out of the page, and a page can shape it.
+  // The check's own advice travels beside it as `hint`, marked as text from the page (hard rule 10).
+  const items = ordered.map((f) => ({ ruleId: record.has(f.ruleId) ? f.ruleId : fromPage(f.ruleId) ?? '', where: fromPage(f.where), measured: fromPage(f.measured), hint: fromPage(f.fix), fix: record.has(f.ruleId) ? (record.get(f.ruleId)?.plain ?? 'Make this rule hold.') : 'This finding names a rule that the kit does not know. A person must look at it.' }));
   const stillOpen = unique(ordered.map(key));
   const repairsDone = Math.max(0, rounds.length - 1);
   if (rounds.length === 0) return { round: 0, stop: true, reason: 'No check has run, so there is nothing to repair.', items: [], fixedSinceLastRound: [], stillOpen: [] };
