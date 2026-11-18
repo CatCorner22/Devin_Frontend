@@ -13,6 +13,12 @@ export function keyboardReachable(doc: Document): Finding[] {
     if (native.includes(el.tagName) && !(el.tagName === 'A' && !el.hasAttribute('href'))) continue;
     if (el.tabIndex < 0 || !el.hasAttribute('tabindex')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'answers a click, and the Tab key cannot reach it', required: 'reachable and usable by keyboard', fix: 'Use a <button> element (or <a href> for a link) in place of this element.' });
   }
+  // A native control taken out of the Tab order. Inside a group that the arrow keys walk (tabs, a menu, a toolbar), one stop is right.
+  const walked = '[role="tablist"], [role="menu"], [role="menubar"], [role="listbox"], [role="radiogroup"], [role="toolbar"], [role="tree"], [role="grid"]';
+  for (const el of doc.querySelectorAll<HTMLElement>('a[href][tabindex], button[tabindex], input[tabindex], select[tabindex], textarea[tabindex]')) {
+    if (el.tabIndex >= 0 || el.getClientRects().length === 0 || (el as HTMLButtonElement).disabled || el.closest(walked) || el.closest('[inert]')) continue;
+    out.push({ ruleId, status: 'fails', where: name(el), measured: `tabindex ${el.tabIndex} keeps the Tab key from reaching this control`, required: 'reachable by keyboard', fix: 'Remove the negative tabindex, or hide the control from everyone if nobody should use it.' });
+  }
   for (const el of doc.querySelectorAll<HTMLElement>('[tabindex]')) {
     if (el.tabIndex > 0) out.push({ ruleId, status: 'fails', where: name(el), measured: `tabindex ${el.tabIndex} changes the order of the Tab key`, required: 'the order of the page', fix: 'Remove the positive tabindex and put the element where it belongs in the page.' });
   }
@@ -29,6 +35,8 @@ export function focusIsVisible(doc: Document): Finding[] {
   const controls = [...doc.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [tabindex]')].filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled && el.getAttribute('type') !== 'hidden');
   if (controls.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const before = doc.activeElement as HTMLElement | null;
+  // The look at rest is taken without the focus, also for the control that holds the focus when the check starts.
+  before?.blur();
   const out: Finding[] = [];
   for (const el of controls) {
     const rest = look(el);
@@ -73,9 +81,13 @@ export function controlsHaveNames(doc: Document): Finding[] {
   const out: Finding[] = [];
   for (const el of controls) {
     const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join('');
-    const pictures = [...el.querySelectorAll('img[alt], svg[aria-label]')].map((p) => p.getAttribute('alt') ?? p.getAttribute('aria-label') ?? '').join('');
-    const titles = [...el.querySelectorAll('svg > title')].map((t) => t.textContent ?? '').join('');
-    const said = [el.getAttribute('aria-label') ?? '', byId, el.textContent ?? '', pictures, titles, el.getAttribute('title') ?? ''].join('').trim();
+    // Only what a screen reader is given counts: nothing inside a part marked aria-hidden, and nothing that is not drawn.
+    const heard = (node: Element): boolean => !node.closest('[aria-hidden="true"]') && (node.closest('svg') !== null || node.getClientRects().length > 0);
+    const pictures = [...el.querySelectorAll('img[alt], svg[aria-label]')].filter(heard).map((p) => p.getAttribute('alt') ?? p.getAttribute('aria-label') ?? '').join('');
+    let text = '';
+    const walker = doc.createTreeWalker(el, 4);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) if (node.parentElement && heard(node.parentElement)) text += node.textContent ?? '';
+    const said = [el.getAttribute('aria-label') ?? '', byId, text, pictures, el.getAttribute('title') ?? ''].join('').trim();
     if (said === '') out.push({ ruleId, status: 'fails', where: name(el), measured: 'no name: no text, no label', required: 'a name that says what the control does', fix: 'Add visible text, or an aria-label that says what the control does.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

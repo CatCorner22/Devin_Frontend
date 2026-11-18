@@ -26,7 +26,8 @@ export function noEndlessMotion(doc: Document): Finding[] {
   const seconds = (text: string): number => (text.endsWith('ms') ? parseFloat(text) / 1000 : parseFloat(text));
   const out: Finding[] = [];
   for (const el of doc.querySelectorAll('marquee, blink')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'text that moves or blinks without end', required: 'still text', fix: 'Replace the moving text with still text.' });
-  const hasPause = doc.querySelector('[data-pause-motion], [aria-label*="pause" i], [aria-label*="stop" i]') !== null;
+  // A pause control counts only if a person can see it.
+  const hasPause = [...doc.querySelectorAll('[data-pause-motion], [aria-label*="pause" i], [aria-label*="stop" i]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
   for (const el of doc.querySelectorAll('body *')) {
     const style = view.getComputedStyle(el);
     if (style.animationName === 'none' || style.display === 'none' || style.visibility === 'hidden') continue;
@@ -88,12 +89,15 @@ export function readingComfort(doc: Document): Finding[] {
 export function visibleLabels(doc: Document): Finding[] {
   const ruleId = 'neuro-visible-label';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.getAttribute('name') ? '[name=' + el.getAttribute('name') + ']' : ''}`;
+  const view = doc.defaultView;
+  if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
+  const seen = (el: Element): boolean => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible' && parseFloat(view.getComputedStyle(el).opacity) > 0 && (el.textContent ?? '').trim().length > 0;
   const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0);
   if (fields.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
   for (const el of fields) {
-    const labels = [...(el.labels ?? [])].filter((label) => label.getClientRects().length > 0 && (label.textContent ?? '').trim().length > 0);
-    const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)).filter((ref) => ref !== null && ref.getClientRects().length > 0);
+    const labels = [...(el.labels ?? [])].filter(seen);
+    const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)).filter((ref) => ref !== null && seen(ref));
     if (labels.length === 0 && byId.length === 0) out.push({ ruleId, status: 'fails', where: name(el), measured: el.getAttribute('placeholder') ? 'only pale text inside the field names it' : 'no visible name', required: 'a visible label that stays while the person types', fix: 'Add a <label> element with visible text and tie it to the field with for and id.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
@@ -111,7 +115,8 @@ export function survivesTextSpacing(doc: Document): Finding[] {
   const out: Finding[] = [];
   const seen = new Set<HTMLElement>();
   for (const el of doc.querySelectorAll<HTMLElement>('body *')) {
-    if (el.getClientRects().length === 0 || el.children.length > 0 || (el.textContent ?? '').trim() === '') continue;
+    // Every element that holds text of its own, also beside a line break or another element.
+    if (el.getClientRects().length === 0 || ![...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '')) continue;
     const hides = (value: string): boolean => value === 'hidden' || value === 'clip';
     // The box that cuts the text off is the text's own box or one around it.
     let box: HTMLElement | null = el;

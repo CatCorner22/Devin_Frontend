@@ -127,3 +127,33 @@ describe('the kit on a page with one planted defect for every check', () => {
     expect(order.indexOf('warning')).toBeGreaterThan(order.lastIndexOf('rule'));
   });
 });
+
+describe('the kit: cases that the automated review of pull request 6 named', () => {
+  const css = '<style>button, input { min-width: 44px; min-height: 44px; } @keyframes turn { to { transform: rotate(360deg); } } .turn { width: 20px; height: 20px; animation: turn 2s linear infinite; }</style>';
+  const cases: [string, string, string, string, string][] = [
+    ['a native button that the Tab key cannot reach', 'keyboardReachable', 'behavior-keyboard-reach', '<button tabindex="-1">Save</button>', '<div role="tablist"><button role="tab" tabindex="0">One</button><button role="tab" tabindex="-1">Two</button></div>'],
+    ['cut-off text beside a line break', 'survivesTextSpacing', 'neuro-text-spacing', '<div style="height: 20px; width: 120px; overflow: hidden">These words need<br>several full lines of room to be read</div>', '<div style="width: 120px">These words need<br>several full lines of room</div>'],
+    ['a label that nobody can see', 'visibleLabels', 'neuro-visible-label', '<label for="a" style="visibility: hidden">Name</label><input id="a"><span id="e"></span><input aria-labelledby="e">', '<label for="a">Name</label><input id="a"><span id="e">City</span><input aria-labelledby="e">'],
+    ['a button whose only text is hidden from screen readers', 'controlsHaveNames', 'behavior-control-name', '<button><svg aria-hidden="true" width="24" height="24"><title>Close</title></svg></button>', '<button><svg width="24" height="24"><title>Close</title></svg></button>'],
+    ['a pause control that nobody can see', 'noEndlessMotion', 'neuro-motion-can-stop', '<div class="turn"></div><button data-pause-motion hidden>Pause</button>', '<div class="turn"></div><button data-pause-motion>Pause</button>'],
+  ];
+  for (const [name, fn, ruleId, faulty, sound] of cases) {
+    it(`${name} fails, and the sound form of the same page holds`, async () => {
+      const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+      await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body>${faulty}</body></html>`);
+      expect((await run(page, fn)).filter((f) => f.ruleId === ruleId).map((f) => f.status)).toContain('fails');
+      await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body>${sound}</body></html>`);
+      expect((await run(page, fn)).filter((f) => f.ruleId === ruleId).map((f) => f.status)).toEqual(['holds']);
+      await page.context().close();
+    });
+  }
+  it('a control that holds the keyboard focus when the check starts is judged like any other, and keeps the focus', async () => {
+    const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><button id="a">One</button><button id="b" style="outline: none">Two</button></body></html>`);
+    await page.keyboard.press('Tab');
+    const findings = await run(page, 'focusIsVisible');
+    expect(findings.filter((f) => f.status === 'fails').map((f) => f.where)).toEqual(['button#b']);
+    expect(await page.evaluate(() => document.activeElement?.id)).toBe('a');
+    await page.context().close();
+  });
+});
