@@ -265,6 +265,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await slides.evaluate(() => { let i = 0; const all = [...document.querySelectorAll<HTMLElement>('.s')]; setInterval(() => { i = (i + 1) % all.length; all.forEach((el, n) => { el.hidden = n !== i; }); }, 4000); });
       expect((await run(slides, 'noScriptedMotion')).map((f) => f.status)).toEqual(['fails']);
       await slides.context().close();
+      // A part that stays hidden and is written to again and again shows nothing, and is not movement.
+      const unseen = await pageOf('<h1>Shop</h1><div><p id="count" hidden>0</p></div>');
+      await unseen.evaluate(() => { let n = 0; setInterval(() => { const c = document.getElementById('count'); if (c) c.textContent = String(++n); }, 2000); });
+      expect((await run(unseen, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
+      await unseen.context().close();
       // Two parts that each fill in once, at one and at six seconds, are late content, not movement.
       const late = await pageOf('<h1>Shop</h1><p id="a">…</p><p id="b">…</p>');
       await late.evaluate(() => { setTimeout(() => { const a = document.getElementById('a'); if (a) a.textContent = 'Prices'; }, 1000); setTimeout(() => { const b = document.getElementById('b'); if (b) b.textContent = 'Reviews'; }, 6000); });

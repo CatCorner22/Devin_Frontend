@@ -193,14 +193,19 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
   const start = view.performance.now();
   // Movement is one part that changes again and again. Two parts that each change once (content that arrives late) are not movement.
   const momentsOf = new Map<Element, number[]>();
+  const wasDrawn = new Set<Element>();
+  for (const el of doc.querySelectorAll('body *')) if (el.getClientRects().length > 0) wasDrawn.add(el);
   const observer = new view.MutationObserver((records) => {
     const now = (view.performance.now() - start) / 1000;
     const seenNow = new Set<Element>();
     for (const r of records) {
       const el = r.target.nodeType === 1 ? (r.target as Element) : r.target.parentElement;
-      // A part that a script has just hidden counts too (its parent is still drawn): a slide that is shown at one moment
-      // and hidden at the next has changed twice, and so a show of slides is found even when no slide is shown twice.
-      const drawn = el !== null && (el.getClientRects().length > 0 || (el.parentElement !== null && el.parentElement.getClientRects().length > 0));
+      // A part that a script has just hidden counts too: a slide that is shown at one moment and hidden at the next has changed
+      // twice, and so a show of slides is found even when no slide is shown twice. A part that was hidden before the change
+      // and is hidden after it has changed nothing that a person sees, and does not count.
+      const drawnNow = el !== null && el.getClientRects().length > 0;
+      const drawn = el !== null && (drawnNow || wasDrawn.has(el));
+      if (el) { if (drawnNow) wasDrawn.add(el); else wasDrawn.delete(el); }
       if (!el || seenNow.has(el) || !drawn || el.tagName === 'STYLE' || el.tagName === 'SCRIPT' || el.tagName === 'HEAD') continue;
       seenNow.add(el);
       const moments = momentsOf.get(el) ?? [];
