@@ -135,7 +135,7 @@ export function emptyStatesExplain(doc: Document): Finding[] {
 export function loadingIsAnnounced(doc: Document): Finding[] {
   const ruleId = 'state-loading-announced';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-  const loaders = [...doc.querySelectorAll<HTMLElement>('[data-loading], [class*="skeleton" i], [class*="spinner" i], [class*="loading" i]')].filter((el) => el.getClientRects().length > 0);
+  const loaders = [...doc.querySelectorAll<HTMLElement>('[data-loading], [class*="skeleton" i], [class*="spinner" i], [class*="loading" i]')].filter((el) => el.getClientRects().length > 0 && !el.closest('[hidden]') && doc.defaultView?.getComputedStyle(el).visibility === 'visible');
   if (loaders.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
   for (const el of loaders) {

@@ -11,7 +11,9 @@ export function noAutoplay(doc: Document): Finding[] {
   const out: Finding[] = [];
   for (const el of media) {
     const silentVideo = el.tagName === 'VIDEO' && el.muted;
-    if (el.autoplay && !silentVideo) out.push({ ruleId, status: 'fails', where: name(el), measured: 'starts by itself, with sound', required: 'starts only when the person asks', fix: 'Remove the autoplay attribute, so that the person starts the sound or video.' });
+    // The record says that nothing starts by itself, so a silent video with controls fails too (finding F-10).
+    if (el.autoplay && silentVideo && !(el.loop && !el.controls)) out.push({ ruleId, status: 'fails', where: name(el), measured: 'silent video that starts by itself', required: 'starts only when the person asks', fix: 'Remove the autoplay attribute, so that the person starts the video.' });
+    else if (el.autoplay && !silentVideo) out.push({ ruleId, status: 'fails', where: name(el), measured: 'starts by itself, with sound', required: 'starts only when the person asks', fix: 'Remove the autoplay attribute, so that the person starts the sound or video.' });
     else if (el.autoplay && el.loop && !el.controls) out.push({ ruleId, status: 'fails', where: name(el), measured: 'silent video that starts by itself, repeats, and has no controls', required: 'a way to pause it', fix: 'Add the controls attribute, or remove autoplay and loop.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
@@ -27,7 +29,8 @@ export function noEndlessMotion(doc: Document): Finding[] {
   const out: Finding[] = [];
   for (const el of doc.querySelectorAll('marquee, blink')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'text that moves or blinks without end', required: 'still text', fix: 'Replace the moving text with still text.' });
   // A pause control counts only if a person can see it.
-  const hasPause = [...doc.querySelectorAll('[data-pause-motion], [aria-label*="pause" i], [aria-label*="stop" i]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
+  // Only a visible button that the builder marked for this job counts. A label that merely holds the word "stop" does not (finding F-6).
+  const hasPause = [...doc.querySelectorAll('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
   for (const el of doc.querySelectorAll('body *')) {
     const style = view.getComputedStyle(el);
     if (style.animationName === 'none' || style.display === 'none' || style.visibility === 'hidden') continue;

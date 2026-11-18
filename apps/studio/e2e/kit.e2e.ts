@@ -148,6 +148,8 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     ['cut-off text beside a line break', 'survivesTextSpacing', 'neuro-text-spacing', '<div style="height: 20px; width: 120px; overflow: hidden">These words need<br>several full lines of room to be read</div>', '<div style="width: 120px">These words need<br>several full lines of room</div>'],
     ['a label that nobody can see', 'visibleLabels', 'neuro-visible-label', '<label for="a" style="visibility: hidden">Name</label><input id="a"><span id="e"></span><input aria-labelledby="e">', '<label for="a">Name</label><input id="a"><span id="e">City</span><input aria-labelledby="e">'],
     ['a button whose only text is hidden from screen readers', 'controlsHaveNames', 'behavior-control-name', '<button><svg aria-hidden="true" width="24" height="24"><title>Close</title></svg></button>', '<button><svg width="24" height="24"><title>Close</title></svg></button>'],
+    ['a label that merely holds the word "stop" (F-6)', 'noEndlessMotion', 'neuro-motion-can-stop', '<div class="turn"></div><a href="#" aria-label="Bus stop finder">Map</a>', '<div class="turn"></div><button data-pause-motion>Pause</button>'],
+    ['a silent video that starts by itself (F-10)', 'noAutoplay', 'neuro-no-autoplay', '<video autoplay muted controls></video>', '<video muted controls></video>'],
     ['a pause control that nobody can see', 'noEndlessMotion', 'neuro-motion-can-stop', '<div class="turn"></div><button data-pause-motion hidden>Pause</button>', '<div class="turn"></div><button data-pause-motion>Pause</button>'],
   ];
   for (const [name, fn, ruleId, faulty, sound] of cases) {
@@ -160,6 +162,12 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await page.context().close();
     });
   }
+  it('a loading mark inside a hidden part is not judged (F-16)', async () => {
+    const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><div hidden><div class="spinner">Wait</div></div><div style="visibility: hidden"><div class="spinner">Wait</div></div></body></html>`);
+    expect((await run(page, 'loadingIsAnnounced')).map((f) => f.status)).toEqual(['not-applicable']);
+    await page.context().close();
+  });
   it('sound pages that the second automated review named hold: text in a boxless wrapper names its button; a hidden or switched-off control needs no Tab stop', async () => {
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><button><span style="display: contents">Save</span></button><button><span hidden>Save</span></button></body></html>`);
