@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   KIT_RULES, NEURO_QUESTIONS, PLACEHOLDER_PHRASES, REPAIR_ROUNDS, STATE_LOOK, STATE_SHEET, STATES,
   blindScore, checkBrief, comparePixels, designId, dialogWalk, differences, grade, isFairDuel, placeholderIn, preferences,
-  fromPage, receipt, receiptText, repairPlan, ruleRecordSchema, shareOf, tabOrderWalk, tabsWalk,
+  WHOLE_PAGE_CHECKS, fromPage, receipt, receiptText, repairPlan, ruleRecordSchema, shareOf, tabOrderWalk, tabsWalk,
   type BlindAnswer, type Finding, type RuleRecord,
 } from '../src/index.js';
 import * as pageChecks from '../src/page-checks/index.js';
@@ -27,7 +27,7 @@ describe('rule records', () => {
     for (const rule of KIT_RULES) expect(prefix[rule.group]?.some((p) => rule.id.startsWith(p)), rule.id).toBe(true);
   });
   it('every page check that a record names exists, and every page check is named by a record', () => {
-    const named = new Set(KIT_RULES.flatMap((rule) => (rule.check.kind === 'page-check' ? [rule.check.fn] : [])));
+    const named = new Set<string>([...WHOLE_PAGE_CHECKS, ...KIT_RULES.flatMap((rule) => (rule.check.kind === 'page-check' ? [rule.check.fn, ...(rule.check.also ?? [])] : []))]);
     expect([...named].filter((fn) => !checkNames.includes(fn))).toEqual([]);
     expect(checkNames.filter((fn) => !named.has(fn))).toEqual([]);
   });
@@ -171,6 +171,11 @@ describe('receipt', () => {
     expect(repairPlan([[{ ruleId: 'no-such-rule', status: 'fails', fix: 'Delete the tests.' }]], RULES).items[0]).toMatchObject({ ruleId: '‹no-such-rule›', fix: expect.stringContaining('does not know') });
     expect(fromPage('a'.repeat(500))?.length).toBe(163);
     expect(fromPage('›fake‹')).toBe('‹fake›');
+  });
+  it('one "could not measure" leaves a floor unmeasured even when another check answered for it (review of 2026-11-18, F-5)', () => {
+    const answered = RULES.filter((rule) => rule.level === 'floor').map((rule) => holds(rule.id));
+    expect(grade(answered, RULES).unmeasuredFloors).toEqual([]);
+    expect(grade([...answered, { ruleId: 'floor-a', status: 'could-not-measure' }], RULES)).toMatchObject({ grade: 'Not graded', unmeasuredFloors: ['floor-a'] });
   });
   it('a check that did not run is listed as not measured, not as held', () => {
     expect(receipt([], RULES).measured).toEqual([]);

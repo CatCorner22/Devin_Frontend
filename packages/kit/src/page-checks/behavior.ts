@@ -144,9 +144,28 @@ export function controlsHaveNames(doc: Document): Finding[] {
 export function dialogsAreMarked(doc: Document): Finding[] {
   const ruleId = 'behavior-dialog-marked';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-  const dialogs = [...doc.querySelectorAll<HTMLElement>('dialog, [role="dialog"], [role="alertdialog"]')];
-  if (dialogs.length === 0) return [{ ruleId, status: 'not-applicable' }];
+  const marks = 'dialog, [role="dialog"], [role="alertdialog"]';
+  const dialogs = [...doc.querySelectorAll<HTMLElement>(marks)];
   const out: Finding[] = [];
+  // A window with no mark at all (finding F-8): a fixed layer that covers the window, lies on top, takes the pointer, and
+  // has page content beside it. A page whose whole content sits in one fixed shell has nothing beside the shell, and holds.
+  const view = doc.defaultView;
+  if (view) {
+    const width = doc.documentElement.clientWidth;
+    const height = view.innerHeight;
+    for (const el of doc.querySelectorAll<HTMLElement>('body *')) {
+      const computed = view.getComputedStyle(el);
+      if (computed.position !== 'fixed' || computed.pointerEvents === 'none' || computed.visibility !== 'visible' || el.getClientRects().length === 0) continue;
+      const box = el.getBoundingClientRect();
+      if (box.width < width * 0.9 || box.height < height * 0.9) continue;
+      const top = doc.elementFromPoint(width / 2, height / 2);
+      if (!top || !(el === top || el.contains(top) || (top.closest('body > *') !== el.closest('body > *') && view.getComputedStyle(top).position === 'fixed'))) continue;
+      const beside = [...doc.querySelectorAll<HTMLElement>('body *')].some((other) => !el.contains(other) && !other.contains(el) && other.getClientRects().length > 0 && view.getComputedStyle(other).position !== 'fixed' && !other.closest(marks) && [...other.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== ''));
+      const marked = el.matches(marks) || el.closest(marks) !== null || dialogs.some((d) => d.getClientRects().length > 0);
+      if (beside && !marked) { out.push({ ruleId, status: 'fails', where: name(el), measured: 'a layer covers the page, and nothing marks a window', required: 'the <dialog> element, or role="dialog" with aria-modal="true" and a name', fix: 'Build the window with the <dialog> element and open it with showModal().' }); break; }
+    }
+  }
+  if (dialogs.length === 0 && out.length === 0) return [{ ruleId, status: 'not-applicable' }];
   for (const el of dialogs) {
     const named = (el.getAttribute('aria-label') ?? '').trim() !== '' || (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).some((id) => id !== '' && (doc.getElementById(id)?.textContent ?? '').trim() !== '');
     if (!named) out.push({ ruleId, status: 'fails', where: name(el), measured: 'a window over the page with no name', required: 'a name, taken from its heading', fix: 'Give the heading an id and point aria-labelledby on the window at it.' });

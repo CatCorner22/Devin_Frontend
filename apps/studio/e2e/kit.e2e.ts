@@ -33,7 +33,8 @@ async function runAll(page: Page): Promise<Finding[]> {
 }
 /** Every check at the present width, with the reflow floor measured where its record says: at 320 pixels. */
 async function runAllWithReflow(page: Page): Promise<Finding[]> {
-  const findings = (await runAll(page)).filter((f) => f.ruleId !== 'neuro-reflow');
+  const findings: Finding[] = [];
+  for (const fn of Object.keys(CHECKS)) if (fn !== 'noSidewaysScroll') findings.push(...await run(page, fn));
   const size = page.viewportSize() ?? { width: 1280, height: 800 };
   await page.setViewportSize({ width: 320, height: size.height });
   findings.push(...await run(page, 'noSidewaysScroll'));
@@ -213,6 +214,61 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     it('F-15: menu items with tabindex -1 inside a menu follow the ARIA guide and hold; the same items outside a menu fail', async () => {
       expect(await statuses('<button>Actions</button><ul role="menu" style="list-style: none"><li role="menuitem" tabindex="-1">Rename</li><li role="menuitem" tabindex="-1">Delete</li></ul>', 'keyboardReachable')).toEqual(['holds']);
       expect(await statuses('<ul style="list-style: none"><li role="menuitem" tabindex="-1">Rename</li></ul>', 'keyboardReachable')).toEqual(['fails']);
+    });
+
+    it('F-5: a frame or a web component leaves every measured floor unmeasured, so the grade cannot be a pass', async () => {
+      const page = await pageOf('<h1>Shop</h1><x-card></x-card><iframe title="Map" style="max-width: 100%" srcdoc="<video autoplay></video>"></iframe>');
+      await page.evaluate(() => {
+        const host = document.querySelector('x-card');
+        host?.attachShadow({ mode: 'open' }).appendChild(document.createElement('marquee'));
+      });
+      const found = await run(page, 'unseenParts');
+      expect(found.every((f) => f.status === 'could-not-measure')).toBe(true);
+      expect(found.map((f) => f.ruleId).sort()).toEqual(KIT_RULES.filter((r) => r.level === 'floor' && r.check.kind === 'page-check').map((r) => r.id).sort());
+      const all = [...await runAllWithReflow(page), { ruleId: 'behavior-dialog-keys', status: 'holds' as const }];
+      // Other checks answer "holds" for these floors on the part of the page they can see; the floors stay unmeasured all the same.
+      const result = grade(all, KIT_RULES);
+      expect(result.unmeasuredFloors.sort()).toEqual(found.map((f) => f.ruleId).sort());
+      expect(['Crafted', 'Meets floor']).not.toContain(result.grade);
+      // With the faults of this bare page's colors and typeface left out, nothing fails, and the grade is "Not graded".
+      expect(grade(all.filter((f) => !f.ruleId.startsWith('fit-') || f.status !== 'fails'), KIT_RULES)).toMatchObject({ grade: 'Not graded', failedFloors: [] });
+      await page.context().close();
+      expect(await statuses('<h1>Shop</h1><p>Plain page.</p>', 'unseenParts')).toEqual([]);
+    });
+
+    it('F-8: a layer that covers the page with no window mark fails; a marked window and a full-window shell hold', async () => {
+      const layer = 'position: fixed; inset: 0; background: rgba(0, 0, 0, 0.5)';
+      expect(await statuses(`<h1>Shop</h1><p>Text of the page.</p><div style="${layer}"><div style="background: #fff; margin: 80px; padding: 24px"><h2>Join our list</h2><button>Close</button></div></div>`, 'dialogsAreMarked')).toEqual(['fails']);
+      expect(await statuses(`<h1>Shop</h1><p>Text of the page.</p><div style="${layer}"><div role="dialog" aria-modal="true" aria-label="Join our list" style="background: #fff; margin: 80px; padding: 24px"><button>Close</button></div></div>`, 'dialogsAreMarked')).toEqual(['holds']);
+      expect(await statuses(`<div style="position: fixed; inset: 0"><h1>App</h1><p>Everything lives in this shell.</p></div>`, 'dialogsAreMarked')).toEqual(['not-applicable']);
+      expect(await statuses(`<h1>Shop</h1><p>Text.</p><div style="${layer}; pointer-events: none; z-index: -1"></div>`, 'dialogsAreMarked')).toEqual(['not-applicable']);
+    });
+
+    it('F-9: a banner that a script turns every two seconds fails; a still page and a page with a pause button hold', async () => {
+      const turn = () => { let n = 0; setInterval(() => { const el = document.getElementById('slide'); if (el) el.textContent = `Offer ${++n}`; }, 2000); };
+      const page = await pageOf('<h1>Shop</h1><p id="slide">Offer 0</p>');
+      await page.evaluate(turn);
+      expect((await run(page, 'noScriptedMotion')).map((f) => [f.status, f.where])).toEqual([['fails', 'p#slide']]);
+      await page.context().close();
+      const paused = await pageOf('<h1>Shop</h1><p id="slide">Offer 0</p><button data-pause-motion>Pause</button>');
+      await paused.evaluate(turn);
+      expect((await run(paused, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
+      await paused.context().close();
+      expect(await statuses('<h1>Shop</h1><p>Still.</p>', 'noScriptedMotion')).toEqual(['holds']);
+    }, 60_000);
+
+    it('F-11: at 320 pixels, columns cut off by a page that hides its overflow fail; a drawer that waits beside the page holds', async () => {
+      const narrow = async (body: string, style: string): Promise<string[]> => {
+        const page = await pageOf(body, style);
+        await page.setViewportSize({ width: 320, height: 800 });
+        const out = (await run(page, 'noSidewaysScroll')).map((f) => f.status);
+        await page.context().close();
+        return out;
+      };
+      const table = '<table><tr><td style="min-width: 150px">Name</td><td style="min-width: 150px">Price</td><td style="min-width: 150px">Stock</td><td style="min-width: 150px">Notes</td></tr></table>';
+      expect(await narrow(table, 'html, body { overflow-x: hidden; }')).toEqual(['fails']);
+      expect(await narrow(table, '')).toEqual(['fails']);
+      expect(await narrow('<p>Text.</p><nav style="position: fixed; top: 0; right: 0; width: 240px; transform: translateX(100%)"><a href="#a">About</a></nav>', 'html, body { overflow-x: hidden; }')).toEqual(['holds']);
     });
 
     it('F-7: an element that shows the hand pointer and has no Tab stop fails, also when a script attached its click', async () => {

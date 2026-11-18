@@ -156,8 +156,80 @@ export function noSidewaysScroll(doc: Document): Finding[] {
   // The floor is defined at 320 pixels. At any other width the answer would say nothing about it (finding F-2 of 2026-11-18).
   const windowWidth = doc.defaultView?.innerWidth ?? 0;
   if (windowWidth !== 320) return [{ ruleId, status: 'could-not-measure', measured: `the window is ${windowWidth} px wide; this floor is measured at 320 px` }];
-  if (root.scrollWidth <= limit) return [{ ruleId, status: 'holds', measured: `${limit} px wide` }];
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const view = doc.defaultView;
+  // A page that hides its sideways overflow does not scroll, and what lies beyond the edge is lost instead (finding F-11).
+  // Only parts in the ordinary flow count: a drawer or a slide that waits beside the page is placed there on purpose.
+  const clips = (el: Element): boolean => ['hidden', 'clip'].includes(view?.getComputedStyle(el).overflowX ?? '');
+  if (view && root.scrollWidth <= limit && (clips(root) || clips(doc.body))) {
+    const inFlow = (el: Element): boolean => {
+      for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
+        const computed = view.getComputedStyle(at);
+        if (computed.position === 'absolute' || computed.position === 'fixed' || computed.transform !== 'none' || computed.visibility !== 'visible' || (at !== el && ['auto', 'scroll'].includes(computed.overflowX))) return false;
+      }
+      return true;
+    };
+    const holdsContent = (el: Element): boolean => ['IMG', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'VIDEO'].includes(el.tagName) || [...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '');
+    const lost = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5 && holdsContent(el) && inFlow(el)).slice(0, 3);
+    if (lost.length > 0) return [{ ruleId, status: 'fails', where: lost.map(name).join(', '), measured: `content lies beyond the right edge of a window of ${limit} px, and the page hides it instead of scrolling`, required: 'all content within the width of the window', fix: 'Let the named parts wrap or shrink. Do not hide the overflow of the page: it cuts content off.' }];
+  }
+  if (root.scrollWidth <= limit) return [{ ruleId, status: 'holds', measured: `${limit} px wide` }];
   const culprits = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5).slice(0, 3);
   return [{ ruleId, status: 'fails', where: culprits.map(name).join(', '), measured: `the page is ${root.scrollWidth} px wide in a window of ${limit} px`, required: 'no sideways scrolling', fix: 'Let the named parts wrap or shrink: remove fixed widths and add max-width: 100%.' }];
+}
+
+/**
+ * Movement that a script drives (the usual carousel) leaves no mark in the style sheet. This check watches the page for 11 seconds
+ * and fails when parts of the page change at two moments or more, the last of them after the 5-second mark, and no pause control is in view
+ * (finding F-9 of 2026-11-18). It cannot see movement drawn on a canvas, or a change that comes less often than every 5 seconds.
+ */
+export function noScriptedMotion(doc: Document): Promise<Finding[]> {
+  const ruleId = 'neuro-motion-can-stop';
+  const view = doc.defaultView as (Window & { MutationObserver?: typeof MutationObserver }) | null;
+  if (!view || !view.MutationObserver) return Promise.resolve([{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }]);
+  const hasPause = [...doc.querySelectorAll('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
+  if (hasPause) return Promise.resolve([{ ruleId, status: 'holds', measured: 'a pause control is in view' }]);
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  const start = view.performance.now();
+  const moments: number[] = [];
+  let where: Element | null = null;
+  const observer = new view.MutationObserver((records) => {
+    const record = records.find((r) => {
+      const el = r.target.nodeType === 1 ? (r.target as Element) : r.target.parentElement;
+      return el !== null && el.tagName !== 'STYLE' && el.tagName !== 'SCRIPT' && el.tagName !== 'HEAD' && el.getClientRects().length > 0;
+    });
+    if (!record) return;
+    const now = (view.performance.now() - start) / 1000;
+    if (moments.length === 0 || now - (moments[moments.length - 1] ?? 0) >= 0.9) moments.push(now);
+    where = record.target.nodeType === 1 ? (record.target as Element) : record.target.parentElement;
+  });
+  observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style', 'class', 'src', 'hidden'] });
+  return new Promise((resolve) => {
+    view.setTimeout(() => {
+      observer.disconnect();
+      const last = moments[moments.length - 1] ?? 0;
+      if (moments.length >= 2 && last > 5 && where) resolve([{ ruleId, status: 'fails', where: name(where), measured: `a script changed the page at ${moments.length} moments in 11 s, the last after ${last.toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with data-pause-motion.' }]);
+      else resolve([{ ruleId, status: 'holds', measured: 'no repeated change in 11 s' }]);
+    }, 11000);
+  });
+}
+
+/**
+ * Parts of the page that no check of this kit looks into: a frame, and the inside of a web component (a shadow root).
+ * A fault there is invisible to every other check, so this check answers "could not measure" for every floor that a page check
+ * measures, and the grade is then "Not graded" (finding F-5 of 2026-11-18).
+ */
+export function unseenParts(doc: Document): Finding[] {
+  const floors = ['neuro-no-autoplay', 'neuro-motion-can-stop', 'neuro-no-time-limit', 'neuro-visible-label', 'neuro-text-spacing', 'neuro-reflow', 'behavior-keyboard-reach', 'behavior-focus-visible', 'behavior-target-size', 'behavior-control-name', 'behavior-dialog-marked', 'craft-picture-alt'];
+  const view = doc.defaultView;
+  const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}`;
+  const parts: string[] = [];
+  for (const el of doc.querySelectorAll('iframe, frame, object, embed')) if (el.getClientRects().length > 0) parts.push(name(el));
+  for (const el of doc.querySelectorAll('body *')) {
+    const custom = el.localName.includes('-') && view?.customElements?.get(el.localName) !== undefined;
+    if (el.shadowRoot || custom) parts.push(name(el));
+  }
+  if (parts.length === 0) return [];
+  const measured = `the checks cannot see inside ${parts.slice(0, 5).join(', ')}${parts.length > 5 ? ` and ${parts.length - 5} more` : ''}`;
+  return floors.map((ruleId) => ({ ruleId, status: 'could-not-measure' as const, where: parts[0], measured }));
 }

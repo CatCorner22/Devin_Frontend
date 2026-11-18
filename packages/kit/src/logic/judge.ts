@@ -17,7 +17,10 @@ export function grade(findings: readonly Finding[], rules: readonly RuleRecord[]
   const failedFloors = unique(findings.filter((f) => f.status === 'fails' && level(f) === 'floor').map((f) => f.ruleId));
   const failedRules = unique(findings.filter((f) => f.status === 'fails' && level(f) === 'rule').map((f) => f.ruleId));
   const answered = new Set(findings.filter((f) => f.status !== 'could-not-measure').map((f) => f.ruleId));
-  const unmeasuredFloors = rules.filter((rule) => rule.level === 'floor' && rule.check.kind !== 'person' && !answered.has(rule.id)).map((rule) => rule.id);
+  // One "could not measure" for a floor leaves the floor unmeasured, even when another check answered for the same floor:
+  // the part of the page that the other check could not see may hold the fault (finding F-5 of 2026-11-18).
+  const refused = new Set(findings.filter((f) => f.status === 'could-not-measure').map((f) => f.ruleId));
+  const unmeasuredFloors = rules.filter((rule) => rule.level === 'floor' && rule.check.kind !== 'person' && (!answered.has(rule.id) || refused.has(rule.id))).map((rule) => rule.id);
   const result = (grade: Grade, reason: string): GradeResult => ({ grade, reason, failedFloors, failedRules, unmeasuredFloors });
   if (failedFloors.length > 0) return result('Below floor', `${failedFloors.length} floor(s) fail.`);
   if (unmeasuredFloors.length > 0) return result('Not graded', `${unmeasuredFloors.length} floor(s) were not measured.`);

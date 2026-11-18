@@ -12,9 +12,15 @@ const reviewed = '2026-11-18';
 
 export const NEURO_LIMIT = 'These rules remove known harms. They do not show that the page works for a person with ADHD, autism, or dyslexia; only a test with such people shows that.';
 
+/**
+ * Page checks that belong to no single rule. `unseenParts` reports the parts of a page that no check looks into (a frame, the inside
+ * of a web component) as "could not measure" for every floor that a page check measures. A checker must run it with the others.
+ */
+export const WHOLE_PAGE_CHECKS = ['unseenParts'] as const;
+
 export const NEURO_RULES: readonly RuleRecord[] = [
   { id: 'neuro-no-autoplay', group: 'neuro', level: 'floor', plain: 'No sound or video starts by itself.', why: 'Sudden sound or movement pulls attention away from the task, and some people cannot pull it back.', check: { kind: 'page-check', fn: 'noAutoplay' }, evidence: 'convention', sources: [wcag('1.4.2 Audio Control (the criterion allows sound that stops within 3 seconds or has a control; the kit allows none)'), coga('Objective 5: Help users focus')], reviewed },
-  { id: 'neuro-motion-can-stop', group: 'neuro', level: 'floor', plain: 'Anything that moves for more than five seconds has a visible control that pauses it.', why: 'Movement at the edge of sight keeps drawing the eye, so reading beside it becomes hard or impossible.', check: { kind: 'page-check', fn: 'noEndlessMotion' }, evidence: 'convention', sources: [wcag('2.2.2 Pause, Stop, Hide')], reviewed },
+  { id: 'neuro-motion-can-stop', group: 'neuro', level: 'floor', plain: 'Anything that moves for more than five seconds has a visible control that pauses it.', why: 'Movement at the edge of sight keeps drawing the eye, so reading beside it becomes hard or impossible.', check: { kind: 'page-check', fn: 'noEndlessMotion', also: ['noScriptedMotion'] }, evidence: 'convention', sources: [wcag('2.2.2 Pause, Stop, Hide')], reviewed },
   { id: 'neuro-no-time-limit', group: 'neuro', level: 'floor', plain: 'The page sets no time limit on a task, or lets the person extend the limit.', why: 'A person who reads or decides slowly loses the work when the time runs out.', check: { kind: 'page-check', fn: 'noTimedReload' }, evidence: 'convention', sources: [wcag('2.2.1 Timing Adjustable (the program finds only a timed reload of the page; other time limits need a person)')], reviewed },
   { id: 'neuro-line-length', group: 'neuro', level: 'rule', plain: 'A line of reading text holds at most 80 letters.', why: 'On a long line the eye loses its place when it returns to the start of the next line.', check: { kind: 'page-check', fn: 'readingComfort' }, evidence: 'convention', sources: [wcag('1.4.8 Visual Presentation (level AAA)')], reviewed },
   { id: 'neuro-line-height', group: 'neuro', level: 'rule', plain: 'Reading text has a line height of at least 1.5.', why: 'Tight lines run together, and a reader with dyslexia skips or repeats lines more often.', check: { kind: 'page-check', fn: 'readingComfort' }, evidence: 'convention', sources: [wcag('1.4.8 Visual Presentation (level AAA)'), wcag('1.4.12 Text Spacing')], reviewed },

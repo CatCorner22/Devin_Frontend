@@ -18,7 +18,8 @@ export const sourceRefSchema = z.strictObject({
 
 const checkSchema = z.discriminatedUnion('kind', [
   /** A program measures it on the drawn page: `fn` names a function in `page-checks/`. */
-  z.strictObject({ kind: z.literal('page-check'), fn: z.string().regex(/^[a-z][A-Za-z0-9]+$/) }),
+  /** `also` names further functions that measure the same rule in another way; a checker runs them all. */
+  z.strictObject({ kind: z.literal('page-check'), fn: z.string().regex(/^[a-z][A-Za-z0-9]+$/), also: z.array(z.string().regex(/^[a-z][A-Za-z0-9]+$/)).optional() }),
   /** A program measures it by pressing keys: `walk` names a scripted walk in `data/walks.ts`. */
   z.strictObject({ kind: z.literal('walk'), walk: z.string().regex(/^[a-z][a-z0-9-]+$/) }),
   /** Only a person can judge it: `ask` is the question to put to that person. */
