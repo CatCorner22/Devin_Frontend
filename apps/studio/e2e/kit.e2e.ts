@@ -178,6 +178,54 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     expect((await run(page, 'keyboardReachable')).map((f) => f.status)).toEqual(['holds']);
     await page.context().close();
   });
+  describe('cases that the red-team review of 2026-11-18 confirmed', () => {
+    const sr = '.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; } .skip { position: absolute; left: -9999px; } .skip:focus { left: 8px; top: 8px; padding: 12px; }';
+    const pageOf = async (body: string, style = ''): Promise<Page> => {
+      const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+      await page.setContent(`<!doctype html><html lang="en"><head><title>t</title><style>body { font: 16px/1.5 Arial, sans-serif; margin: 24px; } ${sr} ${style}</style></head><body>${body}</body></html>`);
+      return page;
+    };
+    const statuses = async (body: string, fn: string, style = ''): Promise<string[]> => {
+      const page = await pageOf(body, style);
+      const out = (await run(page, fn)).map((f) => f.status);
+      await page.context().close();
+      return out;
+    };
+
+    it('F-12: a label hidden for screen readers only is not a visible label; a label in view is', async () => {
+      expect(await statuses('<label class="sr" for="e">Email</label><input id="e" placeholder="Email">', 'visibleLabels')).toEqual(['fails']);
+      expect(await statuses('<label for="e">Email</label><input id="e" placeholder="Email">', 'visibleLabels')).toEqual(['holds']);
+    });
+
+    it('F-13: text hidden on purpose for screen readers, and a skip link, fail neither the spacing floor nor the size floor', async () => {
+      const body = '<a class="skip" href="#main">Skip to the main part</a><p id="main">Read <span class="sr">this hidden note for screen readers, which is long enough to be cut</span> on.</p>';
+      expect(await statuses(body, 'survivesTextSpacing')).toEqual(['holds']);
+      expect(await statuses(body, 'targetSize')).toEqual(['holds']);
+      // A skip link that stays too small when it has the focus still fails.
+      expect(await statuses('<a class="skip" style="font-size: 8px" href="#m">Skip</a><button style="position: absolute; left: 8px; top: 20px; height: 44px">Go</button>', 'targetSize', '.skip:focus { padding: 0; }')).toEqual(['fails']);
+    });
+
+    it('F-14: a small target with 24 pixels of room around its center holds; small targets packed together fail', async () => {
+      expect(await statuses('<ul style="list-style: none"><li style="margin: 12px 0"><a href="#a">About</a></li><li style="margin: 12px 0"><a href="#b">Prices</a></li><li style="margin: 12px 0"><a href="#c">Contact</a></li></ul>', 'targetSize')).toEqual(['holds']);
+      expect(await statuses('<ul style="list-style: none; line-height: 1"><li><a href="#a">About</a></li><li><a href="#b">Prices</a></li><li><a href="#c">Contact</a></li></ul>', 'targetSize')).toEqual(['fails', 'fails', 'fails']);
+    });
+
+    it('F-15: menu items with tabindex -1 inside a menu follow the ARIA guide and hold; the same items outside a menu fail', async () => {
+      expect(await statuses('<button>Actions</button><ul role="menu" style="list-style: none"><li role="menuitem" tabindex="-1">Rename</li><li role="menuitem" tabindex="-1">Delete</li></ul>', 'keyboardReachable')).toEqual(['holds']);
+      expect(await statuses('<ul style="list-style: none"><li role="menuitem" tabindex="-1">Rename</li></ul>', 'keyboardReachable')).toEqual(['fails']);
+    });
+
+    it('F-7: an element that shows the hand pointer and has no Tab stop fails, also when a script attached its click', async () => {
+      const page = await pageOf('<div id="card" style="cursor: pointer; padding: 12px"><span>Open the report</span></div>');
+      await page.evaluate(() => document.getElementById('card')?.addEventListener('click', () => undefined));
+      const found = await run(page, 'keyboardReachable');
+      expect(found.map((f) => [f.status, f.where])).toEqual([['fails', 'div#card']]);
+      await page.context().close();
+      // A card that holds a real link, a button, and a label show the same pointer and hold.
+      expect(await statuses('<div style="cursor: pointer"><a href="#r">Open the report</a></div><button style="cursor: pointer">Go</button><label style="cursor: pointer">Name <input></label>', 'keyboardReachable')).toEqual(['holds']);
+    });
+  });
+
   it('a control that holds the keyboard focus when the check starts is judged like any other, and keeps the focus', async () => {
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><button id="a">One</button><button id="b" style="outline: none">Two</button></body></html>`);

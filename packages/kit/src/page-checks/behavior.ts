@@ -8,13 +8,26 @@ export function keyboardReachable(doc: Document): Finding[] {
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const native = ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'SUMMARY', 'LABEL', 'OPTION'];
   const out: Finding[] = [];
+  const walked = '[role="tablist"], [role="menu"], [role="menubar"], [role="listbox"], [role="radiogroup"], [role="toolbar"], [role="tree"], [role="grid"]';
+  const flagged = new Set<Element>();
   for (const el of doc.querySelectorAll<HTMLElement>('[onclick], [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="checkbox"], [role="switch"]')) {
     if (el.getClientRects().length === 0) continue;
     if (native.includes(el.tagName) && !(el.tagName === 'A' && !el.hasAttribute('href'))) continue;
-    if (el.tabIndex < 0 || !el.hasAttribute('tabindex')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'answers a click, and the Tab key cannot reach it', required: 'reachable and usable by keyboard', fix: 'Use a <button> element (or <a href> for a link) in place of this element.' });
+    // Inside a group that the arrow keys walk, an item with tabindex -1 is the pattern of the ARIA guide (F-15).
+    if (el.hasAttribute('tabindex') && el.tabIndex < 0 && el.closest(walked)) continue;
+    if ((el.tabIndex < 0 || !el.hasAttribute('tabindex')) && flagged.add(el)) out.push({ ruleId, status: 'fails', where: name(el), measured: 'answers a click, and the Tab key cannot reach it', required: 'reachable and usable by keyboard', fix: 'Use a <button> element (or <a href> for a link) in place of this element.' });
+  }
+  // A click that a script attached leaves no mark in the page that this check can read. The hand-shaped pointer is the usual
+  // sign of one: an element that shows it, is no control, holds no control, and has no Tab stop is taken for a mouse-only control (F-7).
+  const view = doc.defaultView;
+  const control = 'a[href], button, input, select, textarea, summary, label, option, [tabindex], [contenteditable]';
+  if (view) for (const el of doc.querySelectorAll<HTMLElement>('body *')) {
+    if (flagged.has(el) || el.getClientRects().length === 0 || view.getComputedStyle(el).cursor !== 'pointer') continue;
+    if (el.parentElement && el.parentElement !== doc.body && view.getComputedStyle(el.parentElement).cursor === 'pointer') continue;
+    if (el.closest(control) || el.querySelector(control) || el.closest('[aria-hidden="true"], [inert]') || view.getComputedStyle(el).visibility !== 'visible') continue;
+    out.push({ ruleId, status: 'fails', where: name(el), measured: 'shows the hand pointer of a control, and the Tab key cannot reach it', required: 'reachable and usable by keyboard', fix: 'If this element answers a click, use a <button> element (or <a href> for a link). If it does not, remove cursor: pointer.' });
   }
   // A native control taken out of the Tab order. Inside a group that the arrow keys walk (tabs, a menu, a toolbar), one stop is right.
-  const walked = '[role="tablist"], [role="menu"], [role="menubar"], [role="listbox"], [role="radiogroup"], [role="toolbar"], [role="tree"], [role="grid"]';
   for (const el of doc.querySelectorAll<HTMLElement>('a[href][tabindex], button[tabindex], input[tabindex], select[tabindex], textarea[tabindex]')) {
     // A control that nobody can see or use needs no stop: hidden, or switched off (also by a fieldset around it).
     if (el.tabIndex >= 0 || el.getClientRects().length === 0 || el.matches(':disabled') || el.closest(walked) || el.closest('[inert]') || doc.defaultView?.getComputedStyle(el).visibility !== 'visible') continue;
@@ -62,13 +75,40 @@ export function targetSize(doc: Document): Finding[] {
   const targets = [...doc.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [role="button"], [role="tab"], [role="menuitem"]')].filter((el) => el.getClientRects().length > 0 && el.getAttribute('type') !== 'hidden');
   if (targets.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
+  const boxOf = (el: HTMLElement): DOMRect => {
+    const label = (el as HTMLInputElement).labels?.[0];
+    return (el.getAttribute('type') === 'checkbox' || el.getAttribute('type') === 'radio') && label ? label.getBoundingClientRect() : el.getBoundingClientRect();
+  };
+  const small = (box: DOMRect): boolean => box.width < 24 || box.height < 24;
+  // The spacing exception of WCAG 2.5.8: a circle 24 pixels across, centered on the small target, meets no other target
+  // and no other small target's circle (F-14).
+  const spaced = (el: HTMLElement, box: DOMRect): boolean => {
+    const x = box.left + box.width / 2;
+    const y = box.top + box.height / 2;
+    return targets.every((other) => {
+      if (other === el || other.contains(el) || el.contains(other)) return true;
+      const b = boxOf(other);
+      if (b.width === 0 && b.height === 0) return true;
+      if (small(b)) return Math.hypot(x - (b.left + b.width / 2), y - (b.top + b.height / 2)) >= 24;
+      const dx = Math.max(b.left - x, 0, x - b.right);
+      const dy = Math.max(b.top - y, 0, y - b.bottom);
+      return Math.hypot(dx, dy) >= 12;
+    });
+  };
   for (const el of targets) {
     const inSentence = el.tagName === 'A' && view.getComputedStyle(el).display === 'inline' && (el.parentElement?.textContent ?? '').trim().length > (el.textContent ?? '').trim().length;
     if (inSentence) continue;
-    let box = el.getBoundingClientRect();
-    const label = (el as HTMLInputElement).labels?.[0];
-    if ((el.getAttribute('type') === 'checkbox' || el.getAttribute('type') === 'radio') && label) box = label.getBoundingClientRect();
-    if (box.width < 24 || box.height < 24) out.push({ ruleId, status: 'fails', where: name(el), measured: `${Math.round(box.width)} by ${Math.round(box.height)} px`, required: 'at least 24 by 24 px', fix: 'Add padding or a min-width and min-height of 24px (44px where the design asks for comfort).' });
+    let box = boxOf(el);
+    // A skip link is one pixel large until it has the focus; it is measured as the person meets it (F-13).
+    const hiddenOnPurpose = box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0;
+    if (hiddenOnPurpose) {
+      const before = doc.activeElement as HTMLElement | null;
+      el.focus({ preventScroll: true });
+      box = boxOf(el);
+      if (before && before !== el && typeof before.focus === 'function') before.focus({ preventScroll: true }); else el.blur();
+      if (box.width <= 1.5 || box.height <= 1.5 || box.right <= 0) continue;
+    }
+    if (small(box) && !spaced(el, box)) out.push({ ruleId, status: 'fails', where: name(el), measured: `${Math.round(box.width)} by ${Math.round(box.height)} px`, required: 'at least 24 by 24 px, or 24 px of room around its center', fix: 'Add padding or a min-width and min-height of 24px (44px where the design asks for comfort).' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }

@@ -94,7 +94,13 @@ export function visibleLabels(doc: Document): Finding[] {
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.getAttribute('name') ? '[name=' + el.getAttribute('name') + ']' : ''}`;
   const view = doc.defaultView;
   if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
-  const seen = (el: Element): boolean => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible' && parseFloat(view.getComputedStyle(el).opacity) > 0 && (el.textContent ?? '').trim().length > 0;
+  // Text that a builder hides on purpose for screen readers: a box of one pixel, clipped away, or moved off the page (F-12, F-13).
+  const tiny = (el: Element): boolean => {
+    const box = el.getBoundingClientRect();
+    const computed = view.getComputedStyle(el);
+    return box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath);
+  };
+  const seen = (el: Element): boolean => el.getClientRects().length > 0 && !tiny(el) && view.getComputedStyle(el).visibility === 'visible' && parseFloat(view.getComputedStyle(el).opacity) > 0 && (el.textContent ?? '').trim().length > 0;
   const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0);
   if (fields.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
@@ -112,6 +118,12 @@ export function survivesTextSpacing(doc: Document): Finding[] {
   const view = doc.defaultView;
   if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
+  // Text that a builder hides on purpose for screen readers: a box of one pixel, clipped away, or moved off the page (F-12, F-13).
+  const tiny = (el: Element): boolean => {
+    const box = el.getBoundingClientRect();
+    const computed = view.getComputedStyle(el);
+    return box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath);
+  };
   const style = doc.createElement('style');
   style.textContent = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
   doc.head.appendChild(style);
@@ -130,7 +142,7 @@ export function survivesTextSpacing(doc: Document): Finding[] {
       cutAcross = hides(computed.overflowX) && box.scrollWidth > box.clientWidth + 1;
       cutDown = hides(computed.overflowY) && box.scrollHeight > box.clientHeight + 1;
     }
-    if (box && box !== doc.body && (cutAcross || cutDown) && !seen.has(box) && seen.add(box)) out.push({ ruleId, status: 'fails', where: name(box), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
+    if (box && box !== doc.body && (cutAcross || cutDown) && !tiny(box) && !tiny(el) && !seen.has(box) && seen.add(box)) out.push({ ruleId, status: 'fails', where: name(box), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
   }
   style.remove();
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
