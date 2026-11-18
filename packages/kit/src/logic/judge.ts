@@ -42,14 +42,20 @@ export function repairPlan(rounds: readonly (readonly Finding[])[], rules: reado
   const now = failing(rounds[rounds.length - 1] ?? []);
   const before = failing(rounds[rounds.length - 2] ?? []);
   const openKeys = new Set(now.map(key));
-  const fixedSinceLastRound = unique(before.filter((f) => !openKeys.has(key(f))).map(key));
+  // Fixed means measured again and found to hold. A rule that the newest check did not answer (its check crashed, did not run,
+  // or could not measure) is not fixed: its item stays open (finding F-1 of the review of 2026-11-18).
+  const newest = rounds[rounds.length - 1] ?? [];
+  const answeredNow = new Set(newest.filter((f) => f.status === 'holds' || f.status === 'not-applicable' || f.status === 'fails').map((f) => f.ruleId));
+  const unanswered = before.filter((f) => !answeredNow.has(f.ruleId));
+  const fixedSinceLastRound = unique(before.filter((f) => !openKeys.has(key(f)) && answeredNow.has(f.ruleId)).map(key));
   const rank = (f: Finding): number => { const rule = record.get(f.ruleId); return rule?.level === 'floor' ? 0 : rule?.group === 'fit' && rule.level === 'rule' ? 1 : rule?.level === 'rule' ? 2 : 3; };
-  const ordered = now.map((f, index) => ({ f, index })).sort((a, b) => rank(a.f) - rank(b.f) || a.index - b.index).map(({ f }) => f);
+  const carried = unanswered.filter((f) => !openKeys.has(key(f))).map((f) => ({ ...f, measured: `not measured again in the newest check (before: ${f.measured ?? 'failed'})` }));
+  const ordered = [...now, ...carried].map((f, index) => ({ f, index })).sort((a, b) => rank(a.f) - rank(b.f) || a.index - b.index).map(({ f }) => f);
   const items = ordered.map((f) => ({ ruleId: f.ruleId, where: f.where, measured: f.measured, fix: f.fix ?? record.get(f.ruleId)?.plain ?? 'Make this rule hold.' }));
   const stillOpen = unique(ordered.map(key));
   const repairsDone = Math.max(0, rounds.length - 1);
   if (rounds.length === 0) return { round: 0, stop: true, reason: 'No check has run, so there is nothing to repair.', items: [], fixedSinceLastRound: [], stillOpen: [] };
-  if (now.length === 0) return { round: repairsDone, stop: true, reason: 'The newest check reports no failure.', items: [], fixedSinceLastRound, stillOpen };
+  if (ordered.length === 0) return { round: repairsDone, stop: true, reason: 'The newest check reports no failure.', items: [], fixedSinceLastRound, stillOpen };
   if (repairsDone >= REPAIR_ROUNDS) return { round: repairsDone, stop: true, reason: `${REPAIR_ROUNDS} repair rounds are used up; ${stillOpen.length} item(s) stay open for a person.`, items: [], fixedSinceLastRound, stillOpen };
   return { round: repairsDone + 1, stop: false, reason: `${stillOpen.length} item(s) to repair, most important first.`, items, fixedSinceLastRound, stillOpen };
 }

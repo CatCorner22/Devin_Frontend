@@ -122,7 +122,7 @@ describe('repair plan', () => {
     expect(plan).toMatchObject({ round: 1, stop: false });
   });
   it('counts an item as fixed only when the newest check no longer reports it', () => {
-    const plan = repairPlan([[fails('floor-a'), fails('craft-a')], [fails('craft-a')]], RULES);
+    const plan = repairPlan([[fails('floor-a'), fails('craft-a')], [holds('floor-a'), fails('craft-a')]], RULES);
     expect(plan.fixedSinceLastRound).toEqual(['floor-a|p']);
     expect(plan.stillOpen).toEqual(['craft-a|p']);
     expect(plan.round).toBe(2);
@@ -132,6 +132,16 @@ describe('repair plan', () => {
     const plan = repairPlan(rounds, RULES);
     expect(plan).toMatchObject({ stop: true, items: [], stillOpen: ['craft-a|p'] });
     expect(repairPlan(rounds.slice(0, REPAIR_ROUNDS), RULES).stop).toBe(false);
+  });
+  it('a failed floor that the newest check did not answer is not fixed: it stays in the plan (review of 2026-11-18, F-1)', () => {
+    for (const newest of [[], [{ ruleId: 'floor-a', status: 'could-not-measure' as const }]]) {
+      const plan = repairPlan([[fails('floor-a')], newest], RULES);
+      expect(plan.fixedSinceLastRound).toEqual([]);
+      expect(plan.stillOpen).toEqual(['floor-a|p']);
+      expect(plan.stop).toBe(false);
+      expect(plan.items[0]?.measured).toMatch(/not measured again/);
+    }
+    expect(repairPlan([[fails('floor-a')], [holds('floor-a')]], RULES)).toMatchObject({ fixedSinceLastRound: ['floor-a|p'], stillOpen: [], stop: true });
   });
   it('stops when nothing fails, and when no check has run', () => {
     expect(repairPlan([allHold], RULES)).toMatchObject({ stop: true, items: [] });

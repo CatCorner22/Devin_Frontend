@@ -32,7 +32,9 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
   const tokenColors = new Map<string, string>();
   const tokenFamilies = new Set<string>();
   const tokenLengths = new Set<number>();
-  for (const [token, value] of Object.entries(tokens)) {
+  for (const [token, raw] of Object.entries(tokens ?? {})) {
+    // A value that is not text (a number, a list) is read as text, so that one odd token cannot stop the whole check.
+    const value = String(raw);
     const color = paint(value.trim());
     if (color && color !== 'clear') tokenColors.set(color, token);
     else if (/^-?[\d.]+(px|rem)$/.test(value.trim())) tokenLengths.add(parseFloat(value) * (value.trim().endsWith('rem') ? parseFloat(view.getComputedStyle(doc.documentElement).fontSize) : 1));
