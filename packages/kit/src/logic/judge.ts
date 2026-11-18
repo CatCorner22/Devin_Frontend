@@ -60,7 +60,15 @@ const failing = (findings: readonly Finding[]): Finding[] => findings.filter((f)
 export function repairPlan(rounds: readonly (readonly Finding[])[], rules: readonly RuleRecord[]): RepairPlan {
   const record = byId(rules);
   const now = failing(rounds[rounds.length - 1] ?? []);
-  const before = failing(rounds[rounds.length - 2] ?? []);
+  // What was open before the newest check: every failure of an earlier round that no later round has answered for.
+  // A failure stays open through any number of rounds that did not measure its rule.
+  const openBefore = new Map<string, Finding>();
+  for (const round of rounds.slice(0, -1)) {
+    const answered = new Set(round.filter((f) => f.status !== 'could-not-measure').map((f) => f.ruleId));
+    for (const [k, f] of openBefore) if (answered.has(f.ruleId)) openBefore.delete(k);
+    for (const f of failing(round)) openBefore.set(key(f), f);
+  }
+  const before = [...openBefore.values()];
   const openKeys = new Set(now.map(key));
   // Fixed means measured again and found to hold. A rule that the newest check did not answer (its check crashed, did not run,
   // or could not measure) is not fixed: its item stays open (finding F-1 of the review of 2026-11-18).
@@ -102,8 +110,11 @@ export function receipt(findings: readonly Finding[], rules: readonly RuleRecord
     if (rule.check.kind === 'person') { forAPerson.push(rule.check.ask); continue; }
     const own = findings.filter((f) => f.ruleId === rule.id);
     const answered = own.filter((f) => f.status !== 'could-not-measure');
-    if (answered.length === 0) { notMeasured.push({ ruleId: rule.id, plain: rule.plain, result: fromPage(own[0]?.measured) ?? 'The check did not run.' }); continue; }
-    for (const f of answered) {
+    // One "could not measure" leaves the rule unmeasured, as in the grade: what another check found to hold on the part of the
+    // page it could see is not listed as measured. A failure that a check did find is still listed.
+    const refused = own.find((f) => f.status === 'could-not-measure');
+    if (answered.length === 0 || refused) notMeasured.push({ ruleId: rule.id, plain: rule.plain, result: fromPage(refused?.measured) ?? 'The check did not run.' });
+    for (const f of refused ? answered.filter((a) => a.status === 'fails') : answered) {
       const detail = [fromPage(f.where), f.measured && `found: ${fromPage(f.measured)}`, f.required && `required: ${fromPage(f.required)}`].filter(Boolean).join('; ');
       measured.push({ ruleId: rule.id, plain: rule.plain, result: `${f.status === 'fails' ? 'Fails' : f.status === 'holds' ? 'Holds' : 'Does not apply to this page'}${detail ? ` (${detail})` : ''}` });
     }

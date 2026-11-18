@@ -142,6 +142,9 @@ describe('repair plan', () => {
       expect(plan.items[0]?.measured).toMatch(/not measured again/);
     }
     expect(repairPlan([[fails('floor-a')], [holds('floor-a')]], RULES)).toMatchObject({ fixedSinceLastRound: ['floor-a|p'], stillOpen: [], stop: true });
+    // Two rounds in a row without an answer: the failure is still open, and it is fixed only once a check answers for it.
+    expect(repairPlan([[fails('floor-a')], [], []], RULES)).toMatchObject({ fixedSinceLastRound: [], stillOpen: ['floor-a|p'], stop: false });
+    expect(repairPlan([[fails('floor-a')], [], [holds('floor-a')]], RULES)).toMatchObject({ fixedSinceLastRound: ['floor-a|p'], stillOpen: [] });
   });
   it('stops when nothing fails, and when no check has run', () => {
     expect(repairPlan([allHold], RULES)).toMatchObject({ stop: true, items: [] });
@@ -182,6 +185,14 @@ describe('receipt', () => {
     const answered = RULES.filter((rule) => rule.level === 'floor').map((rule) => holds(rule.id));
     expect(grade(answered, RULES).unmeasuredFloors).toEqual([]);
     expect(grade([...answered, { ruleId: 'floor-a', status: 'could-not-measure' }], RULES)).toMatchObject({ grade: 'Not graded', unmeasuredFloors: ['floor-a'] });
+  });
+  it('a rule that one check could not measure is listed as not measured, even when another check answered for it', () => {
+    const r = receipt([holds('floor-a'), { ruleId: 'floor-a', status: 'could-not-measure', measured: 'the checks cannot see inside iframe' }], RULES);
+    expect(r.measured.filter((line) => line.ruleId === 'floor-a')).toEqual([]);
+    expect(r.notMeasured.find((line) => line.ruleId === 'floor-a')?.result).toBe('‹the checks cannot see inside iframe›');
+    const failed = receipt([fails('floor-a'), { ruleId: 'floor-a', status: 'could-not-measure' }], RULES);
+    expect(failed.measured.filter((line) => line.ruleId === 'floor-a').length).toBe(1);
+    expect(failed.notMeasured.some((line) => line.ruleId === 'floor-a')).toBe(true);
   });
   it('a check that did not run is listed as not measured, not as held', () => {
     expect(receipt([], RULES).measured).toEqual([]);
