@@ -4,7 +4,7 @@
  * Two different designs can share an ID by chance (about one pair in four billion).
  */
 export function designId(tokens: Readonly<Record<string, string>>): string {
-  const text = Object.keys(tokens).sort().map((key) => `${key.trim()}:${(tokens[key] ?? '').trim().toLowerCase().replace(/\s+/g, ' ')};`).join('');
+  const text = Object.keys(tokens).sort().map((key) => JSON.stringify([key.trim(), (tokens[key] ?? '').trim().toLowerCase().replace(/\s+/g, ' ')])).join('');
   // FNV-1a, 32 bits: a public, simple way to turn a text into a number.
   let hash = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
