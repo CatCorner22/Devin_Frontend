@@ -105,13 +105,15 @@ describe('grade', () => {
     expect(grade([], RULES).grade).toBe('Not graded');
     expect(grade([holds('floor-a'), { ruleId: 'floor-b', status: 'could-not-measure' }], RULES)).toMatchObject({ grade: 'Not graded', unmeasuredFloors: ['floor-b'] });
   });
-  it('a failed rule gives "Meets floor"; a failed warning leaves "Crafted"', () => {
-    expect(grade([...allHold, fails('craft-a')], RULES).grade).toBe('Meets floor');
-    expect(grade([...allHold, fails('tell-a')], RULES).grade).toBe('Crafted');
-    expect(grade(allHold, RULES).grade).toBe('Crafted');
+  it('a failed rule gives "Meets floor"; a failed warning leaves "Crafted" (once a person has answered for the person-only floor, D59)', () => {
+    const withPerson = [...allHold, holds('person-a')];
+    expect(grade([...withPerson, fails('craft-a')], RULES).grade).toBe('Meets floor');
+    expect(grade([...withPerson, fails('tell-a')], RULES).grade).toBe('Crafted');
+    expect(grade(withPerson, RULES).grade).toBe('Crafted');
   });
-  it('a floor that only a person can check does not block the grade, and the reason says a person must still check', () => {
-    expect(grade(allHold, RULES).reason).toMatch(/person must still check/);
+  it('a floor that only a person can check, while open, holds the grade at "Meets floor", and the reason says so (D59)', () => {
+    expect(grade(allHold, RULES)).toMatchObject({ grade: 'Meets floor', floorsForAPerson: ['person-a'] });
+    expect(grade(allHold, RULES).reason).toMatch(/"Crafted" waits for a person/);
   });
 });
 
@@ -175,12 +177,19 @@ describe('receipt', () => {
     expect(fromPage('a'.repeat(500))?.length).toBe(163);
     expect(fromPage('›fake‹')).toBe('‹fake›');
   });
-  it('names the floors that only a person can check, and says that they are not part of the grade (review of 2026-11-18, F-18)', () => {
-    const result = grade(KIT_RULES.filter((rule) => rule.check.kind !== 'person').map((rule) => holds(rule.id)), KIT_RULES);
-    expect(result.grade).toBe('Crafted');
-    expect(result.floorsForAPerson).toEqual(['neuro-no-flashing', 'neuro-reduced-motion', 'neuro-error-recovery']);
-    expect(result.reason).toMatch(/3 floor\(s\) that only a person can check are not part of this grade/);
+  it('gives "Crafted" only after a person has answered for the floors that no program can check (review of 2026-11-18, F-18; D59)', () => {
+    const measured = KIT_RULES.filter((rule) => rule.check.kind !== 'person').map((rule) => holds(rule.id));
+    const waiting = grade(measured, KIT_RULES);
+    expect(waiting.grade).toBe('Meets floor');
+    expect(waiting.floorsForAPerson).toEqual(['neuro-no-flashing', 'neuro-reduced-motion', 'neuro-error-recovery']);
+    expect(waiting.reason).toMatch(/"Crafted" waits for a person. 3 floor\(s\) that only a person can check are still open/);
+    const two = grade([...measured, holds('neuro-no-flashing'), holds('neuro-reduced-motion')], KIT_RULES);
+    expect(two).toMatchObject({ grade: 'Meets floor', floorsForAPerson: ['neuro-error-recovery'] });
+    const checked = grade([...measured, holds('neuro-no-flashing'), holds('neuro-reduced-motion'), holds('neuro-error-recovery')], KIT_RULES);
+    expect(checked).toMatchObject({ grade: 'Crafted', floorsForAPerson: [] });
+    expect(grade([...measured, holds('neuro-no-flashing'), holds('neuro-reduced-motion'), fails('neuro-error-recovery')], KIT_RULES).grade).toBe('Below floor');
   });
+
   it('one "could not measure" leaves a floor unmeasured even when another check answered for it (review of 2026-11-18, F-5)', () => {
     const answered = RULES.filter((rule) => rule.level === 'floor').map((rule) => holds(rule.id));
     expect(grade(answered, RULES).unmeasuredFloors).toEqual([]);
@@ -193,6 +202,12 @@ describe('receipt', () => {
     const failed = receipt([fails('floor-a'), { ruleId: 'floor-a', status: 'could-not-measure' }], RULES);
     expect(failed.measured.filter((line) => line.ruleId === 'floor-a').length).toBe(1);
     expect(failed.notMeasured.some((line) => line.ruleId === 'floor-a')).toBe(true);
+  });
+  it('lists a person\'s answer as the person\'s, and drops the question from "a person must still check" (D59)', () => {
+    const open = receipt([], RULES);
+    const answered = receipt([holds('person-a')], RULES);
+    expect(answered.forAPerson.length).toBe(open.forAPerson.length - 1);
+    expect(answered.measured.find((line) => line.ruleId === 'person-a')?.result).toBe('A person answered: holds');
   });
   it('a check that did not run is listed as not measured, not as held', () => {
     expect(receipt([], RULES).measured).toEqual([]);

@@ -3,8 +3,9 @@ import type { Finding, RuleRecord } from '../shapes.js';
 
 export type Grade = 'Not graded' | 'Below floor' | 'Meets floor' | 'Crafted';
 /**
- * `floorsForAPerson` names the floors that no program can check. They never enter the grade: the grade speaks only of what a
- * program measured, and these floors stay open until a person has checked them (finding F-18 of 2026-11-18).
+ * `floorsForAPerson` names the floors that no program can check and that no person has answered for yet. While one is open,
+ * the grade is at most "Meets floor": "Crafted" says that every floor holds, and a program cannot say that alone
+ * (finding F-18 of 2026-11-18; the owner's delegation, decision D59). A person's answer is a finding under the floor's rule id.
  */
 export interface GradeResult { grade: Grade; reason: string; failedFloors: string[]; failedRules: string[]; unmeasuredFloors: string[]; floorsForAPerson: string[] }
 
@@ -25,13 +26,15 @@ export function grade(findings: readonly Finding[], rules: readonly RuleRecord[]
   // the part of the page that the other check could not see may hold the fault (finding F-5 of 2026-11-18).
   const refused = new Set(findings.filter((f) => f.status === 'could-not-measure').map((f) => f.ruleId));
   const unmeasuredFloors = rules.filter((rule) => rule.level === 'floor' && rule.check.kind !== 'person' && (!answered.has(rule.id) || refused.has(rule.id))).map((rule) => rule.id);
-  const floorsForAPerson = rules.filter((rule) => rule.level === 'floor' && rule.check.kind === 'person').map((rule) => rule.id);
-  const open = floorsForAPerson.length > 0 ? ` ${floorsForAPerson.length} floor(s) that only a person can check are not part of this grade.` : '';
+  // A person's answer enters as a finding like any other: `holds`, `fails`, or `not-applicable` under the floor's rule id.
+  const floorsForAPerson = rules.filter((rule) => rule.level === 'floor' && rule.check.kind === 'person' && (!answered.has(rule.id) || refused.has(rule.id))).map((rule) => rule.id);
+  const open = floorsForAPerson.length > 0 ? ` ${floorsForAPerson.length} floor(s) that only a person can check are still open.` : '';
   const result = (grade: Grade, reason: string): GradeResult => ({ grade, reason: reason + open, failedFloors, failedRules, unmeasuredFloors, floorsForAPerson });
   if (failedFloors.length > 0) return result('Below floor', `${failedFloors.length} floor(s) fail.`);
   if (unmeasuredFloors.length > 0) return result('Not graded', `${unmeasuredFloors.length} floor(s) were not measured.`);
   if (failedRules.length > 0) return result('Meets floor', `Every measured floor holds; ${failedRules.length} rule(s) fail.`);
-  return result('Crafted', 'Every measured floor and rule holds. A person must still check what no program can.');
+  if (floorsForAPerson.length > 0) return result('Meets floor', 'Every measured floor and rule holds. The grade "Crafted" waits for a person.');
+  return result('Crafted', 'Every floor and rule holds, those that a person checked among them.');
 }
 
 /**
@@ -107,7 +110,13 @@ export function receipt(findings: readonly Finding[], rules: readonly RuleRecord
   const notMeasured: ReceiptLine[] = [];
   const forAPerson: string[] = [];
   for (const rule of rules) {
-    if (rule.check.kind === 'person') { forAPerson.push(rule.check.ask); continue; }
+    if (rule.check.kind === 'person') {
+      // A person's answer is listed as the person's, never as a measurement of the program; without one the question stays open.
+      const said = findings.filter((f) => f.ruleId === rule.id && f.status !== 'could-not-measure');
+      if (said.length === 0) forAPerson.push(rule.check.ask);
+      for (const f of said) measured.push({ ruleId: rule.id, plain: rule.plain, result: `A person answered: ${f.status === 'fails' ? 'fails' : f.status === 'holds' ? 'holds' : 'does not apply to this page'}` });
+      continue;
+    }
     const own = findings.filter((f) => f.ruleId === rule.id);
     const answered = own.filter((f) => f.status !== 'could-not-measure');
     // One "could not measure" leaves the rule unmeasured, as in the grade: what another check found to hold on the part of the

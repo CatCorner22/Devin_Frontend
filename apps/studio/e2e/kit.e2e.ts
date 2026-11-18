@@ -88,10 +88,12 @@ describe('the kit on a page built with care', () => {
     expect(await walk(page, tabOrderWalk('#name', ['#phone', '#send']))).toBeNull();
     await page.context().close();
   });
-  it('grades "Crafted" once the walks are counted, and the receipt still lists what a person must check', async () => {
+  it('grades "Meets floor" once the walks are counted, and "Crafted" only after a person answers for the three person-only floors (D59)', async () => {
     const page = await open('good.html');
     const findings = [...await runAllWithReflow(page), { ruleId: 'behavior-dialog-keys', status: 'holds' as const }];
-    expect(grade(findings, KIT_RULES)).toMatchObject({ grade: 'Crafted', failedFloors: [], unmeasuredFloors: [] });
+    expect(grade(findings, KIT_RULES)).toMatchObject({ grade: 'Meets floor', failedFloors: [], failedRules: [], unmeasuredFloors: [], floorsForAPerson: ['neuro-no-flashing', 'neuro-reduced-motion', 'neuro-error-recovery'] });
+    const person = ['neuro-no-flashing', 'neuro-reduced-motion', 'neuro-error-recovery'].map((ruleId) => ({ ruleId, status: 'holds' as const }));
+    expect(grade([...findings, ...person], KIT_RULES)).toMatchObject({ grade: 'Crafted', failedFloors: [], unmeasuredFloors: [], floorsForAPerson: [] });
     expect(receipt(findings, KIT_RULES).forAPerson.length).toBeGreaterThan(8);
     await page.context().close();
   });
