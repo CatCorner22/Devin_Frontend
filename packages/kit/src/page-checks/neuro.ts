@@ -212,8 +212,11 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
       // and is hidden after it has changed nothing that a person sees, and does not count.
       const drawnNow = el !== null && isDrawn(el);
       const drawn = el !== null && (drawnNow || wasDrawn.has(el));
-      // A part that is hidden takes all that it holds out of sight with it.
-      if (el) { if (drawnNow) wasDrawn.add(el); else { wasDrawn.delete(el); for (const inner of el.querySelectorAll('*')) wasDrawn.delete(inner); } }
+      // A part that is hidden takes all that it holds out of sight with it, and brings it back when it is shown again.
+      if (el && drawnNow !== wasDrawn.has(el)) {
+        if (drawnNow) { wasDrawn.add(el); for (const inner of el.querySelectorAll('*')) if (isDrawn(inner)) wasDrawn.add(inner); }
+        else { wasDrawn.delete(el); for (const inner of el.querySelectorAll('*')) wasDrawn.delete(inner); }
+      }
       if (!el || seenNow.has(el) || !drawn || el.tagName === 'STYLE' || el.tagName === 'SCRIPT' || el.tagName === 'HEAD') continue;
       seenNow.add(el);
       const moments = momentsOf.get(el) ?? [];

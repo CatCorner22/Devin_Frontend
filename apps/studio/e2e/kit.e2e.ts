@@ -286,6 +286,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await panel.evaluate(() => { const set = (t: string) => { const i = document.getElementById('inner'); if (i) i.textContent = t; }; setTimeout(() => set('1'), 2000); setTimeout(() => { const p = document.getElementById('panel'); if (p) p.hidden = true; }, 4000); setTimeout(() => set('2'), 6000); });
       expect((await run(panel, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
       await panel.context().close();
+      // A panel is hidden at two seconds and shown again at four; a part inside it is hidden at six and shown at nine: movement.
+      const back = await pageOf('<h1>Shop</h1><div id="panel"><p id="inner">Offer</p></div>');
+      await back.evaluate(() => { const hide = (id: string, hidden: boolean, ms: number) => setTimeout(() => { const el = document.getElementById(id); if (el) el.hidden = hidden; }, ms); hide('panel', true, 2000); hide('panel', false, 4000); hide('inner', true, 6000); hide('inner', false, 9000); });
+      expect((await run(back, 'noScriptedMotion')).map((f) => f.status)).toEqual(['fails']);
+      await back.context().close();
       // Two parts that each fill in once, at one and at six seconds, are late content, not movement.
       const late = await pageOf('<h1>Shop</h1><p id="a">…</p><p id="b">…</p>');
       await late.evaluate(() => { setTimeout(() => { const a = document.getElementById('a'); if (a) a.textContent = 'Prices'; }, 1000); setTimeout(() => { const b = document.getElementById('b'); if (b) b.textContent = 'Reviews'; }, 6000); });
