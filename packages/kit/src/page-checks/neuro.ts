@@ -194,7 +194,14 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
   // Movement is one part that changes again and again. Two parts that each change once (content that arrives late) are not movement.
   const momentsOf = new Map<Element, number[]>();
   const wasDrawn = new Set<Element>();
-  for (const el of doc.querySelectorAll('body *')) if (el.getClientRects().length > 0) wasDrawn.add(el);
+  // Drawn: the part has a box, or (a part with `display: contents` has none) what it holds has one.
+  const isDrawn = (el: Element): boolean => {
+    if (el.getClientRects().length > 0) return true;
+    const range = doc.createRange();
+    range.selectNodeContents(el);
+    return range.getClientRects().length > 0;
+  };
+  for (const el of doc.querySelectorAll('body *')) if (isDrawn(el)) wasDrawn.add(el);
   const observer = new view.MutationObserver((records) => {
     const now = (view.performance.now() - start) / 1000;
     const seenNow = new Set<Element>();
@@ -203,9 +210,10 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
       // A part that a script has just hidden counts too: a slide that is shown at one moment and hidden at the next has changed
       // twice, and so a show of slides is found even when no slide is shown twice. A part that was hidden before the change
       // and is hidden after it has changed nothing that a person sees, and does not count.
-      const drawnNow = el !== null && el.getClientRects().length > 0;
+      const drawnNow = el !== null && isDrawn(el);
       const drawn = el !== null && (drawnNow || wasDrawn.has(el));
-      if (el) { if (drawnNow) wasDrawn.add(el); else wasDrawn.delete(el); }
+      // A part that is hidden takes all that it holds out of sight with it.
+      if (el) { if (drawnNow) wasDrawn.add(el); else { wasDrawn.delete(el); for (const inner of el.querySelectorAll('*')) wasDrawn.delete(inner); } }
       if (!el || seenNow.has(el) || !drawn || el.tagName === 'STYLE' || el.tagName === 'SCRIPT' || el.tagName === 'HEAD') continue;
       seenNow.add(el);
       const moments = momentsOf.get(el) ?? [];
