@@ -253,7 +253,8 @@ describe('walks', () => {
     const steps = dialogWalk('#open', '#box', 2).steps;
     expect(steps[0]).toEqual({ do: 'focus', on: '#open' });
     expect(steps.at(-1)).toEqual({ do: 'expect-focus-on', on: '#open' });
-    expect(steps.filter((s) => s.do === 'expect-focus-inside').length).toBe(4);
+    expect(steps.filter((s) => s.do === 'expect-focus-inside').length).toBe(1);
+    expect(steps.filter((s) => s.do === 'expect-focus-not-behind').length).toBe(3);
   });
   it('a tabs walk needs two tabs and wraps round', () => {
     expect(() => tabsWalk(['#a'])).toThrow();

@@ -6,17 +6,23 @@ export type WalkStep =
   | { do: 'press'; key: 'Tab' | 'Shift+Tab' | 'Enter' | 'Space' | 'Escape' | 'ArrowRight' | 'ArrowLeft' | 'ArrowDown' | 'ArrowUp' | 'Home' | 'End' }
   | { do: 'expect-focus-on'; on: string }
   | { do: 'expect-focus-inside'; on: string }
+  /** The focus is inside `on`, or on no control of the page at all (a browser may move it to its own bar for one press). It is never on the page behind. */
+  | { do: 'expect-focus-not-behind'; on: string }
   | { do: 'expect-visible'; on: string }
   | { do: 'expect-hidden'; on: string }
   | { do: 'expect-attribute'; on: string; name: string; value: string };
 
 export interface Walk { id: string; ruleId: string; steps: readonly WalkStep[] }
 
-/** A window over the page: Enter opens it, the focus moves inside and stays inside, Escape closes it, and the focus returns to the opener. */
+/**
+ * A window over the page: Enter opens it, the focus moves inside, the Tab key never reaches the page behind, Escape closes it,
+ * and the focus returns to the opener. The browser's own <dialog> element lets the Tab key pass through the browser's bar
+ * between the last control and the first, so the walk asks "never on the page behind", not "always on a control inside".
+ */
 export function dialogWalk(opener: string, dialog: string, tabPresses = 12): Walk {
   const steps: WalkStep[] = [{ do: 'focus', on: opener }, { do: 'press', key: 'Enter' }, { do: 'expect-visible', on: dialog }, { do: 'expect-focus-inside', on: dialog }];
-  for (let i = 0; i < tabPresses; i++) steps.push({ do: 'press', key: 'Tab' }, { do: 'expect-focus-inside', on: dialog });
-  steps.push({ do: 'press', key: 'Shift+Tab' }, { do: 'expect-focus-inside', on: dialog }, { do: 'press', key: 'Escape' }, { do: 'expect-hidden', on: dialog }, { do: 'expect-focus-on', on: opener });
+  for (let i = 0; i < tabPresses; i++) steps.push({ do: 'press', key: 'Tab' }, { do: 'expect-focus-not-behind', on: dialog });
+  steps.push({ do: 'press', key: 'Shift+Tab' }, { do: 'expect-focus-not-behind', on: dialog }, { do: 'press', key: 'Escape' }, { do: 'expect-hidden', on: dialog }, { do: 'expect-focus-on', on: opener });
   return { id: 'dialog-walk', ruleId: 'behavior-dialog-keys', steps };
 }
 

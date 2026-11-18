@@ -41,7 +41,8 @@ async function walk(page: Page, w: Walk): Promise<string | null> {
       if (!el) return false;
       const shown = el.getClientRects().length > 0;
       if (s.do === 'expect-focus-on') return document.activeElement === el;
-      if (s.do === 'expect-focus-inside') return el.contains(document.activeElement) && document.activeElement !== el.ownerDocument.body;
+      if (s.do === 'expect-focus-inside') return el !== document.activeElement && el.contains(document.activeElement);
+      if (s.do === 'expect-focus-not-behind') return el.contains(document.activeElement) || document.activeElement === document.body;
       if (s.do === 'expect-visible') return shown;
       if (s.do === 'expect-hidden') return !shown;
       return el.getAttribute(s.name) === s.value;
@@ -93,8 +94,12 @@ describe('the kit on a page with one planted defect for every check', () => {
   let findings: Finding[];
   beforeAll(async () => {
     const page = await open('flawed.html');
-    findings = await runAll(page);
+    findings = (await runAll(page)).filter((f) => f.ruleId !== 'neuro-reflow');
     await page.context().close();
+    // The reflow floor is measured at 320 pixels, as its record says.
+    const narrow = await open('flawed.html', 320);
+    findings.push(...await run(narrow, 'noSidewaysScroll'));
+    await narrow.context().close();
   });
   for (const rule of PAGE_RULES) {
     it(`finds the planted defect: ${rule.id}`, () => {

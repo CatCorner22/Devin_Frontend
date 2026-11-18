@@ -51,17 +51,25 @@ export function purpleGradient(doc: Document): Finding[] {
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }
 
-/** Nearly every heading and paragraph centered. */
+/** Nearly every heading and paragraph centered: on the whole page, or within one part of it that holds six or more. */
 export function everythingCentered(doc: Document): Finding[] {
   const ruleId = 'tell-all-centered';
   const view = doc.defaultView;
   if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
-  const blocks = [...doc.querySelectorAll<HTMLElement>('h1, h2, h3, p')].filter((el) => el.getClientRects().length > 0 && (el.textContent ?? '').trim() !== '');
-  if (blocks.length < 6) return [{ ruleId, status: 'not-applicable', measured: 'fewer than 6 headings and paragraphs' }];
-  const centered = blocks.filter((el) => view.getComputedStyle(el).textAlign === 'center').length;
-  const share = centered / blocks.length;
-  if (share > 0.8) return [{ ruleId, status: 'fails', measured: `${centered} of ${blocks.length} headings and paragraphs are centered`, required: 'centered text only where the design asks for it', fix: 'Align reading text to the start; keep centering for the one place the design names.' }];
-  return [{ ruleId, status: 'holds', measured: `${centered} of ${blocks.length} centered` }];
+  const isBlock = (el: Element): boolean => ['H1', 'H2', 'H3', 'P'].includes(el.tagName) && el.getClientRects().length > 0 && (el.textContent ?? '').trim() !== '';
+  const groups: { where: string; blocks: Element[] }[] = [{ where: 'the whole page', blocks: [...doc.querySelectorAll('h1, h2, h3, p')].filter(isBlock) }];
+  for (const part of doc.querySelectorAll('body, body *')) {
+    const own = [...part.children].filter(isBlock);
+    if (own.length >= 6) groups.push({ where: `${part.tagName.toLowerCase()}${part.id ? '#' + part.id : ''}${part.classList[0] ? '.' + part.classList[0] : ''}`, blocks: own });
+  }
+  if ((groups[0]?.blocks.length ?? 0) < 6 && groups.length === 1) return [{ ruleId, status: 'not-applicable', measured: 'fewer than 6 headings and paragraphs' }];
+  const out: Finding[] = [];
+  for (const group of groups) {
+    if (group.blocks.length < 6) continue;
+    const centered = group.blocks.filter((el) => view.getComputedStyle(el).textAlign === 'center').length;
+    if (centered / group.blocks.length > 0.8) out.push({ ruleId, status: 'fails', where: group.where, measured: `${centered} of ${group.blocks.length} headings and paragraphs are centered`, required: 'centered text only where the design asks for it', fix: 'Align reading text to the start; keep centering for the one place the design names.' });
+  }
+  return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }
 
 /** A row of exactly three cards of the same build: icon, heading, one paragraph. */
