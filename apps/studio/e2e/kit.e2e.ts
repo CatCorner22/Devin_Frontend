@@ -147,6 +147,16 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await page.context().close();
     });
   }
+  it('sound pages that the second automated review named hold: text in a boxless wrapper names its button; a hidden or switched-off control needs no Tab stop', async () => {
+    const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
+    await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><button><span style="display: contents">Save</span></button><button><span hidden>Save</span></button></body></html>`);
+    expect((await run(page, 'controlsHaveNames')).map((f) => f.status)).toEqual(['fails']);
+    await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><button><span style="display: contents">Save</span></button></body></html>`);
+    expect((await run(page, 'controlsHaveNames')).map((f) => f.status)).toEqual(['holds']);
+    await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><button tabindex="-1" style="visibility: hidden">A</button><fieldset disabled><button tabindex="-1">B</button></fieldset></body></html>`);
+    expect((await run(page, 'keyboardReachable')).map((f) => f.status)).toEqual(['holds']);
+    await page.context().close();
+  });
   it('a control that holds the keyboard focus when the check starts is judged like any other, and keeps the focus', async () => {
     const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
     await page.setContent(`<!doctype html><html lang="en"><head><title>t</title>${css}</head><body><button id="a">One</button><button id="b" style="outline: none">Two</button></body></html>`);

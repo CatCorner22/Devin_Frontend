@@ -16,7 +16,8 @@ export function keyboardReachable(doc: Document): Finding[] {
   // A native control taken out of the Tab order. Inside a group that the arrow keys walk (tabs, a menu, a toolbar), one stop is right.
   const walked = '[role="tablist"], [role="menu"], [role="menubar"], [role="listbox"], [role="radiogroup"], [role="toolbar"], [role="tree"], [role="grid"]';
   for (const el of doc.querySelectorAll<HTMLElement>('a[href][tabindex], button[tabindex], input[tabindex], select[tabindex], textarea[tabindex]')) {
-    if (el.tabIndex >= 0 || el.getClientRects().length === 0 || (el as HTMLButtonElement).disabled || el.closest(walked) || el.closest('[inert]')) continue;
+    // A control that nobody can see or use needs no stop: hidden, or switched off (also by a fieldset around it).
+    if (el.tabIndex >= 0 || el.getClientRects().length === 0 || el.matches(':disabled') || el.closest(walked) || el.closest('[inert]') || doc.defaultView?.getComputedStyle(el).visibility !== 'visible') continue;
     out.push({ ruleId, status: 'fails', where: name(el), measured: `tabindex ${el.tabIndex} keeps the Tab key from reaching this control`, required: 'reachable by keyboard', fix: 'Remove the negative tabindex, or hide the control from everyone if nobody should use it.' });
   }
   for (const el of doc.querySelectorAll<HTMLElement>('[tabindex]')) {
@@ -82,11 +83,17 @@ export function controlsHaveNames(doc: Document): Finding[] {
   for (const el of controls) {
     const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join('');
     // Only what a screen reader is given counts: nothing inside a part marked aria-hidden, and nothing that is not drawn.
-    const heard = (node: Element): boolean => !node.closest('[aria-hidden="true"]') && (node.closest('svg') !== null || node.getClientRects().length > 0);
-    const pictures = [...el.querySelectorAll('img[alt], svg[aria-label]')].filter(heard).map((p) => p.getAttribute('alt') ?? p.getAttribute('aria-label') ?? '').join('');
+    // The text itself is asked whether it is drawn, because a wrapper with "display: contents" has no box of its own.
+    const open = (node: Element): boolean => !node.closest('[aria-hidden="true"]');
+    const pictures = [...el.querySelectorAll('img[alt], svg[aria-label]')].filter((p) => open(p) && p.getClientRects().length > 0).map((p) => p.getAttribute('alt') ?? p.getAttribute('aria-label') ?? '').join('');
     let text = '';
     const walker = doc.createTreeWalker(el, 4);
-    for (let node = walker.nextNode(); node; node = walker.nextNode()) if (node.parentElement && heard(node.parentElement)) text += node.textContent ?? '';
+    const range = doc.createRange();
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if (!node.parentElement || !open(node.parentElement)) continue;
+      range.selectNodeContents(node);
+      if (node.parentElement.closest('svg') !== null || range.getClientRects().length > 0) text += node.textContent ?? '';
+    }
     const said = [el.getAttribute('aria-label') ?? '', byId, text, pictures, el.getAttribute('title') ?? ''].join('').trim();
     if (said === '') out.push({ ruleId, status: 'fails', where: name(el), measured: 'no name: no text, no label', required: 'a name that says what the control does', fix: 'Add visible text, or an aria-label that says what the control does.' });
   }
