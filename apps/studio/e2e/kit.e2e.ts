@@ -260,6 +260,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect((await run(paused, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
       await paused.context().close();
       expect(await statuses('<h1>Shop</h1><p>Still.</p>', 'noScriptedMotion')).toEqual(['holds']);
+      // A show of three slides, one at a time, every four seconds: no slide is shown twice in 11 seconds, and it is still movement.
+      const slides = await pageOf('<h1>Shop</h1><div id="show"><p class="s">One</p><p class="s" hidden>Two</p><p class="s" hidden>Three</p></div>');
+      await slides.evaluate(() => { let i = 0; const all = [...document.querySelectorAll<HTMLElement>('.s')]; setInterval(() => { i = (i + 1) % all.length; all.forEach((el, n) => { el.hidden = n !== i; }); }, 4000); });
+      expect((await run(slides, 'noScriptedMotion')).map((f) => f.status)).toEqual(['fails']);
+      await slides.context().close();
       // Two parts that each fill in once, at one and at six seconds, are late content, not movement.
       const late = await pageOf('<h1>Shop</h1><p id="a">…</p><p id="b">…</p>');
       await late.evaluate(() => { setTimeout(() => { const a = document.getElementById('a'); if (a) a.textContent = 'Prices'; }, 1000); setTimeout(() => { const b = document.getElementById('b'); if (b) b.textContent = 'Reviews'; }, 6000); });
