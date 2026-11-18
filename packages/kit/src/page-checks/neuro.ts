@@ -138,6 +138,9 @@ export function noSidewaysScroll(doc: Document): Finding[] {
   const ruleId = 'neuro-reflow';
   const root = doc.documentElement;
   const limit = root.clientWidth;
+  // The floor is defined at 320 pixels. At any other width the answer would say nothing about it (finding F-2 of 2026-11-18).
+  const windowWidth = doc.defaultView?.innerWidth ?? 0;
+  if (windowWidth !== 320) return [{ ruleId, status: 'could-not-measure', measured: `the window is ${windowWidth} px wide; this floor is measured at 320 px` }];
   if (root.scrollWidth <= limit) return [{ ruleId, status: 'holds', measured: `${limit} px wide` }];
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const culprits = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5).slice(0, 3);

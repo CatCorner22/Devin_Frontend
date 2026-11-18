@@ -49,7 +49,7 @@ receiptText(receipt(findings, KIT_RULES)); // measured / not measured / a person
 designId(tokens);                         // 'rx-1a2b3c4d': links a build to a design; not secret, proves nothing about authorship
 ```
 
-`tokenFit` takes a second argument, the design's tokens. `noSidewaysScroll` measures at the present window width; set the window to 320 pixels first for the reflow floor. `layoutShift` returns a promise.
+`tokenFit` takes a second argument, the design's tokens. `noSidewaysScroll` answers only in a window 320 pixels wide, where the reflow floor is defined; at any other width it reports "could not measure", and the grade is then "Not graded". `layoutShift` returns a promise.
 
 ## What can go wrong
 

@@ -31,6 +31,15 @@ async function runAll(page: Page): Promise<Finding[]> {
   for (const fn of Object.keys(CHECKS)) all.push(...await run(page, fn));
   return all;
 }
+/** Every check at the present width, with the reflow floor measured where its record says: at 320 pixels. */
+async function runAllWithReflow(page: Page): Promise<Finding[]> {
+  const findings = (await runAll(page)).filter((f) => f.ruleId !== 'neuro-reflow');
+  const size = page.viewportSize() ?? { width: 1280, height: 800 };
+  await page.setViewportSize({ width: 320, height: size.height });
+  findings.push(...await run(page, 'noSidewaysScroll'));
+  await page.setViewportSize(size);
+  return findings;
+}
 /** Runs a scripted walk. Returns null when every step holds, or a description of the first step that does not. */
 async function walk(page: Page, w: Walk): Promise<string | null> {
   for (const [i, step] of w.steps.entries()) {
@@ -58,7 +67,9 @@ afterAll(async () => { await browser?.close(); });
 describe('the kit on a page built with care', () => {
   it('no check reports a failure at desktop width, and every check gives an answer for each of its rules', async () => {
     const page = await open('good.html');
-    const findings = await runAll(page);
+    // At 1280 pixels the reflow floor refuses to answer: it is defined at 320 (review of 2026-11-18, F-2).
+    expect((await run(page, 'noSidewaysScroll')).map((f) => f.status)).toEqual(['could-not-measure']);
+    const findings = await runAllWithReflow(page);
     expect(findings.filter((f) => f.status === 'fails')).toEqual([]);
     expect(findings.filter((f) => f.status === 'could-not-measure')).toEqual([]);
     expect(PAGE_RULES.filter((rule) => !findings.some((f) => f.ruleId === rule.id)).map((rule) => rule.id)).toEqual([]);
@@ -78,14 +89,16 @@ describe('the kit on a page built with care', () => {
   });
   it('grades "Crafted" once the walks are counted, and the receipt still lists what a person must check', async () => {
     const page = await open('good.html');
-    const findings = [...await runAll(page), { ruleId: 'behavior-dialog-keys', status: 'holds' as const }];
+    const findings = [...await runAllWithReflow(page), { ruleId: 'behavior-dialog-keys', status: 'holds' as const }];
     expect(grade(findings, KIT_RULES)).toMatchObject({ grade: 'Crafted', failedFloors: [], unmeasuredFloors: [] });
     expect(receipt(findings, KIT_RULES).forAPerson.length).toBeGreaterThan(8);
     await page.context().close();
   });
   it('without the walk the grade is "Not graded": a floor that did not run is not a pass', async () => {
     const page = await open('good.html');
-    expect(grade(await runAll(page), KIT_RULES)).toMatchObject({ grade: 'Not graded', unmeasuredFloors: ['behavior-dialog-keys'] });
+    expect(grade(await runAllWithReflow(page), KIT_RULES)).toMatchObject({ grade: 'Not graded', unmeasuredFloors: ['behavior-dialog-keys'] });
+    // And at desktop width alone the reflow floor is unmeasured too.
+    expect(grade(await runAll(page), KIT_RULES).unmeasuredFloors).toEqual(['neuro-reflow', 'behavior-dialog-keys']);
     await page.context().close();
   });
 });
