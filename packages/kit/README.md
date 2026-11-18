@@ -49,14 +49,23 @@ receiptText(receipt(findings, KIT_RULES)); // measured / not measured / a person
 designId(tokens);                         // 'rx-1a2b3c4d': links a build to a design; not secret, proves nothing about authorship
 ```
 
-`tokenFit` takes a second argument, the design's tokens. `noSidewaysScroll` answers only in a window 320 pixels wide, where the reflow floor is defined; at any other width it reports "could not measure", and the grade is then "Not graded". `layoutShift` returns a promise.
+`tokenFit` takes a second argument, the design's tokens. `noSidewaysScroll` answers only in a window 320 pixels wide, where the reflow floor is defined; at any other width it reports "could not measure", and the grade is then "Not graded". `layoutShift` and `noScriptedMotion` return a promise; `noScriptedMotion` takes 11 seconds unless a pause button is in view. `unseenParts` belongs to no single rule (`WHOLE_PAGE_CHECKS`); run it with the others, as the loop above does. A rule record may name further checks under `also`.
+
+The example needs a TypeScript-aware runner (Playwright's own, Vitest, or `tsx`): the package ships TypeScript source and has no build step, so plain `node` cannot import it. `checks` holds every page check by name; pass the tokens to `tokenFit` as the example in `apps/studio/e2e/kit.e2e.ts` does (`run`).
 
 ## What can go wrong
 
-- **A floor that did not run.** The grade is then "Not graded", never a pass. The window walk (`behavior-dialog-keys`) is a floor: a checker that runs only the page checks gets "Not graded".
+- **A floor that did not run.** If a floor that a program checks (by a page check or a walk) did not run or could not measure, the grade is "Not graded", never a pass. The window walk (`behavior-dialog-keys`) is such a floor: a checker that runs only the page checks gets "Not graded".
+- **Floors that only a person can check.** Three of the 16 floors (no flashing, reduced motion honored, error recovery) are checked by no program. They are not part of the grade: a page can be graded "Crafted" while they are open. The grade's result names them in `floorsForAPerson`, its reason says how many there are, and the receipt lists them under "a person must still check".
+- **A page that works against the check.** A page check runs inside the page, beside the page's own scripts. A script in the page can replace the browser functions that a check calls, and so hide every fault or keep a check from ever answering. The kit does not defend against this. A checker that grades a page it does not trust must run the checks where the page's scripts cannot reach them (Playwright: with JavaScript switched off for the page, or in a separate script world), must put a time limit on each check, and must record "could not measure" for a check that ran out of time.
+- **Parts that no check looks into.** No check looks inside a frame or inside a web component. `unseenParts` reports such parts, every floor that a page check measures is then "could not measure", and the grade is "Not graded".
+- **Clicks that a script attached.** The keyboard floor cannot read them. It takes an element that shows the hand pointer (`cursor: pointer`), is no control, and has no Tab stop for one. A mouse-only control without that pointer passes; an element that shows the pointer and answers no click fails.
+- **Movement that a script drives.** `noScriptedMotion` watches the page for 11 seconds and takes the 11 seconds each time. It misses movement drawn on a canvas and a change that comes less often than every 5 seconds. Only a visible button marked `data-pause-motion` counts as a pause control.
+- **Overflow that the page hides.** At 320 pixels the reflow check also fails content that lies beyond the edge of a page that hides its overflow. It skips parts placed outside the ordinary flow (a drawer, a slide), so it can miss content lost there.
+- **A window with no mark.** The check takes a fixed layer that covers the window, with page content beside it, for a window. A window built another way passes unseen.
 - **A check that judges by a simple sign.** The loading check looks for class names that contain "loading", "spinner", or "skeleton". The purple-fade check looks only at CSS color fades, not at pictures. A page can pass a check and still have the fault.
 - **A check that depends on the browser.** `balancedHeadings` and `layoutShift` report "could not measure" in a browser that lacks the feature. They were tested in Chromium only.
-- **Stricter than the source.** Some rules ask for more than the standard they cite. The record's source line says so each time.
+- **Stricter than the source.** Some rules ask for more than the standard they cite. The record's source line says so for each such rule that the review of 2026-11-18 found (finding F-35); a person who compares the remaining records with their sources may find more.
 - **Sources.** The builder read the text of each WCAG criterion cited, the summaries of the COGA objectives, and the keyboard sections of two patterns of the ARIA guide. It did not read the longer explanatory pages. Records whose only source is "the builder's judgment" carry the grade "expert-opinion".
 - **The design ID** is a short public fingerprint. Anyone can copy it onto any page.
 

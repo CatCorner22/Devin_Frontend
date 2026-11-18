@@ -2,7 +2,11 @@
 import type { Finding, RuleRecord } from '../shapes.js';
 
 export type Grade = 'Not graded' | 'Below floor' | 'Meets floor' | 'Crafted';
-export interface GradeResult { grade: Grade; reason: string; failedFloors: string[]; failedRules: string[]; unmeasuredFloors: string[] }
+/**
+ * `floorsForAPerson` names the floors that no program can check. They never enter the grade: the grade speaks only of what a
+ * program measured, and these floors stay open until a person has checked them (finding F-18 of 2026-11-18).
+ */
+export interface GradeResult { grade: Grade; reason: string; failedFloors: string[]; failedRules: string[]; unmeasuredFloors: string[]; floorsForAPerson: string[] }
 
 const unique = (list: string[]): string[] => [...new Set(list)];
 const byId = (rules: readonly RuleRecord[]): Map<string, RuleRecord> => new Map(rules.map((rule) => [rule.id, rule]));
@@ -21,7 +25,9 @@ export function grade(findings: readonly Finding[], rules: readonly RuleRecord[]
   // the part of the page that the other check could not see may hold the fault (finding F-5 of 2026-11-18).
   const refused = new Set(findings.filter((f) => f.status === 'could-not-measure').map((f) => f.ruleId));
   const unmeasuredFloors = rules.filter((rule) => rule.level === 'floor' && rule.check.kind !== 'person' && (!answered.has(rule.id) || refused.has(rule.id))).map((rule) => rule.id);
-  const result = (grade: Grade, reason: string): GradeResult => ({ grade, reason, failedFloors, failedRules, unmeasuredFloors });
+  const floorsForAPerson = rules.filter((rule) => rule.level === 'floor' && rule.check.kind === 'person').map((rule) => rule.id);
+  const open = floorsForAPerson.length > 0 ? ` ${floorsForAPerson.length} floor(s) that only a person can check are not part of this grade.` : '';
+  const result = (grade: Grade, reason: string): GradeResult => ({ grade, reason: reason + open, failedFloors, failedRules, unmeasuredFloors, floorsForAPerson });
   if (failedFloors.length > 0) return result('Below floor', `${failedFloors.length} floor(s) fail.`);
   if (unmeasuredFloors.length > 0) return result('Not graded', `${unmeasuredFloors.length} floor(s) were not measured.`);
   if (failedRules.length > 0) return result('Meets floor', `Every measured floor holds; ${failedRules.length} rule(s) fail.`);

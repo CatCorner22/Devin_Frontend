@@ -172,6 +172,12 @@ describe('receipt', () => {
     expect(fromPage('a'.repeat(500))?.length).toBe(163);
     expect(fromPage('›fake‹')).toBe('‹fake›');
   });
+  it('names the floors that only a person can check, and says that they are not part of the grade (review of 2026-11-18, F-18)', () => {
+    const result = grade(KIT_RULES.filter((rule) => rule.check.kind !== 'person').map((rule) => holds(rule.id)), KIT_RULES);
+    expect(result.grade).toBe('Crafted');
+    expect(result.floorsForAPerson).toEqual(['neuro-no-flashing', 'neuro-reduced-motion', 'neuro-error-recovery']);
+    expect(result.reason).toMatch(/3 floor\(s\) that only a person can check are not part of this grade/);
+  });
   it('one "could not measure" leaves a floor unmeasured even when another check answered for it (review of 2026-11-18, F-5)', () => {
     const answered = RULES.filter((rule) => rule.level === 'floor').map((rule) => holds(rule.id));
     expect(grade(answered, RULES).unmeasuredFloors).toEqual([]);
@@ -243,6 +249,17 @@ describe('blind test', () => {
     const score = blindScore([...answers('tool', 30, 60), ...answers('person', 31, 60)]);
     expect(score.statement).toMatch(/found no clear difference; the true difference could be as large as \d+%/);
     expect(score.statement).not.toMatch(/indistinguishable/i);
+  });
+  it('unanimous answers keep a range of doubt, and "no clear difference" never reads as "the same" (review of 2026-11-18, F-17)', () => {
+    const same = blindScore([...answers('tool', 30, 30), ...answers('person', 30, 30)]);
+    expect(same.differenceHigh).toBeGreaterThan(0.1);
+    expect(same.statement).toMatch(/could be as large as (1[1-9]|[2-9]\d)%\. This does not show that the two kinds are the same/);
+    const few = blindScore([...answers('tool', 0, 5), ...answers('person', 5, 5)]);
+    expect(few.differenceLow).toBeLessThan(0.6);
+    expect(few.differenceHigh).toBe(1);
+    expect(few.statement).toMatch(/^Too few.*In these answers the reviewers told the two apart/);
+    expect(() => shareOf(5, 3)).toThrow(RangeError);
+    expect(() => shareOf(1.5, 3)).toThrow(RangeError);
   });
   it('warns when there are too few answers, and asks for both kinds of page', () => {
     expect(blindScore([...answers('tool', 2, 4), ...answers('person', 2, 4)]).statement).toMatch(/^Too few/);
