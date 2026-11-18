@@ -63,22 +63,28 @@ export function readingComfort(doc: Document): Finding[] {
   const view = doc.defaultView;
   if (!view) return [{ ruleId: 'neuro-line-length', status: 'could-not-measure', measured: 'the page has no window' }];
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-  const blocks = [...doc.querySelectorAll<HTMLElement>('p, li, dd, blockquote')].filter((el) => (el.textContent ?? '').trim().length >= 120 && el.getClientRects().length > 0);
+  // Reading text: any part that holds 120 letters or more of its own (not counting what its children hold), whatever its tag.
+  // Builders put text in a `div` as often as in a `p` (finding F-21 of 2026-11-18).
+  const ownText = (el: Element): string => [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent ?? '').join(' ').replace(/\s+/g, ' ').trim();
+  const blocks = [...doc.querySelectorAll<HTMLElement>('body *:not(script):not(style):not(textarea):not(option):not(pre):not(code):not(svg *)')].filter((el) => el.getClientRects().length > 0 && ownText(el).length >= 120);
   const ids = ['neuro-line-length', 'neuro-line-height', 'neuro-text-size', 'neuro-no-justified-text'] as const;
   if (blocks.length === 0) return ids.map((ruleId) => ({ ruleId, status: 'not-applicable' as const }));
   const fails: Finding[] = [];
-  const probe = doc.createElement('span');
-  probe.textContent = '0000000000';
-  probe.style.visibility = 'hidden';
-  probe.style.position = 'absolute';
   for (const el of blocks) {
     const style = view.getComputedStyle(el);
     const size = parseFloat(style.fontSize);
-    el.appendChild(probe);
-    const letter = probe.getBoundingClientRect().width / 10;
-    probe.remove();
-    const width = el.getBoundingClientRect().width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-    const letters = letter > 0 ? Math.round(width / letter) : 0;
+    // The letters of the longest drawn line: the width of that line, divided by the mean width of a letter of this very text
+    // (the width of all lines over the count of letters). This measures the text, not its box (finding F-22 of 2026-11-18).
+    const lines = new Map<number, number>();
+    const range = doc.createRange();
+    let drawn = 0;
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3) continue;
+      range.selectNodeContents(node);
+      for (const rect of range.getClientRects()) { lines.set(Math.round(rect.top), (lines.get(Math.round(rect.top)) ?? 0) + rect.width); drawn += rect.width; }
+    }
+    const letter = drawn / ownText(el).length;
+    const letters = letter > 0 ? Math.round(Math.max(...lines.values()) / letter) : 0;
     if (letters > 80) fails.push({ ruleId: 'neuro-line-length', status: 'fails', where: name(el), measured: `about ${letters} letters in a line`, required: 'at most 80', fix: 'Give the text a max-width of about 65ch.' });
     const lineHeight = style.lineHeight === 'normal' ? 1.2 : parseFloat(style.lineHeight) / size;
     if (lineHeight < 1.5) fails.push({ ruleId: 'neuro-line-height', status: 'fails', where: name(el), measured: `line height ${lineHeight.toFixed(2)}${style.lineHeight === 'normal' ? ' (the browser\'s default, taken as 1.2)' : ''}`, required: 'at least 1.5', fix: 'Set line-height to 1.5 or more on reading text.' });

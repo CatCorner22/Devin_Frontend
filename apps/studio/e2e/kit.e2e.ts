@@ -251,6 +251,21 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(`<h1>Shop</h1><p>Text.</p><div style="${layer}; pointer-events: none; z-index: -1"></div>`, 'dialogsAreMarked')).toEqual(['not-applicable']);
     });
 
+    it('F-21, F-22: reading text in a div is judged; a line is counted in letters of the text itself', async () => {
+      const text = 'The shop opens at nine each weekday and closes at five, and on Saturday the doors stay open until one in the afternoon for callers. '.repeat(4);
+      const comfort = async (body: string): Promise<Record<string, string>> => {
+        const page = await pageOf(body);
+        const out = Object.fromEntries((await run(page, 'readingComfort')).map((f) => [f.ruleId, f.status]));
+        await page.context().close();
+        return out;
+      };
+      expect(await comfort(`<div style="font-size:10px;line-height:1;text-align:justify;max-width:300px">${text}</div>`)).toMatchObject({ 'neuro-line-height': 'fails', 'neuro-text-size': 'fails', 'neuro-no-justified-text': 'fails' });
+      // About 110 letters of Arial in a line: wider than 80, though the box is narrower than 80 zeros.
+      expect((await comfort(`<p style="width:780px;line-height:1.6">${text}</p>`))['neuro-line-length']).toBe('fails');
+      // A list item whose paragraph is 60 letters wide: the paragraph is measured, not the item around it.
+      expect((await comfort(`<ul style="width:1100px"><li><p style="max-width:60ch;line-height:1.6">${text}</p></li></ul>`))['neuro-line-length']).toBe('holds');
+    });
+
     it('F-24: a button made with input and a button named by a letter that draws nothing have no name', async () => {
       const where = async (html: string): Promise<(string | undefined)[]> => {
         const page = await pageOf(html);
