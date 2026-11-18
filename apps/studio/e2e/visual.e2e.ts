@@ -3,12 +3,13 @@
 // 2. One variable: a Step that changes paint only (color, finish) moves no element by even one pixel.
 // 3. No look changes by accident: each curated Direction is compared with a stored picture.
 //    After a deliberate change of look, store new pictures with `npm run visual:update` and review them before committing.
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { DEFAULT_PARAMS, DIRECTIONS, FONTS, SAMPLE_CONTENT, STEPS, deriveTokens, renderSmallBusiness, resolvePatch, type DesignParams, type FontId, type MockupFocus } from '@refraction/core';
-import { chromium, type Browser, type Page } from 'playwright';
-import { afterAll, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const baselineDir = fileURLToPath(new URL('./baselines/', import.meta.url));
@@ -41,26 +42,52 @@ function mockup(params: DesignParams, focus: MockupFocus): string {
 
 // A machine whose installed browser is older than this Playwright version names its browser here; CI sets nothing.
 const LOCAL_BROWSER = process.env['PW_CHROMIUM'] ? { executablePath: process.env['PW_CHROMIUM'] } : {};
+const CONTEXT = { viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' } as const;
 let browser: Browser;
 let page: Page;
 beforeAll(async () => {
   // Pin how the browser draws text, so that the same picture comes out on every machine. By default the browser takes font "hinting" from the
   // machine's own settings; with hinting on, it also rounds each letter's width to whole pixels, so lines wrap at different words (CI runs 11 and 27).
   browser = await chromium.launch({ ...LOCAL_BROWSER, args: ['--font-render-hinting=none', '--disable-lcd-text'] });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
-  page = await context.newPage();
+  page = await (await browser.newContext(CONTEXT)).newPage();
 });
+// A failed or timed-out test may have left the shared `page` changed, and after a timeout its code keeps running. Closing the page
+// stops that code at its next browser call; the next test then starts on a fresh page (finding ISO-03). The old page closes before
+// `page` names the new one.
+afterEach(async ({ task }) => {
+  if (task.result?.state !== 'fail') return;
+  replaced += 1;
+  await page.context().close();
+  page = await (await browser.newContext(CONTEXT)).newPage();
+});
+// Leftover code that waits on something other than the browser (a timer, a file) wakes after the new page exists. So each test that
+// uses the shared page runs under the count of replacements at its start, and `sharedPage()` refuses code whose count is old or
+// absent (second review, finding ISO-10). A new test that draws on the shared page must use `itShared`, or `sharedPage()` throws.
+let replaced = 0;
+const turn = new AsyncLocalStorage<number>();
+function sharedPage(): Page {
+  if (turn.getStore() !== replaced) throw new Error('The shared page is not for this code: its test failed or timed out and the page was replaced, or its test does not use `itShared`.');
+  return page;
+}
+const itShared = (name: string, body: () => Promise<void>, limit?: number): void => {
+  it(name, () => turn.run(replaced, body), limit);
+};
 afterAll(async () => {
-  await browser.close();
+  await browser?.close();
 });
 
+// A test that changes the window width or draws many pages gets a page of its own. Vitest closes that page's context when the
+// test finishes, even after a timeout or a failed check, so the test can never leave the shared `page` at the wrong width or
+// keep drawing on it while the stored-picture tests run.
 async function loopPage(): Promise<Page> {
-  const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
-  onTestFinished(() => context.close());
-  return context.newPage();
+  // Register the closing first: after an `await`, a test that already timed out would register it on the next test (finding ISO-08).
+  const own: { context?: BrowserContext } = {};
+  onTestFinished(async () => own.context?.close());
+  own.context = await browser.newContext(CONTEXT);
+  return own.context.newPage();
 }
 
-async function show(html: string, target: Page = page): Promise<void> {
+async function show(html: string, target: Page = sharedPage()): Promise<void> {
   await target.setContent(html, { waitUntil: 'load' });
   // Load every declared typeface before any picture or measurement. Waiting for `document.fonts.ready` alone is not enough:
   // a browser starts to load a typeface only when it first lays the page out, so a slow machine could take the picture too early.
@@ -71,12 +98,12 @@ async function show(html: string, target: Page = page): Promise<void> {
 }
 const shot = async (html: string): Promise<Buffer> => {
   await show(html);
-  return page.screenshot({ type: 'png' });
+  return sharedPage().screenshot({ type: 'png' });
 };
 /** The position and size of every element, to a tenth of a pixel. */
 const geometry = async (html: string): Promise<string[]> => {
   await show(html);
-  return page.evaluate(() =>
+  return sharedPage().evaluate(() =>
     [...document.querySelectorAll('body *')].map((el) => {
       const r = el.getBoundingClientRect();
       return `${el.tagName.toLowerCase()}${el.className ? '.' + String(el.className).split(' ')[0] : ''} ${r.x.toFixed(1)},${r.y.toFixed(1)} ${r.width.toFixed(1)}x${r.height.toFixed(1)}`;
@@ -99,7 +126,7 @@ const PAINT_ONLY = ['neutral', 'accent', 'color-strategy', 'theme', 'contrast', 
 
 describe('Mockup: every Option shows (M3 exit test)', () => {
   for (const step of STEPS) {
-    it(`"${step.name}": each Option looks different from the others`, async () => {
+    itShared(`"${step.name}": each Option looks different from the others`, async () => {
       if (STILL_TWINS[step.id]) {
         // The exception is real: the stills are in fact identical, so the note on the card is true.
         const first = await shot(mockup({ ...DEFAULT_PARAMS, ...resolvePatch(step.options[0]!, DEFAULT_PARAMS) }, step.focus));
@@ -124,7 +151,7 @@ describe('Mockup: every Option shows (M3 exit test)', () => {
 
 describe('Mockup: one variable per Step, measured in the browser', () => {
   for (const id of PAINT_ONLY) {
-    it(`"${id}" changes paint only: no element moves or changes size`, async () => {
+    itShared(`"${id}" changes paint only: no element moves or changes size`, async () => {
       const step = STEPS.find((s) => s.id === id)!;
       for (const base of BASES) {
         for (const focus of ['top', 'services', 'contact'] as const) {
@@ -142,10 +169,11 @@ describe('Mockup: one variable per Step, measured in the browser', () => {
 
 describe('Mockup: targets and structure in the browser', () => {
   it('gives every link, button, and field a target of at least 24 by 24 pixels, at phone and desktop widths', async () => {
+    const page = await loopPage();
     for (const viewport of [{ width: 375, height: 800 }, { width: 1280, height: 800 }]) {
       await page.setViewportSize(viewport);
       for (const params of [DEFAULT_PARAMS, ...['midnight-aurora', 'control-room', 'sticker-pop', 'quiet-luxury'].map((id) => DIRECTIONS.find((d) => d.id === id)!.params)]) {
-        await show(mockup(params, 'top'));
+        await show(mockup(params, 'top'), page);
         const small = await page.evaluate(() =>
           [...document.querySelectorAll<HTMLElement>('a, button, input, textarea')]
             .filter((el) => el.getClientRects().length > 0 && !el.classList.contains('skip'))
@@ -185,11 +213,13 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
     return out;
   }
 
-  it('never makes the page wider than a phone, whatever the Direction, the type Options, or the slider ends', async () => {
-    const page = await loopPage();
-    await page.setViewportSize({ width: 375, height: 800 });
-    const wide: string[] = [];
-    for (const direction of [{ name: 'plain start', params: DEFAULT_PARAMS }, ...DIRECTIONS]) {
+  // One test per starting design (the plain start and each Direction), each with the limit the single test had: the single test drew every Direction in one 240-second
+  // limit and ran out of time on a slow machine (finding ISO-06; the owner approved the split, D56). Every check is the same.
+  for (const direction of [{ name: 'plain start', params: DEFAULT_PARAMS }, ...DIRECTIONS]) {
+    it(`never makes the page wider than a phone: ${direction.name}, whatever the type Options or the slider ends`, async () => {
+      const page = await loopPage();
+      await page.setViewportSize({ width: 375, height: 800 });
+      const wide: string[] = [];
       for (const design of reachable(direction.params)) {
         await show(mockup(design.params, 'top'), page);
         const report = await page.evaluate(() => {
@@ -203,10 +233,10 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
         });
         if (report) wide.push(`${direction.name}, ${design.label}: ${report}`);
       }
-    }
-    await page.setViewportSize({ width: 1280, height: 800 });
-    expect(wide).toEqual([]);
-  }, 240_000);
+      await page.setViewportSize({ width: 1280, height: 800 });
+      expect(wide).toEqual([]);
+    }, 240_000);
+  }
 
   it('fits the window at other widths as well: a small phone, the width at which two columns begin, and wider (code review of 2026-11-13, finding "tokens 4")', async () => {
     const page = await loopPage();
@@ -240,11 +270,12 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
   }, 600_000);
 
   it('shows the telephone number in the contact part on a phone, whatever the menu (code review of 2026-11-13, finding "tokens 1")', async () => {
+    const page = await loopPage();
     await page.setViewportSize({ width: 375, height: 800 });
     const nav = STEPS.find((step) => step.id === 'nav')!;
     for (const base of [DEFAULT_PARAMS, ...['midnight-aurora', 'galactic-goth'].map((id) => DIRECTIONS.find((d) => d.id === id)!.params)]) {
       for (const option of nav.options) {
-        await show(mockup({ ...base, ...resolvePatch(option, base) }, 'contact'));
+        await show(mockup({ ...base, ...resolvePatch(option, base) }, 'contact'), page);
         const shown = await page.evaluate(() => {
           const phone = document.querySelector<HTMLElement>('address .phone');
           return phone !== null && phone.getClientRects().length > 0 && (phone.textContent ?? '').trim().length > 0;
@@ -283,7 +314,7 @@ describe('Mockup: fits a phone, and keeps the headline the largest text (campaig
 describe('Mockup: no look changes by accident (decision D8)', () => {
   /** Shrink a screenshot to a small picture inside the browser, and return it as a PNG. Small pictures forgive one-pixel differences in text rendering. */
   const shrink = async (png: Buffer): Promise<Buffer> => {
-    const dataUrl = await page.evaluate(async (source) => {
+    const dataUrl = await sharedPage().evaluate(async (source) => {
       const image = new Image();
       image.src = source;
       await image.decode();
@@ -299,7 +330,7 @@ describe('Mockup: no look changes by accident (decision D8)', () => {
   };
   /** How far apart two small pictures are: the mean difference per color channel (0 to 255), and the share of pixels that differ clearly. */
   const difference = (a: Buffer, b: Buffer): Promise<{ mean: number; share: number }> =>
-    page.evaluate(async ([one, two]) => {
+    sharedPage().evaluate(async ([one, two]) => {
       const load = async (source: string): Promise<Uint8ClampedArray> => {
         const image = new Image();
         image.src = source;
@@ -326,7 +357,7 @@ describe('Mockup: no look changes by accident (decision D8)', () => {
     // Three parts of the page: the top, the services, and the contact part. The services part was added after a review found
     // that no stored picture showed it (code review of 2026-11-13, finding "gaps 2").
     for (const focus of ['top', 'services', 'contact'] as const) {
-      it(`${direction.id}, region "${focus}" matches its stored picture`, async () => {
+      itShared(`${direction.id}, region "${focus}" matches its stored picture`, async () => {
         const current = await shrink(await shot(mockup(direction.params, focus)));
         const file = `${baselineDir}${direction.id}-${focus}.png`;
         if (UPDATE || !existsSync(file)) {
@@ -356,7 +387,7 @@ describe('Mockup: no look changes by accident (decision D8)', () => {
   const stylesFile = `${baselineDir}styles.json`;
   const measureStyles = async (params: DesignParams): Promise<Record<string, Record<string, string> | null>> => {
     await show(mockup(params, 'top'));
-    return page.evaluate(([parts, values]) => {
+    return sharedPage().evaluate(([parts, values]) => {
       const out: Record<string, Record<string, string> | null> = {};
       for (const [name, selector] of Object.entries(parts as Record<string, string>)) {
         const el = document.querySelector(selector);
@@ -371,7 +402,7 @@ describe('Mockup: no look changes by accident (decision D8)', () => {
     }, [PARTS, VALUES] as [Record<string, string>, string[]]);
   };
 
-  it('keeps the measured style of the main parts of every Direction: corners, lines, shadows, colors, sizes, letters', async () => {
+  itShared('keeps the measured style of the main parts of every Direction: corners, lines, shadows, colors, sizes, letters', async () => {
     const current: Record<string, Record<string, Record<string, string> | null>> = {};
     for (const direction of [{ id: 'plain-start', params: DEFAULT_PARAMS }, ...DIRECTIONS]) current[direction.id] = await measureStyles(direction.params);
     if (UPDATE || !existsSync(stylesFile)) {
@@ -384,7 +415,7 @@ describe('Mockup: no look changes by accident (decision D8)', () => {
     for (const id of Object.keys(current)) expect(current[id], `the measured style of “${id}” changed; if that is intended, run "npm run visual:update" and review the difference`).toEqual(stored[id]);
   });
 
-  it('would notice square corners in place of round ones, which the pictures alone would let pass', async () => {
+  itShared('would notice square corners in place of round ones, which the pictures alone would let pass', async () => {
     const round = DIRECTIONS.find((d) => d.params.radius > 6 && d.params.radius < 999)!;
     const before = await measureStyles(round.params);
     const after = await measureStyles({ ...round.params, radius: 0 });
@@ -392,7 +423,7 @@ describe('Mockup: no look changes by accident (decision D8)', () => {
     expect(after).not.toEqual(before);
   });
 
-  it('would notice a changed look: one Direction against another fails the comparison', async () => {
+  itShared('would notice a changed look: one Direction against another fails the comparison', async () => {
     const a = await shrink(await shot(mockup(DIRECTIONS[0]!.params, 'top')));
     // A change of one Step is enough to fail: the same Direction with a different opening layout.
     const b = await shrink(await shot(mockup({ ...DIRECTIONS[0]!.params, hero: 'text-left' }, 'top')));
@@ -402,7 +433,7 @@ describe('Mockup: no look changes by accident (decision D8)', () => {
 });
 
 describe('Contrast: what the browser itself draws (finding T3-01)', () => {
-  it('draws every color pair that the Studio calls passing at or above its requirement, measured from pixels in the browser', async () => {
+  itShared('draws every color pair that the Studio calls passing at or above its requirement, measured from pixels in the browser', async () => {
     // The Studio writes each measured color to the page as six hexadecimal digits. This test hands those same texts to the
     // browser, lets the browser paint them (a see-through color over its background included), reads the pixels back, and
     // measures the contrast from the pixels. It measures the page, where the unit tests measure a model of the page.
@@ -437,7 +468,7 @@ describe('Contrast: what the browser itself draws (finding T3-01)', () => {
     }
     // Every color handed to the browser is six hexadecimal digits: nothing is left for the browser to convert.
     for (const job of jobs) for (const color of [job.fg, job.bg, job.ground]) expect(color, job.label).toMatch(/^#[0-9a-f]{6}$/);
-    const result = await page.evaluate((list) => {
+    const result = await sharedPage().evaluate((list) => {
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = 1;
       const ctx = canvas.getContext('2d', { willReadFrequently: true })!;

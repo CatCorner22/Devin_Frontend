@@ -376,10 +376,10 @@ The lines used most often. Each line ends with the ID of the section that suppor
 <!-- index: phone width | overflow; narrow screen; heading size; see also: Mockup -->
 
 - **Rule.** At widths of 320, 375, 860, 1024, and 1280 pixels, no Direction, no Option of the Steps that change sizes, and no slider end makes the Mockup wider than the window; and the main headline is larger than the opening paragraph and than every section heading at 375, 768, and 1280 pixels. [S4]
-- **Test.** "never makes the page wider than a phone, whatever the Direction, the type Options, or the slider ends"; "fits the window at other widths as well: a small phone, the width at which two columns begin, and wider (code review of 2026-11-13, finding "tokens 4")"; "keeps the main headline the largest text: above the reading text and above every section heading, at phone, tablet, and desktop widths"; "shows the telephone number in the contact part on a phone, whatever the menu (code review of 2026-11-13, finding "tokens 1")".
+- **Test.** 39 tests whose titles begin "never makes the page wider than a phone:" (one per starting design: the plain start and each Direction; the title goes on with that design's name); "fits the window at other widths as well: a small phone, the width at which two columns begin, and wider (code review of 2026-11-13, finding "tokens 4")"; "keeps the main headline the largest text: above the reading text and above every section heading, at phone, tablet, and desktop widths"; "shows the telephone number in the contact part on a phone, whatever the menu (code review of 2026-11-13, finding "tokens 1")".
 - **Exceptions.** The tests change one Step at a time from each Direction, plus all sliders at their lowest and all at their highest. They do not try every combination of Options.
 - **Open.** Measured in Chromium only, at the named widths only.
-- Last verified: 2026-11-13
+- Last verified: 2026-11-16
 
 ### [30.06] The picture of an Overlay holds no script, no link, and nothing that a visitor could send
 
