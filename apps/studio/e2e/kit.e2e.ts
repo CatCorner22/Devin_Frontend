@@ -234,6 +234,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(grade(all.filter((f) => !f.ruleId.startsWith('fit-') || f.status !== 'fails'), KIT_RULES)).toMatchObject({ grade: 'Not graded', failedFloors: [] });
       await page.context().close();
       expect(await statuses('<h1>Shop</h1><p>Plain page.</p>', 'unseenParts')).toEqual([]);
+      // A web component that keeps its content in the page hides nothing from the other checks.
+      const light = await pageOf('<h1>Shop</h1><x-note><p>Read by every check.</p></x-note>');
+      await light.evaluate(() => customElements.define('x-note', class extends HTMLElement {}));
+      expect(await run(light, 'unseenParts')).toEqual([]);
+      await light.context().close();
     });
 
     it('F-8: a layer that covers the page with no window mark fails; a marked window and a full-window shell hold', async () => {
@@ -255,6 +260,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect((await run(paused, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
       await paused.context().close();
       expect(await statuses('<h1>Shop</h1><p>Still.</p>', 'noScriptedMotion')).toEqual(['holds']);
+      // Two parts that each fill in once, at one and at six seconds, are late content, not movement.
+      const late = await pageOf('<h1>Shop</h1><p id="a">…</p><p id="b">…</p>');
+      await late.evaluate(() => { setTimeout(() => { const a = document.getElementById('a'); if (a) a.textContent = 'Prices'; }, 1000); setTimeout(() => { const b = document.getElementById('b'); if (b) b.textContent = 'Reviews'; }, 6000); });
+      expect((await run(late, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
+      await late.context().close();
     }, 60_000);
 
     it('F-11: at 320 pixels, columns cut off by a page that hides its overflow fail; a drawer that waits beside the page holds', async () => {

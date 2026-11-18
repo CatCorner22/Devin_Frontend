@@ -191,8 +191,8 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
   if (hasPause) return Promise.resolve([{ ruleId, status: 'holds', measured: 'a pause control is in view' }]);
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const start = view.performance.now();
-  const moments: number[] = [];
-  let where: Element | null = null;
+  // Movement is one part that changes again and again. Two parts that each change once (content that arrives late) are not movement.
+  const momentsOf = new Map<Element, number[]>();
   const observer = new view.MutationObserver((records) => {
     const record = records.find((r) => {
       const el = r.target.nodeType === 1 ? (r.target as Element) : r.target.parentElement;
@@ -200,15 +200,22 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
     });
     if (!record) return;
     const now = (view.performance.now() - start) / 1000;
-    if (moments.length === 0 || now - (moments[moments.length - 1] ?? 0) >= 0.9) moments.push(now);
-    where = record.target.nodeType === 1 ? (record.target as Element) : record.target.parentElement;
+    const seenNow = new Set<Element>();
+    for (const r of records) {
+      const el = r.target.nodeType === 1 ? (r.target as Element) : r.target.parentElement;
+      if (!el || seenNow.has(el) || el.getClientRects().length === 0) continue;
+      seenNow.add(el);
+      const moments = momentsOf.get(el) ?? [];
+      if (moments.length === 0 || now - (moments[moments.length - 1] ?? 0) >= 0.9) moments.push(now);
+      momentsOf.set(el, moments);
+    }
   });
   observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style', 'class', 'src', 'hidden'] });
   return new Promise((resolve) => {
     view.setTimeout(() => {
       observer.disconnect();
-      const last = moments[moments.length - 1] ?? 0;
-      if (moments.length >= 2 && last > 5 && where) resolve([{ ruleId, status: 'fails', where: name(where), measured: `a script changed the page at ${moments.length} moments in 11 s, the last after ${last.toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with data-pause-motion.' }]);
+      const moving = [...momentsOf].find(([, moments]) => moments.length >= 2 && (moments[moments.length - 1] ?? 0) > 5);
+      if (moving) resolve([{ ruleId, status: 'fails', where: name(moving[0]), measured: `a script changed this part at ${moving[1].length} moments in 11 s, the last after ${(moving[1][moving[1].length - 1] ?? 0).toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with data-pause-motion.' }]);
       else resolve([{ ruleId, status: 'holds', measured: 'no repeated change in 11 s' }]);
     }, 11000);
   });
@@ -221,14 +228,12 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
  */
 export function unseenParts(doc: Document): Finding[] {
   const floors = ['neuro-no-autoplay', 'neuro-motion-can-stop', 'neuro-no-time-limit', 'neuro-visible-label', 'neuro-text-spacing', 'neuro-reflow', 'behavior-keyboard-reach', 'behavior-focus-visible', 'behavior-target-size', 'behavior-control-name', 'behavior-dialog-marked', 'craft-picture-alt'];
-  const view = doc.defaultView;
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}`;
   const parts: string[] = [];
   for (const el of doc.querySelectorAll('iframe, frame, object, embed')) if (el.getClientRects().length > 0) parts.push(name(el));
-  for (const el of doc.querySelectorAll('body *')) {
-    const custom = el.localName.includes('-') && view?.customElements?.get(el.localName) !== undefined;
-    if (el.shadowRoot || custom) parts.push(name(el));
-  }
+  // Only a part that the other checks cannot read counts. A web component without a shadow root keeps its content in the page,
+  // where every check reads it. A closed shadow root cannot be told from none; a component that uses one goes unreported.
+  for (const el of doc.querySelectorAll('body *')) if (el.shadowRoot) parts.push(name(el));
   if (parts.length === 0) return [];
   const measured = `the checks cannot see inside ${parts.slice(0, 5).join(', ')}${parts.length > 5 ? ` and ${parts.length - 5} more` : ''}`;
   return floors.map((ruleId) => ({ ruleId, status: 'could-not-measure' as const, where: parts[0], measured }));
