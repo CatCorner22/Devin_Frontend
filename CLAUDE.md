@@ -67,6 +67,7 @@ TypeScript 6.0 (D16) · React 19.3 · Vite 8.3 · native HTML controls (D22) · 
 
 ```
 packages/core/   Catalog, engine, exporters (pure TypeScript)
+packages/kit/    Rules and page checks toward the North Star (D58; not yet connected to the Studio or the Fitter)
 apps/studio/     The Studio web app
 plugin/          The Fitter (Claude Code plugin)
 docs/research/   Research records
