@@ -34,5 +34,6 @@
 | 2026-11-18, 05:42 EST | "please write instructions to Lovable for that, and please have it design a transferable tool and I'll give it back to you so you can finalize" (the builder wrote the instructions; the owner then gave the instruction in the next row). | D58 |
 | 2026-11-18, 05:55 EST | "You go ahead and make the changes.  Please conduct a full review." (after the builder wrote instructions for another tool to build the North Star kit: neurodivergence rules, states, craft rules, fit checks, a blind test). | D58 |
 | 2026-11-18, 06:27 EST | "proceed" (after the builder set out its plan for the kit: a new package, the kit not yet connected to the Studio or the Fitter, three reviewers and a judge, one pull request, not merged). | D58 |
+| 2026-11-18, 12:00 EST | "I trust you.  I defer to you.  Decide for me.  Proceed." (after the builder asked for five decisions: the audit advisory against `picomatch`; hard rule 5 and the kit's records; the grade and the person-only floors; the reading of the owner's words in D58; the minor findings and a second review). | D59 |
 
 **Entries with no owner statement behind them.** D8, D9, D10, D11, D15, D20, D21, D24, D25, D27, D28 (replaced by D53), D29, D30, D31, D32, D35, D36, D37. `DECISIONS.md` marks each as "Recorded" or "Pending the owner".
