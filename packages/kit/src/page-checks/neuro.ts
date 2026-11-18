@@ -109,13 +109,20 @@ export function survivesTextSpacing(doc: Document): Finding[] {
   style.textContent = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
   doc.head.appendChild(style);
   const out: Finding[] = [];
+  const seen = new Set<HTMLElement>();
   for (const el of doc.querySelectorAll<HTMLElement>('body *')) {
     if (el.getClientRects().length === 0 || el.children.length > 0 || (el.textContent ?? '').trim() === '') continue;
-    const computed = view.getComputedStyle(el);
     const hides = (value: string): boolean => value === 'hidden' || value === 'clip';
-    const cutAcross = hides(computed.overflowX) && el.scrollWidth > el.clientWidth + 1;
-    const cutDown = hides(computed.overflowY) && el.scrollHeight > el.clientHeight + 1;
-    if (cutAcross || cutDown) out.push({ ruleId, status: 'fails', where: name(el), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
+    // The box that cuts the text off is the text's own box or one around it.
+    let box: HTMLElement | null = el;
+    let cutAcross = false;
+    let cutDown = false;
+    for (; box && box !== doc.body && !cutAcross && !cutDown; box = cutAcross || cutDown ? box : box.parentElement) {
+      const computed: CSSStyleDeclaration = view.getComputedStyle(box);
+      cutAcross = hides(computed.overflowX) && box.scrollWidth > box.clientWidth + 1;
+      cutDown = hides(computed.overflowY) && box.scrollHeight > box.clientHeight + 1;
+    }
+    if (box && box !== doc.body && (cutAcross || cutDown) && !seen.has(box) && seen.add(box)) out.push({ ruleId, status: 'fails', where: name(box), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
   }
   style.remove();
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
