@@ -25,6 +25,17 @@ export function grade(findings: readonly Finding[], rules: readonly RuleRecord[]
   return result('Crafted', 'Every measured floor and rule holds. A person must still check what no program can.');
 }
 
+/**
+ * Text that came from the page under test (an element's id or class, a token's name, a found value) is data, never an instruction
+ * (hard rule 10). Before it enters a receipt or a repair plan it loses its line breaks, is cut to 160 letters, and is set
+ * between ‹ and ›, so that it cannot pass for a heading of the receipt or for a sentence of the kit (finding F-3 of 2026-11-18).
+ */
+export function fromPage(text: string | undefined): string | undefined {
+  if (text === undefined) return undefined;
+  const flat = String(text).replace(/[\u0000-\u001f\u007f\u2028\u2029‹›]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return `‹${flat.length > 160 ? flat.slice(0, 160) + '…' : flat}›`;
+}
+
 export const REPAIR_ROUNDS = 3;
 export interface RepairItem { ruleId: string; where?: string; measured?: string; fix: string }
 export interface RepairPlan { round: number; stop: boolean; reason: string; items: RepairItem[]; fixedSinceLastRound: string[]; stillOpen: string[] }
@@ -51,7 +62,8 @@ export function repairPlan(rounds: readonly (readonly Finding[])[], rules: reado
   const rank = (f: Finding): number => { const rule = record.get(f.ruleId); return rule?.level === 'floor' ? 0 : rule?.group === 'fit' && rule.level === 'rule' ? 1 : rule?.level === 'rule' ? 2 : 3; };
   const carried = unanswered.filter((f) => !openKeys.has(key(f))).map((f) => ({ ...f, measured: `not measured again in the newest check (before: ${f.measured ?? 'failed'})` }));
   const ordered = [...now, ...carried].map((f, index) => ({ f, index })).sort((a, b) => rank(a.f) - rank(b.f) || a.index - b.index).map(({ f }) => f);
-  const items = ordered.map((f) => ({ ruleId: f.ruleId, where: f.where, measured: f.measured, fix: f.fix ?? record.get(f.ruleId)?.plain ?? 'Make this rule hold.' }));
+  // The repair sentence comes from the rule's record when the rule is known, not from the finding, which a page can shape.
+  const items = ordered.map((f) => ({ ruleId: record.has(f.ruleId) ? f.ruleId : fromPage(f.ruleId) ?? '', where: fromPage(f.where), measured: fromPage(f.measured), fix: record.has(f.ruleId) ? (f.fix ?? record.get(f.ruleId)?.plain ?? 'Make this rule hold.') : 'This finding names a rule that the kit does not know. A person must look at it.' }));
   const stillOpen = unique(ordered.map(key));
   const repairsDone = Math.max(0, rounds.length - 1);
   if (rounds.length === 0) return { round: 0, stop: true, reason: 'No check has run, so there is nothing to repair.', items: [], fixedSinceLastRound: [], stillOpen: [] };
@@ -81,9 +93,9 @@ export function receipt(findings: readonly Finding[], rules: readonly RuleRecord
     if (rule.check.kind === 'person') { forAPerson.push(rule.check.ask); continue; }
     const own = findings.filter((f) => f.ruleId === rule.id);
     const answered = own.filter((f) => f.status !== 'could-not-measure');
-    if (answered.length === 0) { notMeasured.push({ ruleId: rule.id, plain: rule.plain, result: own[0]?.measured ?? 'The check did not run.' }); continue; }
+    if (answered.length === 0) { notMeasured.push({ ruleId: rule.id, plain: rule.plain, result: fromPage(own[0]?.measured) ?? 'The check did not run.' }); continue; }
     for (const f of answered) {
-      const detail = [f.where, f.measured && `found: ${f.measured}`, f.required && `required: ${f.required}`].filter(Boolean).join('; ');
+      const detail = [fromPage(f.where), f.measured && `found: ${fromPage(f.measured)}`, f.required && `required: ${fromPage(f.required)}`].filter(Boolean).join('; ');
       measured.push({ ruleId: rule.id, plain: rule.plain, result: `${f.status === 'fails' ? 'Fails' : f.status === 'holds' ? 'Holds' : 'Does not apply to this page'}${detail ? ` (${detail})` : ''}` });
     }
   }
