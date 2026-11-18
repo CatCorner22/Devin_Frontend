@@ -30,6 +30,9 @@
 | 2026-11-15, 12:22 and 12:23 EST | "Please fix the issue.  I would prefer to approve the red-team run" and "fix it" (about the missing reviews of pull request 4). | D55 |
 | 2026-11-16, 07:58 EST | "please fix all issues" (after the builder asked whether to split the phone-width test into one test per starting design: the plain start and each Direction). | D56 |
 | 2026-11-16, 11:15 EST | "run it" (after the builder asked whether to run the three red-team reviewers and a judge on the second isolation repair, finding ISO-09). | D57 |
+| 2026-11-17, 06:39 EST | "What features, code bases, etc. would get the overall app closer to the North Star (indistinguishable from the best, world-class human, talented coders for UI, UX, neurodivergence, etc." (a question; the builder answered with a list of gaps). | D58 |
+| 2026-11-18, 05:42 EST | "please write instructions to Lovable for that, and please have it design a transferable tool and I'll give it back to you so you can finalize" (the builder wrote the instructions; the owner then gave the instruction in the next row). | D58 |
 | 2026-11-18, 05:55 EST | "You go ahead and make the changes.  Please conduct a full review." (after the builder wrote instructions for another tool to build the North Star kit: neurodivergence rules, states, craft rules, fit checks, a blind test). | D58 |
+| 2026-11-18, 06:27 EST | "proceed" (after the builder set out its plan for the kit: a new package, the kit not yet connected to the Studio or the Fitter, three reviewers and a judge, one pull request, not merged). | D58 |
 
 **Entries with no owner statement behind them.** D8, D9, D10, D11, D15, D20, D21, D24, D25, D27, D28 (replaced by D53), D29, D30, D31, D32, D35, D36, D37. `DECISIONS.md` marks each as "Recorded" or "Pending the owner".
