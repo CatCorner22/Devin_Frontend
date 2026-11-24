@@ -186,8 +186,9 @@ export function visibleLabels(doc: Document): Finding[] {
   // the page, shrunk to a pixel, or clipped away, so neither the eye nor a screen reader finds it; only a program fills it in
   // (finding F-5 of the review of 2026-11-24). Both signs are needed: a field that people can see is judged like any other.
   const unmet = (el: Element): boolean => {
-    // A third sign is needed: the trap is out of the Tab order. A field that the Tab key still reaches is met by a person.
-    if (!el.closest('[aria-hidden="true"]') || (el as HTMLElement).tabIndex >= 0) return false;
+    // A third sign is needed: the trap is out of the Tab order. A field that the Tab key still reaches is met by a person;
+    // inside an inert part the Tab key reaches nothing, whatever the field's tabindex says.
+    if (!el.closest('[aria-hidden="true"]') || ((el as HTMLElement).tabIndex >= 0 && !el.closest('[inert]'))) return false;
     for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
       const box = at.getBoundingClientRect();
       const computed = view.getComputedStyle(at);
