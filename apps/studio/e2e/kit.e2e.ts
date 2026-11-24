@@ -117,6 +117,14 @@ describe('the kit on a page with one planted defect for every check', () => {
     findings.push(...await run(narrow, 'noSidewaysScroll'));
     await narrow.context().close();
   });
+  it('second review, F-33: every rule that a page check measures has an element marked with its id in the drawn page', async () => {
+    // A browser keeps only the first of two attributes of one name, so each element names its defects in one attribute, apart by spaces.
+    const page = await open('flawed.html');
+    const marked = await page.evaluate(() => [...document.querySelectorAll('[data-defect]')].flatMap((el) => (el.getAttribute('data-defect') ?? '').split(/\s+/)));
+    await page.context().close();
+    // One defect is an absence (a color of the design that no element uses), so no element can carry its mark.
+    expect(PAGE_RULES.map((rule) => rule.id).filter((id) => !marked.includes(id))).toEqual(['fit-unused-color']);
+  });
   for (const rule of PAGE_RULES) {
     it(`finds the planted defect: ${rule.id}`, () => {
       expect(findings.filter((f) => f.ruleId === rule.id && f.status === 'fails').length, rule.plain).toBeGreaterThan(0);
