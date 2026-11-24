@@ -310,6 +310,25 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await page.context().close();
     });
 
+    it('second review, F-20: an off-design color on an outline, a text line, a text shadow, a text fill, a ::before, or a shape of a drawing fails; so does one odd corner', async () => {
+      const fails = async (body: string, style: string, rule = 'fit-colors'): Promise<(string | undefined)[]> => { const page = await pageOf(body, `body{color:#1a1a1a;background:#ffffff;font-family:serif} ${style}`); const out = (await run(page, 'tokenFit')).filter((f) => f.ruleId === rule && f.status === 'fails').map((f) => f.measured); await page.context().close(); return out; };
+      const pink = 'rgb(255, 0, 170)';
+      expect(await fails('<p class="a">Bread</p>', '.a{outline:2px solid #ff00aa}')).toEqual([`outline color ${pink}`]);
+      expect(await fails('<p class="a">Bread</p>', '.a{text-decoration:underline #ff00aa}')).toEqual([`text line color ${pink}`]);
+      expect(await fails('<p class="a">Bread</p>', '.a{text-shadow:0 1px 0 #ff00aa}')).toEqual([`text shadow color ${pink}`]);
+      expect(await fails('<p class="a">Bread</p>', '.a{-webkit-text-fill-color:#ff00aa}')).toEqual([`text fill color ${pink}`]);
+      expect(await fails('<p class="a">Bread</p>', '.a::before{content:"New";color:#ff00aa}')).toEqual([`::before text color ${pink}`]);
+      expect(await fails('<p class="a">Bread</p>', '.a::after{content:"";display:block;height:4px;background:#ff00aa}')).toEqual([`::after background color ${pink}`]);
+      expect(await fails('<svg width="24" height="24"><circle cx="12" cy="12" r="10" fill="#ff00aa" stroke="hotpink" stroke-width="2"/></svg>', '')).toEqual([`fill color ${pink}`, 'line color rgb(255, 105, 180)']);
+      expect(await fails('<div class="card">Bread</div>', '.card{width:200px;height:80px;border-radius:0 13px 13px 13px}', 'fit-radii')).toEqual(['corner radius 13 px']);
+      expect(await fails('<div class="card">Bread</div>', '.card{width:200px;height:80px;border-radius:calc(13px + 0%)}', 'fit-radii')).toEqual(['corner radius 13 px']);
+      // The same parts in the colors and the radii of the design hold, and so does the ring that the browser draws on focus.
+      const sound = '<p class="a">Bread</p><div class="card">Rolls</div><button id="b">Order</button><svg width="24" height="24"><path d="M2 12h20" fill="none" stroke="#0b5fff" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="#1a1a1a"/></svg><script>document.getElementById("b").focus();</script>';
+      const style = '.a{outline:2px solid #0b5fff;text-decoration:underline #0b5fff;text-shadow:0 1px 0 #d0d5dd} .a::before{content:"New";color:#0b5fff} .card{border-radius:0 8px 8px 4px} button{color:#1a1a1a;background:#ffffff;border:1px solid #d0d5dd;border-radius:4px;font-family:serif}';
+      expect(await fails(sound, style)).toEqual([]);
+      expect(await fails(sound, style, 'fit-radii')).toEqual([]);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

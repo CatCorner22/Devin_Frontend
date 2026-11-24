@@ -88,8 +88,22 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
   const reported = new Set<string>();
   const once = (finding: Finding): void => { const key = `${finding.ruleId}|${finding.measured}`; if (!reported.has(key)) { reported.add(key); fails.push(finding); } };
   for (const el of doc.querySelectorAll<HTMLElement>('body, body *')) {
-    if (el.getClientRects().length === 0 || el.closest('svg')) continue;
+    if (el.getClientRects().length === 0) continue;
     const style = view.getComputedStyle(el);
+    // Inside a drawing (<svg>), the colors are those that fill a shape and those that draw its line (finding F-20 of 2026-11-24).
+    if (el.closest('svg')) {
+      if (!/^(path|rect|circle|ellipse|line|polyline|polygon|text|tspan)$/i.test(el.tagName) || style.visibility !== 'visible') continue;
+      const inks: [string, string][] = [];
+      if (!/^line$/i.test(el.tagName)) inks.push(['fill', style.fill]);
+      if (parseFloat(style.strokeWidth) > 0) inks.push(['line', style.stroke]);
+      for (const [part, value] of inks) {
+        const color = paint(value);
+        if (!color || color === 'clear') continue;
+        seenColors.add(color);
+        if (tokenColors.size > 0 && !tokenColors.has(color)) once({ ruleId: 'fit-colors', status: 'fails', where: name(el), measured: `${part} color ${value}`, required: 'a color of the design', fix: 'Replace the color with the design token (a custom property from tokens.css) that has this job.' });
+      }
+      continue;
+    }
     const hasText = [...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '');
     const colors: [string, string][] = [['background', style.backgroundColor]];
     if (hasText) colors.push(['text', style.color]);
@@ -97,6 +111,23 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     // The colors inside a shadow and inside a fade, however the style sheet writes them (F-32). Only the first 2,000 letters are read.
     for (const [part, text] of [['shadow', style.boxShadow], ['background fade', style.backgroundImage.includes('gradient') ? withoutUrls(style.backgroundImage) : '']] as const) {
       for (const color of text.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push([part, color]);
+    }
+    // More places where a page carries a color (finding F-20 of 2026-11-24): the outline, the line under or through text, the
+    // shadow of text, the fill of text, and the ::before and ::after of the element. The ring that the browser itself draws
+    // around the focused control (outline-style: auto) is not the page's color.
+    if (parseFloat(style.outlineWidth) > 0 && style.outlineStyle !== 'none' && style.outlineStyle !== 'auto') colors.push(['outline', style.outlineColor]);
+    if (hasText) {
+      if (style.textDecorationLine !== 'none') colors.push(['text line', style.textDecorationColor]);
+      colors.push(['text fill', style.getPropertyValue('-webkit-text-fill-color')]);
+      for (const color of style.textShadow.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push(['text shadow', color]);
+    }
+    for (const pseudo of ['::before', '::after']) {
+      const extra = view.getComputedStyle(el, pseudo);
+      if (extra.content === 'none' || extra.content === 'normal' || extra.display === 'none' || extra.visibility !== 'visible') continue;
+      colors.push([`${pseudo} background`, extra.backgroundColor]);
+      if (/^"[^"]/.test(extra.content)) colors.push([`${pseudo} text`, extra.color]);
+      for (const edge of ['Top', 'Right', 'Bottom', 'Left'] as const) if (parseFloat(extra[`border${edge}Width`]) > 0 && extra[`border${edge}Style`] !== 'none') colors.push([`${pseudo} border`, extra[`border${edge}Color`]]);
+      for (const text of [extra.boxShadow, extra.backgroundImage.includes('gradient') ? withoutUrls(extra.backgroundImage) : '']) for (const color of text.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push([`${pseudo} background`, color]);
     }
     for (const [part, value] of colors) {
       const color = paint(value);
@@ -106,12 +137,20 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     }
     if (hasText && tokenFamilies.size > 0 && tokenFamilies.has(family(style.fontFamily)) && !drawn(family(style.fontFamily))) once({ ruleId: 'fit-fonts', status: 'fails', where: name(el), measured: `typeface ${family(style.fontFamily)} is named, and this browser draws another in its place`, required: 'the typeface of the design, drawn', fix: 'Ship the font file with the page (see FONTS.md), or check the spelling of the family name.' });
     else if (hasText && tokenFamilies.size > 0 && !tokenFamilies.has(family(style.fontFamily))) once({ ruleId: 'fit-fonts', status: 'fails', where: name(el), measured: `typeface ${family(style.fontFamily)}`, required: `one of: ${[...tokenFamilies].join(', ')}`, fix: 'Set font-family from the design token.' });
-    const radius = parseFloat(style.borderTopLeftRadius);
     const box = el.getBoundingClientRect();
     // A round shape needs no radius of the design: a pill (a radius far larger than the box) or a circle (F-32).
+    // Each of the four corners is read by itself, and a radius written as a sum (calc(13px + 0%)) is worked out in pixels;
+    // a radius written as a plain percentage is not judged (finding F-20 of 2026-11-24).
     const side = Math.min(box.width, box.height);
-    const round = radius >= 999 || (Math.abs(box.width - box.height) <= side * 0.1 && radius >= side / 2);
-    if (radius > 0 && !round && !style.borderTopLeftRadius.includes('%') && tokenLengths.size > 0 && ![...tokenLengths].some((length) => Math.abs(length - radius) <= 0.5)) once({ ruleId: 'fit-radii', status: 'fails', where: name(el), measured: `corner radius ${radius} px`, required: 'a radius of the design', fix: 'Set border-radius from the design token.' });
+    for (const corner of ['TopLeft', 'TopRight', 'BottomRight', 'BottomLeft'] as const) {
+      // The computed value names the radius across and, when it differs, the radius down; the first is read.
+      const written = /^(calc\([^()]*(?:\([^()]*\)[^()]*)*\)|\S+)/.exec(style[`border${corner}Radius`])?.[0] ?? '';
+      if (/^-?[\d.]+%$/.test(written)) continue;
+      let radius = 0;
+      for (const term of written.match(/-?[\d.]+(?:px|%)/g) ?? []) radius += term.endsWith('%') ? (parseFloat(term) / 100) * box.width : parseFloat(term);
+      const round = radius >= 999 || (Math.abs(box.width - box.height) <= side * 0.1 && radius >= side / 2);
+      if (radius > 0 && !round && tokenLengths.size > 0 && ![...tokenLengths].some((length) => Math.abs(length - radius) <= 0.5)) once({ ruleId: 'fit-radii', status: 'fails', where: name(el), measured: `corner radius ${Math.round(radius * 10) / 10} px`, required: 'a radius of the design', fix: 'Set border-radius from the design token.' });
+    }
   }
   for (const [color, token] of tokenColors) if (!seenColors.has(color)) fails.push({ ruleId: 'fit-unused-color', status: 'fails', where: token, measured: `the page never uses the color of ${token}`, required: 'every color of the design is used, or the page has no part that needs it', fix: 'Check whether a part that should carry this color has another color.' });
   const empty: Record<(typeof ids)[number], boolean> = { 'fit-colors': tokenColors.size === 0, 'fit-fonts': tokenFamilies.size === 0, 'fit-radii': tokenLengths.size === 0, 'fit-unused-color': tokenColors.size === 0 };
