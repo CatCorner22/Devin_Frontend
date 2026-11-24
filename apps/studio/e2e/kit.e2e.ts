@@ -419,6 +419,14 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(`${moving}<button data-pause-motion aria-labelledby="missing">${icon}</button>`, 'noEndlessMotion')).toEqual(['fails']);
     });
 
+    it('automated review of 2026-11-24, round 1: a drawing whose animation ends at a stated time is not endless', async () => {
+      const svg = (attrs: string): string => `<svg width="40" height="40"><rect width="20" height="20"><animate attributeName="x" from="0" to="20" dur="1s" repeatCount="indefinite" ${attrs}/></rect></svg>`;
+      expect(await statuses(svg('end="3s"'), 'noEndlessMotion')).toEqual(['holds']);
+      expect(await statuses(svg('begin="1s" end="5s"'), 'noEndlessMotion')).toEqual(['holds']);
+      expect(await statuses(svg('end="20s"'), 'noEndlessMotion')).toEqual(['fails']);
+      expect(await statuses(svg(''), 'noEndlessMotion')).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
