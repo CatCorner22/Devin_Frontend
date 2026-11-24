@@ -20,10 +20,19 @@ export function keyboardReachable(doc: Document): Finding[] {
     // the control still answers a click, so it is judged like any other.
     if (isNative && el.matches(':disabled')) continue;
     // Nor does anything inside a part marked inert: the browser lets no click and no key reach it.
+    // Only the window on top answers: a second window opened over the first blocks it. The browser tells which is on top
+    // by what a click in the middle of the window would land on.
+    const onTop = (dialog: Element): boolean => {
+      const box = dialog.getBoundingClientRect();
+      const view = doc.defaultView;
+      const x = Math.min(Math.max(box.left + box.width / 2, 0), (view?.innerWidth ?? 1) - 1);
+      const y = Math.min(Math.max(box.top + box.height / 2, 0), (view?.innerHeight ?? 1) - 1);
+      return dialog.contains(doc.elementFromPoint(x, y));
+    };
     // A window opened over the page (showModal) escapes the inert mark of a part around it, so what it holds is still judged.
     const inertPart = el.closest('[inert]');
     const modal = el.closest('dialog:modal');
-    if (inertPart && !(modal && inertPart !== modal && inertPart.contains(modal))) continue;
+    if (inertPart && !(modal && inertPart !== modal && inertPart.contains(modal) && onTop(modal))) continue;
     // Inside a group that the arrow keys walk, an item with tabindex -1 is the pattern of the ARIA guide (F-15).
     // The group must still have a way in: one of its items, or the group itself, takes the Tab key.
     // A menu is the exception: the button that opens it moves the focus into it.
