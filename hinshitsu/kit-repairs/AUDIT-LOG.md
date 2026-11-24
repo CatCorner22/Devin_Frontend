@@ -669,3 +669,9 @@ If you don't reply, I do no repair.
 - This run changes no milestone record: M4 stays open.
 
 Working assumption while the card is open: the recommended answers (1 yes, 2 yes with 40, 3 start now). No repair, no SUB-AGENT run and no change of a milestone record takes place before an `ANSWER` entry quotes the USER. Planned SUB-AGENT runs asked for: 40 (first plan, E-4: 30; used: 9). The full text of the 16 CRITERIA is E-51; the card states each in plain words.
+
+### E-56 · 2026-11-24T20:50:46Z · CORRECTION · ORCHESTRATOR
+
+- Corrects: E-53
+- What was wrong: the shell removed 1 word; the last clause reads "CRITERIA  in E-51".
+- What is true: the clause reads "CRITERIA PROPOSED in E-51".
