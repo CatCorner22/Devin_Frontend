@@ -1,5 +1,5 @@
 // From findings to a grade, a repair plan, and a receipt. Pure: the same findings always give the same result.
-import type { Finding, RuleRecord } from '../shapes.js';
+import { FINDING_STATUSES, type Finding, type RuleRecord } from '../shapes.js';
 
 export type Grade = 'Not graded' | 'Below floor' | 'Meets floor' | 'Crafted';
 /**
@@ -10,13 +10,22 @@ export type Grade = 'Not graded' | 'Below floor' | 'Meets floor' | 'Crafted';
 export interface GradeResult { grade: Grade; reason: string; failedFloors: string[]; failedRules: string[]; unmeasuredFloors: string[]; floorsForAPerson: string[]; /** Rule ids that findings name and no record holds. Text from outside: print it only through `fromPage`. */ unknownRules: string[] }
 
 const unique = (list: string[]): string[] => [...new Set(list)];
+/**
+ * Findings arrive as data: a person types an answer, or a builder's program writes a list. A status outside the four of
+ * `FINDING_STATUSES` ("failed", "broken", a slip of the keyboard) says nothing the kit can rely on, so the finding counts as
+ * "could not measure" and never as an answer (finding F-1 of the review of 2026-11-24).
+ */
+const UNKNOWN_STATUS = 'the finding carries a status that the kit does not know';
+const sound = (findings: readonly Finding[]): Finding[] =>
+  findings.map((f) => ((FINDING_STATUSES as readonly string[]).includes(f.status) ? f : { ...f, status: 'could-not-measure' as const, measured: UNKNOWN_STATUS }));
 const byId = (rules: readonly RuleRecord[]): Map<string, RuleRecord> => new Map(rules.map((rule) => [rule.id, rule]));
 
 /**
  * The grade. A floor that fails gives "Below floor". A floor that no program measured gives "Not graded", because a grade
  * may not rest on a check that did not run. Warnings never lower the grade. The grade covers only what programs measured.
  */
-export function grade(findings: readonly Finding[], rules: readonly RuleRecord[]): GradeResult {
+export function grade(given: readonly Finding[], rules: readonly RuleRecord[]): GradeResult {
+  const findings = sound(given);
   const record = byId(rules);
   const level = (f: Finding): string | undefined => record.get(f.ruleId)?.level;
   const failedFloors = unique(findings.filter((f) => f.status === 'fails' && level(f) === 'floor').map((f) => f.ruleId));
@@ -65,7 +74,8 @@ const failing = (findings: readonly Finding[]): Finding[] => findings.filter((f)
  * `rounds` holds the findings of every check so far, oldest first; the last entry is the newest check. An item counts as
  * fixed only when the newest check no longer reports it. After three repair rounds the plan stops and lists what is open.
  */
-export function repairPlan(rounds: readonly (readonly Finding[])[], rules: readonly RuleRecord[]): RepairPlan {
+export function repairPlan(given: readonly (readonly Finding[])[], rules: readonly RuleRecord[]): RepairPlan {
+  const rounds = given.map(sound);
   const record = byId(rules);
   const now = failing(rounds[rounds.length - 1] ?? []);
   // What was open before the newest check: every failure of an earlier round that no later round has answered for.
@@ -115,7 +125,8 @@ export interface ReceiptLine { ruleId: string; plain: string; result: string }
 export interface Receipt { measured: ReceiptLine[]; notMeasured: ReceiptLine[]; forAPerson: string[]; grade: GradeResult }
 
 /** The honest receipt: what programs measured, what they could not measure, and what a person must still check. The three lists never mix. */
-export function receipt(findings: readonly Finding[], rules: readonly RuleRecord[]): Receipt {
+export function receipt(given: readonly Finding[], rules: readonly RuleRecord[]): Receipt {
+  const findings = sound(given);
   const measured: ReceiptLine[] = [];
   const notMeasured: ReceiptLine[] = [];
   const forAPerson: string[] = [];
@@ -139,7 +150,7 @@ export function receipt(findings: readonly Finding[], rules: readonly RuleRecord
     }
   }
   const known = new Set(rules.map((rule) => rule.id));
-  for (const f of findings) if (!known.has(f.ruleId)) notMeasured.push({ ruleId: fromPage(f.ruleId) ?? '', plain: 'No rule of this set has this id.', result: `A finding with the status "${f.status}" names it. Check the spelling of the id.` });
+  for (const f of findings) if (!known.has(f.ruleId)) notMeasured.push({ ruleId: fromPage(f.ruleId) ?? '', plain: 'No rule of this set has this id.', result: `A finding with the status "${f.status}" names it. Check the spelling of the id.` }); // the status is one of the four: `sound` saw to it
   return { measured, notMeasured, forAPerson: [...forAPerson, ...ALWAYS_FOR_A_PERSON], grade: grade(findings, rules) };
 }
 

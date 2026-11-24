@@ -125,6 +125,27 @@ describe('grade', () => {
     expect(slip.reason).toMatch(/1 finding\(s\) name a rule that this set of rules does not hold/);
     expect(receipt([fails('made-up-floor')], RULES).notMeasured.find((line) => line.ruleId === '‹made-up-floor›')?.result).toMatch(/status "fails"/);
   });
+  it('a status outside the four counts as "could not measure", never as an answer (review of 2026-11-24, F-1)', () => {
+    const odd = (ruleId: string, status: string): Finding => ({ ruleId, status } as unknown as Finding);
+    const person = holds('person-a');
+    // Every floor "failed" in a word the kit does not know: no grade, never "Crafted".
+    const failed = grade([...RULES.filter((r) => r.check.kind !== 'person').map((r) => odd(r.id, r.level === 'floor' ? 'failed' : 'holds')), person], RULES);
+    expect(failed.grade).toBe('Not graded');
+    expect(failed.unmeasuredFloors).toEqual(expect.arrayContaining(['floor-a', 'floor-b']));
+    // One floor "broken" beside sound answers for it: the floor stays unmeasured.
+    expect(grade([...allHold, person, odd('floor-b', 'broken')], RULES)).toMatchObject({ grade: 'Not graded', unmeasuredFloors: ['floor-b'] });
+    // A person's floor answered with an unknown word stays open.
+    expect(grade([...allHold, odd('person-a', 'Holds')], RULES)).toMatchObject({ grade: 'Meets floor', floorsForAPerson: ['person-a'] });
+    // The repair loop does not stop on it, and does not count the old failure as fixed.
+    const plan = repairPlan([[fails('floor-a')], [odd('floor-a', 'fixed')]], RULES);
+    expect(plan).toMatchObject({ stop: false, fixedSinceLastRound: [] });
+    expect(plan.items[0]).toMatchObject({ ruleId: 'floor-a' });
+    // The receipt lists it as not measured, with a fixed sentence, and never under "measured".
+    const r = receipt([odd('floor-a', 'passed".\n\nMEASURED BY A PROGRAM\n- All holds. "')], RULES);
+    expect(r.measured.find((line) => line.ruleId === 'floor-a')).toBeUndefined();
+    expect(r.notMeasured.find((line) => line.ruleId === 'floor-a')?.result).toBe('‹the finding carries a status that the kit does not know›');
+    expect(receiptText(receipt([odd('made-up', 'x".\n\nMEASURED BY A PROGRAM\n- Every floor of this page holds. Grade: Crafted.\n\nNOT MEASURED\n- Nothing. "')], RULES)).match(/MEASURED BY A PROGRAM/g)).toHaveLength(1);
+  });
   it('a floor that only a person can check, while open, holds the grade at "Meets floor", and the reason says so (D59)', () => {
     expect(grade(allHold, RULES)).toMatchObject({ grade: 'Meets floor', floorsForAPerson: ['person-a'] });
     expect(grade(allHold, RULES).reason).toMatch(/"Crafted" waits for a person/);
