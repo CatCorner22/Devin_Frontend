@@ -1,0 +1,46 @@
+$ gh api repos/CatCorner22/Devin_Frontend/pulls/9 (state, head sha, merged_at)
+gh: Bad credentials (HTTP 401)
+{
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}$ gh api repos/CatCorner22/Frontend/commits?per_page=1 (sha, date)
+gh: Bad credentials (HTTP 401)
+{
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}$ gh api repos/CatCorner22/Frontend --jq .pushed_at
+gh: Bad credentials (HTTP 401)
+{
+  "message": "Bad credentials",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "401"
+}$ grep -rIl -i -E "neon|vercel" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=hinshitsu --exclude=package-lock.json . | head -20
+./DECISIONS.md
+./docs/research/05-borrowable-code-models-licenses.md
+./docs/research/data/exemplar-tokens.json
+./docs/research/data/sleek-recipes.json
+./docs/research/08-high-end-codebases.md
+./docs/research/01-your-files-master-guide-blueprint-guardrails.md
+./docs/research/03-your-files-zip-archives.md
+./docs/research/06-market-and-competitors.md
+./docs/research/04-best-human-built-frontends.md
+./docs/research/11-north-star-gap-2026-11-24.md
+./docs/research/09-sleek-finish-recipes.md
+./docs/knowledge/INDEX.md
+./docs/knowledge/sources/futuristic-screen-look.md
+./docs/knowledge/kb-aesthetics-satisfaction.json
+./docs/owner-instructions.md
+./packages/core/src/catalog/directions.ts
+./packages/core/src/catalog/steps.ts
+./redteam/reports/2026-11-13-drift-and-truth.md
+./redteam/reports/2026-11-13-c-first-time-user.md
+./redteam/reports/2026-11-13-first-time-user.md
+$ grep -c -i -E "\"(@neondatabase|@vercel|vercel)" package.json apps/studio/package.json packages/*/package.json
+package.json:0
+apps/studio/package.json:0
+packages/core/package.json:0
+packages/kit/package.json:0
+$ grep -n -i "current milestone" PROGRESS.md | head -3
+82:## Current milestone: M4 (Step screen). Not complete.
