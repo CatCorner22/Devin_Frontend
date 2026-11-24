@@ -109,7 +109,10 @@ export function focusIsVisible(doc: Document): Finding[] {
   // icon's shapes; a shape drawn in currentColor follows the text color, a shape with a color of its own does not.
   const ink = (el: Element, s: CSSStyleDeclaration): number[][] => {
     if ((el.textContent ?? '').trim() !== '' || el.matches('input, select, textarea')) return [rgba(s.color)];
-    return [...el.querySelectorAll('svg, path, circle, rect, line, polyline, polygon, ellipse, use')].slice(0, 8).flatMap((shape) => { const drawn = view.getComputedStyle(shape); return [rgba(drawn.fill), rgba(drawn.stroke)]; });
+    const shapes = [...el.querySelectorAll('svg, path, circle, rect, line, polyline, polygon, ellipse, use')].slice(0, 8).flatMap((shape) => { const drawn = view.getComputedStyle(shape); return [rgba(drawn.fill), rgba(drawn.stroke)]; });
+    // An icon that CSS draws (::before, ::after) shows its own text color and ground.
+    const made = ['::before', '::after'].flatMap((pseudo) => { const drawn = view.getComputedStyle(el, pseudo); return /^(none|normal)$/.test(drawn.content) ? [[], []] : [rgba(drawn.color), rgba(drawn.backgroundColor)]; });
+    return [...shapes, ...made];
   };
   const look = (el: Element): Look => {
     const s = view.getComputedStyle(el);
