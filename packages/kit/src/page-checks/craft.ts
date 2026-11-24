@@ -37,8 +37,19 @@ export function balancedHeadings(doc: Document): Finding[] {
   let wrapped = 0;
   for (const el of headings) {
     const style = view.getComputedStyle(el);
-    const frame = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) + parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
-    const lines = Math.round((el.getBoundingClientRect().height - (frame || 0)) / (parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.2));
+    // The lines are counted from where the letters themselves lie, so a logo in a heading is no line of text. A heading
+    // whose lines the writer broke by hand (<br>) is not judged: text-wrap: balance cannot move such a break
+    // (finding F-17 of the review of 2026-11-24).
+    if (el.querySelector('br')) continue;
+    const tops: number[] = [];
+    const walker = doc.createTreeWalker(el, 4);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      if ((node.textContent ?? '').trim() === '') continue;
+      const range = doc.createRange();
+      range.selectNodeContents(node);
+      for (const rect of range.getClientRects()) if (rect.width > 0 && !tops.some((top) => Math.abs(top - rect.top) < rect.height / 2)) tops.push(rect.top);
+    }
+    const lines = tops.length;
     if (lines < 2) continue;
     wrapped++;
     const wrap = `${style.getPropertyValue('text-wrap')} ${style.getPropertyValue('text-wrap-style')}`;

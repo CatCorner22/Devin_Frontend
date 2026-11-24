@@ -362,6 +362,18 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<div role="dialog" aria-label="Basket"><p>A window about something else.</p></div><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['fails']);
     });
 
+    it('second review, F-17: a heading that holds a logo and no text, and one whose lines are broken by hand, are not blamed', async () => {
+      const gif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      expect(await statuses(`<h1><a href="/"><img src="${gif}" width="240" height="80" alt="Corner Bakery"></a></h1>`, 'balancedHeadings')).toEqual(['not-applicable']);
+      expect(await statuses('<h2>Fresh bread every morning.<br>Baked here since 1998.</h2>', 'balancedHeadings')).toEqual(['not-applicable']);
+      // A heading that the browser wraps over two lines still fails, also with a large logo beside its words and with tall padding.
+      const long = 'A heading that is long enough to run over two lines in this narrow box';
+      expect(await statuses(`<div style="width:300px"><h2>${long}</h2></div>`, 'balancedHeadings')).toEqual(['fails']);
+      expect(await statuses(`<div style="width:300px"><h2><img src="${gif}" width="40" height="120" alt=""> ${long}</h2></div>`, 'balancedHeadings')).toEqual(['fails']);
+      expect(await statuses(`<div style="width:300px"><h2 style="text-wrap:balance">${long}</h2></div>`, 'balancedHeadings')).toEqual(['holds']);
+      expect(await statuses('<h2 style="padding:60px 0">Short</h2>', 'balancedHeadings')).toEqual(['not-applicable']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
