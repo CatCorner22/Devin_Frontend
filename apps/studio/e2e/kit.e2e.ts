@@ -471,6 +471,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<label for="n">Name</label><input id="n"><div inert aria-hidden="true" style="position:absolute;left:-9999px"><input name="website" autocomplete="off"></div>', 'visibleLabels')).toEqual(['holds']);
     });
 
+    it('automated review of 2026-11-24, round 2: a full-window decoration that lets clicks through is no blocking layer', async () => {
+      const box = '<div role="dialog" aria-label="Chat" style="position:fixed;bottom:20px;right:20px;width:300px;background:#ffffff"><p>How can we help you today?</p><button>Close</button></div>';
+      const layer = (extra: string): string => `<div class="fx"><div style="position:fixed;inset:0;${extra}"></div></div>`;
+      expect(await statuses(`<main><p>Page</p></main>${layer('pointer-events:none')}${box}`, 'dialogsAreMarked')).toEqual(['holds']);
+      expect(await statuses(`<main><p>Page</p></main>${layer('')}${box}`, 'dialogsAreMarked')).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

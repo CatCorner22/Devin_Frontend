@@ -277,7 +277,8 @@ export function dialogsAreMarked(doc: Document): Finding[] {
       if (!view) return true;
       const box = part.getBoundingClientRect();
       const position = view.getComputedStyle(part).position;
-      return (position === 'fixed' || position === 'absolute') && box.width >= doc.documentElement.clientWidth * 0.9 && box.height >= view.innerHeight * 0.9;
+      // A layer that lets every click through (pointer-events: none) is a decoration; it blocks nothing.
+      return (position === 'fixed' || position === 'absolute') && view.getComputedStyle(part).pointerEvents !== 'none' && box.width >= doc.documentElement.clientWidth * 0.9 && box.height >= view.innerHeight * 0.9;
     };
     let blocks = !view || doc.querySelector('[inert]') !== null;
     for (let at: Element | null = el; at && at !== doc.body && !blocks; at = at.parentElement) blocks = covers(at) || [...(at.parentElement?.children ?? [])].slice(0, 200).some((beside) => beside !== at && beside.getClientRects().length > 0 && (covers(beside) || [...beside.querySelectorAll('*')].slice(0, 50).some((inside) => inside.getClientRects().length > 0 && covers(inside))));
