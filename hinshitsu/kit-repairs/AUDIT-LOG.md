@@ -675,3 +675,9 @@ Working assumption while the card is open: the recommended answers (1 yes, 2 yes
 - Corrects: E-53
 - What was wrong: the shell removed 1 word; the last clause reads "CRITERIA  in E-51".
 - What is true: the clause reads "CRITERIA PROPOSED in E-51".
+
+### E-57 · 2026-11-24T21:05:18Z · ANSWER · ORCHESTRATOR
+
+- Card: E-55
+- The USER's reply, word for word: "Please fix all issues that Hinshitsu found and continue to complete all milestones" (2026-11-24 16:04 EST)
+- Effect: Question 3 is answered: start M5 to M7 after this pull request while M4 stays open. The choice "minors may stay open" is reversed: each confirmed finding of every class is repaired. Questions 1 and 2 are not answered: the reply names neither the CRITERIA nor the number of SUB-AGENT runs, so the CRITERIA stay PROPOSED (E-51) and the limit stays 30 (E-4). The BUILDER starts the repairs, which the reply orders; no WORK UNIT is reported VERIFIED while the CRITERIA are not FROZEN.
