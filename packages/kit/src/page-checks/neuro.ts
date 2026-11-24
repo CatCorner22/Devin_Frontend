@@ -168,7 +168,14 @@ export function noSidewaysScroll(doc: Document): Finding[] {
   // A page that hides its sideways overflow does not scroll, and what lies beyond the edge is lost instead (finding F-11).
   // Only parts in the ordinary flow count: a drawer or a slide that waits beside the page is placed there on purpose.
   const clips = (el: Element): boolean => ['hidden', 'clip'].includes(view?.getComputedStyle(el).overflowX ?? '');
-  if (view && root.scrollWidth <= limit && (clips(root) || clips(doc.body))) {
+  // The part that hides it may be the page itself or any box around the content: a wrapper `div` with `overflow: hidden` is as
+  // common as the rule on `body` (finding F-2 of the review of 2026-11-24). A box that cuts its own text with an ellipsis on
+  // purpose is not counted.
+  const cutBy = (el: Element): boolean => {
+    for (let at: Element | null = el.parentElement; at; at = at.parentElement) if (clips(at) && view?.getComputedStyle(at).textOverflow !== 'ellipsis') return true;
+    return false;
+  };
+  if (view && root.scrollWidth <= limit) {
     const inFlow = (el: Element): boolean => {
       for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
         const computed = view.getComputedStyle(at);
@@ -177,7 +184,7 @@ export function noSidewaysScroll(doc: Document): Finding[] {
       return true;
     };
     const holdsContent = (el: Element): boolean => ['IMG', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'VIDEO'].includes(el.tagName) || [...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '');
-    const lost = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5 && holdsContent(el) && inFlow(el)).slice(0, 3);
+    const lost = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5 && holdsContent(el) && inFlow(el) && cutBy(el)).slice(0, 3);
     if (lost.length > 0) return [{ ruleId, status: 'fails', where: lost.map(name).join(', '), measured: `content lies beyond the right edge of a window of ${limit} px, and the page hides it instead of scrolling`, required: 'all content within the width of the window', fix: 'Let the named parts wrap or shrink. Do not hide the overflow of the page: it cuts content off.' }];
   }
   if (root.scrollWidth <= limit) return [{ ruleId, status: 'holds', measured: `${limit} px wide` }];

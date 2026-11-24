@@ -415,6 +415,24 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await narrow('<p>Text.</p><nav style="position: fixed; top: 0; right: 0; width: 240px; transform: translateX(100%)"><a href="#a">About</a></nav>', 'html, body { overflow-x: hidden; }')).toEqual(['holds']);
     });
 
+    it('second review F-2: at 320 pixels, columns cut off by a wrapper that hides its overflow fail; an ellipsis and a scrolling box hold', async () => {
+      const narrow = async (body: string, style = ''): Promise<string[]> => {
+        const page = await pageOf(body, style);
+        await page.setViewportSize({ width: 320, height: 800 });
+        const out = (await run(page, 'noSidewaysScroll')).map((f) => f.status);
+        await page.context().close();
+        return out;
+      };
+      const table = '<table><tr><td style="min-width: 150px">Name</td><td style="min-width: 150px">Price</td><td style="min-width: 150px">Stock</td><td style="min-width: 150px">Notes</td></tr></table>';
+      expect(await narrow(`<div style="overflow: hidden">${table}</div>`)).toEqual(['fails']);
+      expect(await narrow(`<div class="page-wrapper"><main>${table}</main></div>`, '.page-wrapper { overflow-x: hidden; }')).toEqual(['fails']);
+      expect(await narrow(`<div style="overflow-x: clip"><p style="width: 600px">A line of text that is set wider than the window and cannot be reached.</p></div>`)).toEqual(['fails']);
+      // The same table in a box that scrolls sideways can be reached, and a title cut with an ellipsis is cut on purpose.
+      expect(await narrow(`<div style="overflow-x: auto">${table}</div>`)).toEqual(['holds']);
+      expect(await narrow('<p style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap"><span>A long title that the page shortens with three dots at the end of the line on purpose</span></p>')).toEqual(['holds']);
+      expect(await narrow('<div style="overflow: hidden"><p>Text that wraps inside the window.</p></div>')).toEqual(['holds']);
+    });
+
     it('F-7: an element that shows the hand pointer and has no Tab stop fails, also when a script attached its click', async () => {
       const page = await pageOf('<div id="card" style="cursor: pointer; padding: 12px"><span>Open the report</span></div>');
       await page.evaluate(() => document.getElementById('card')?.addEventListener('click', () => undefined));
