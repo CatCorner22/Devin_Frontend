@@ -255,6 +255,24 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(Date.now() - started).toBeLessThan(40000);
     }, 60000);
 
+    it('second review, F-23: a notice that leaves the page in use needs no aria-modal; a window that blocks the page does', async () => {
+      const text = '<h1>Shop</h1><p>Bread, baked here every morning.</p>';
+      const bar = 'position:fixed;left:16px;right:16px;bottom:16px;padding:12px;background:#fff;border:1px solid #333';
+      expect(await statuses(`${text}<div class="cookies" role="dialog" aria-label="Cookies" style="${bar}">We use one cookie. <button>Fine</button></div>`, 'dialogsAreMarked')).toEqual(['holds']);
+      expect(await statuses(`${text}<div role="dialog" aria-labelledby="h" style="position:fixed;right:16px;bottom:16px;width:280px;padding:12px;background:#fff"><h2 id="h">Chat with us</h2><button>Close</button></div>`, 'dialogsAreMarked')).toEqual(['holds']);
+      // The name is still asked of the notice.
+      expect(await statuses(`${text}<div role="dialog" style="${bar}">We use one cookie.</div>`, 'dialogsAreMarked')).toEqual(['fails']);
+      const box = 'position:fixed;top:30%;left:30%;width:40%;padding:16px;background:#fff';
+      const blocking = [
+        `<div style="position:fixed;inset:0;background:rgba(0,0,0,.5)"><div role="dialog" aria-label="Basket" style="${box}">Your basket</div></div>`,
+        `<div style="position:fixed;inset:0;background:rgba(0,0,0,.5)"></div><div role="dialog" aria-label="Basket" style="${box}">Your basket</div>`,
+        `<div role="dialog" aria-label="Basket" style="position:fixed;inset:0;background:#fff">Your basket</div>`,
+      ];
+      for (const layer of blocking) expect(await statuses(`${text}${layer}`, 'dialogsAreMarked'), layer).toEqual(['fails']);
+      expect(await statuses(`<main inert>${text}</main><div role="dialog" aria-label="Basket" style="${box}">Your basket</div>`, 'dialogsAreMarked')).toEqual(['fails']);
+      expect(await statuses(`${text}${blocking[0]!.replace('role="dialog"', 'role="dialog" aria-modal="true"')}`, 'dialogsAreMarked')).toEqual(['holds']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

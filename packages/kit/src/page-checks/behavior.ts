@@ -237,7 +237,18 @@ export function dialogsAreMarked(doc: Document): Finding[] {
   for (const el of dialogs) {
     const named = (el.getAttribute('aria-label') ?? '').trim() !== '' || (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).some((id) => id !== '' && (doc.getElementById(id)?.textContent ?? '').trim() !== '');
     if (!named) out.push({ ruleId, status: 'fails', where: name(el), measured: 'a window over the page with no name', required: 'a name, taken from its heading', fix: 'Give the heading an id and point aria-labelledby on the window at it.' });
-    if (el.tagName !== 'DIALOG' && el.getAttribute('aria-modal') !== 'true') out.push({ ruleId, status: 'fails', where: name(el), measured: 'not marked as a window that blocks the page', required: 'the <dialog> element, or aria-modal="true"', fix: 'Use the <dialog> element and open it with showModal().' });
+    // Only a window that blocks the page needs the mark of one. A notice that leaves the page in use (a cookie bar at the
+    // bottom) is right without it. A window blocks the page when it, a part around it, or a layer beside it covers the browser
+    // window, or when a part of the page is marked inert while it is shown (finding F-23 of the review of 2026-11-24).
+    const covers = (part: Element): boolean => {
+      if (!view) return true;
+      const box = part.getBoundingClientRect();
+      const position = view.getComputedStyle(part).position;
+      return (position === 'fixed' || position === 'absolute') && box.width >= doc.documentElement.clientWidth * 0.9 && box.height >= view.innerHeight * 0.9;
+    };
+    let blocks = !view || doc.querySelector('[inert]') !== null;
+    for (let at: Element | null = el; at && at !== doc.body && !blocks; at = at.parentElement) blocks = covers(at) || [...(at.parentElement?.children ?? [])].slice(0, 200).some((beside) => beside !== at && beside.getClientRects().length > 0 && covers(beside));
+    if (blocks && el.tagName !== 'DIALOG' && el.getAttribute('aria-modal') !== 'true') out.push({ ruleId, status: 'fails', where: name(el), measured: 'not marked as a window that blocks the page', required: 'the <dialog> element, or aria-modal="true"', fix: 'Use the <dialog> element and open it with showModal().' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }
