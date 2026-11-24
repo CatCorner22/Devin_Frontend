@@ -299,10 +299,11 @@ export function emptyStatesExplain(doc: Document): Finding[] {
     // A heading opens another part of the page, and text that is not drawn tells nobody anything.
     const tells = (beside: Element | null): boolean => beside !== null && beside.getClientRects().length > 0 && doc.defaultView?.getComputedStyle(beside).visibility === 'visible' && !/^(UL|OL|TABLE|H[1-6]|HR|SECTION|ARTICLE|NAV|ASIDE|FOOTER|HEADER)$/.test(beside.tagName) && beside.getAttribute('role') !== 'heading' && (beside.textContent ?? '').trim().length >= 10;
     // The sentence directly before the list is beside it as much as the one directly after it. Before the list only a
-    // paragraph counts: any other part there (a window, a form, a card) belongs to what came earlier on the page.
+    // paragraph counts, and only one that says nothing is here ("no", "not yet", "empty"): a paragraph that
+    // introduces the list says nothing of its being empty. Any other part there (a window, a form, a card) belongs to what came earlier on the page.
     const holder = el.tagName === 'TBODY' ? el.parentElement : el;
     const before = holder?.previousElementSibling ?? null;
-    const nextTells = tells(holder?.nextElementSibling ?? null) || (before?.tagName === 'P' && tells(before));
+    const nextTells = tells(holder?.nextElementSibling ?? null) || (before?.tagName === 'P' && tells(before) && /\b(no|not|none|nothing|empty|yet|never|without|zero|n't)\b|n’t\b/i.test(before.textContent ?? ''));
     if (!nextTells && (!told || (told.textContent ?? '').trim() === '')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'an empty list with no explanation', required: 'a sentence that says what belongs here and what to do next', fix: 'Beside the empty list, add an element marked data-empty that says what belongs in the list and offers the next action.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

@@ -432,6 +432,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<footer><p>Business Name</p><p>Address line 1</p></footer>', 'placeholderCopy')).toContain('fails');
     });
 
+    it('automated review of 2026-11-24, round 1: a paragraph that only introduces an empty list does not explain it', async () => {
+      const style = 'ul{min-height:24px}';
+      expect(await statuses('<p>Your recent orders are listed below.</p><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['fails']);
+      expect(await statuses('<p>You haven’t placed an order. Browse the shop to start.</p><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['holds']);
+      expect(await statuses('<p>Nothing here so far. Add your first item.</p><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['holds']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
