@@ -280,7 +280,7 @@ export function dialogsAreMarked(doc: Document): Finding[] {
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }
 
-/** A list or table that is shown, with nothing in it and no word about why: no marked element near it and no sentence directly after it. A sentence two elements away, or inside a wrapper that starts a new part, is not seen. */
+/** A list or table that is shown, with nothing in it and no word about why: no marked element near it and no sentence directly before or after it. An empty list inside an item of another list, or inside a menu, is not judged. A sentence two elements away, or inside a wrapper that starts a new part, is not seen. */
 export function emptyStatesExplain(doc: Document): Finding[] {
   const ruleId = 'state-empty-explained';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
@@ -289,12 +289,20 @@ export function emptyStatesExplain(doc: Document): Finding[] {
   const out: Finding[] = [];
   for (const el of holders) {
     if (el.children.length > 0 || (el.textContent ?? '').trim() !== '') continue;
+    // An empty sub-list (a list inside an item of another list) and an empty list inside a menu are slots that the page
+    // fills or leaves; they show the visitor no empty place that asks for a word (finding F-16 of the review of 2026-11-24).
+    // The height is no sign: an empty list has no height on most pages, and that is the very fault this check finds.
+    if (el.parentElement?.closest('li, nav, [role="navigation"], [role="menu"], [role="menubar"]')) continue;
     const around = (el.tagName === 'TBODY' ? el.parentElement?.parentElement : el.parentElement) ?? null;
     const told = around?.querySelector('[data-empty], [role="status"]') ?? null;
     // A sentence that is shown directly after the list (or after its table) explains it as a marked element does.
-    const next = (el.tagName === 'TBODY' ? el.parentElement : el)?.nextElementSibling ?? null;
-    // A heading after the list opens the next part of the page, and text that is not drawn tells nobody anything.
-    const nextTells = next !== null && next.getClientRects().length > 0 && doc.defaultView?.getComputedStyle(next).visibility === 'visible' && !/^(UL|OL|TABLE|H[1-6]|HR|SECTION|ARTICLE|NAV|ASIDE|FOOTER|HEADER)$/.test(next.tagName) && next.getAttribute('role') !== 'heading' && (next.textContent ?? '').trim().length >= 10;
+    // A heading opens another part of the page, and text that is not drawn tells nobody anything.
+    const tells = (beside: Element | null): boolean => beside !== null && beside.getClientRects().length > 0 && doc.defaultView?.getComputedStyle(beside).visibility === 'visible' && !/^(UL|OL|TABLE|H[1-6]|HR|SECTION|ARTICLE|NAV|ASIDE|FOOTER|HEADER)$/.test(beside.tagName) && beside.getAttribute('role') !== 'heading' && (beside.textContent ?? '').trim().length >= 10;
+    // The sentence directly before the list is beside it as much as the one directly after it. Before the list only a
+    // paragraph counts: any other part there (a window, a form, a card) belongs to what came earlier on the page.
+    const holder = el.tagName === 'TBODY' ? el.parentElement : el;
+    const before = holder?.previousElementSibling ?? null;
+    const nextTells = tells(holder?.nextElementSibling ?? null) || (before?.tagName === 'P' && tells(before));
     if (!nextTells && (!told || (told.textContent ?? '').trim() === '')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'an empty list with no explanation', required: 'a sentence that says what belongs here and what to do next', fix: 'Beside the empty list, add an element marked data-empty that says what belongs in the list and offers the next action.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

@@ -348,6 +348,20 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await wheres('<label for="e" style="color:rgba(0,0,0,0.6)">Email</label><input id="e" type="email">')).toEqual([]);
     });
 
+    it('second review, F-16: an empty sub-list, an empty list in a menu, and one with its sentence directly before it hold', async () => {
+      const style = 'ul{min-height:24px}';
+      expect(await statuses('<nav><ul><li><a href="#history">History</a><ul id="history-sublist"></ul></li></ul></nav>', 'emptyStatesExplain', style)).toEqual(['holds']);
+      expect(await statuses('<ul><li><a href="#history">History</a><ul id="history-sublist"></ul></li></ul>', 'emptyStatesExplain')).toEqual(['holds']);
+      expect(await statuses('<nav><ul id="menu"></ul></nav>', 'emptyStatesExplain')).toEqual(['holds']);
+      // An empty list with no height is the usual shape of the fault, and still fails.
+      expect(await statuses('<h1>Orders</h1><ul id="orders" style="min-height:0;margin:0;padding:0"></ul>', 'emptyStatesExplain')).toEqual(['fails']);
+      expect(await statuses('<p>You have no orders yet. <a href="/shop">Browse the shop</a> to place your first order.</p><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['holds']);
+      // An empty list that takes room, with a heading before it and nothing after it, still fails.
+      expect(await statuses('<h2>Your orders</h2><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['fails']);
+      expect(await statuses('<p style="visibility:hidden">You have no orders yet.</p><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['fails']);
+      expect(await statuses('<div role="dialog" aria-label="Basket"><p>A window about something else.</p></div><ul id="orders"></ul>', 'emptyStatesExplain', style)).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
