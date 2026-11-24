@@ -309,7 +309,7 @@ export function emptyStatesExplain(doc: Document): Finding[] {
     // introduces the list says nothing of its being empty. Any other part there (a window, a form, a card) belongs to what came earlier on the page.
     const holder = el.tagName === 'TBODY' ? el.parentElement : el;
     const before = holder?.previousElementSibling ?? null;
-    const nextTells = tells(holder?.nextElementSibling ?? null) || (before?.tagName === 'P' && tells(before) && /\b(no|not|none|nothing|empty|yet|never|without|zero|n't)\b|n’t\b/i.test(before.textContent ?? ''));
+    const nextTells = tells(holder?.nextElementSibling ?? null) || (before?.tagName === 'P' && tells(before) && /\b(no|not|none|nothing|empty|yet|never|without|zero)\b|n['’]t\b/i.test(before.textContent ?? ''));
     if (!nextTells && (!told || (told.textContent ?? '').trim() === '')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'an empty list with no explanation', required: 'a sentence that says what belongs here and what to do next', fix: 'Beside the empty list, add an element marked data-empty that says what belongs in the list and offers the next action.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
