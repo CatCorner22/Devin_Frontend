@@ -100,15 +100,25 @@ export function purpleGradient(doc: Document): Finding[] {
     return (pixel[3] ?? 0) < 128 ? null : [pixel[0] ?? 0, pixel[1] ?? 0, pixel[2] ?? 0];
   };
   const out: Finding[] = [];
-  for (const el of doc.querySelectorAll<HTMLElement>('body, body *')) {
-    const image = view.getComputedStyle(el).backgroundImage;
-    const box = el.getBoundingClientRect();
-    if (!image.includes('gradient') || box.width * box.height < 40_000) continue;
-    // A style sheet can write a color in many ways (hex, rgb, hsl, oklch, a name). The check paints each color of the fade on a
-    // canvas, off the page, and reads the drawn pixel back.
-    const stops = image.slice(0, 4000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? [];
-    const hues = stops.map((stop) => { const rgb = drawn(stop); return rgb ? hueOf(rgb[0], rgb[1], rgb[2]) : null; }).filter((h): h is number => h !== null);
-    if (hues.some((h) => h >= 200 && h < 250) && hues.some((h) => h >= 250 && h <= 310)) out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}`, measured: 'a fade from blue to purple over a large area', required: 'the colors of the design', fix: 'Use the background that the design names; if it names a fade, use its two colors.' });
+  // The fade is read on every element, on the page's root (<html>), and on the ::before and ::after of an element, where
+  // a hero often carries it (finding F-22 of the review of 2026-11-24).
+  for (const el of doc.querySelectorAll<HTMLElement>('html, body, body *')) {
+    for (const pseudo of ['', '::before', '::after']) {
+      const computed = view.getComputedStyle(el, pseudo === '' ? null : pseudo);
+      const image = computed.backgroundImage;
+      if (!image.includes('gradient')) continue;
+      if (pseudo !== '' && (computed.content === 'none' || computed.display === 'none')) continue;
+      if (computed.visibility !== 'visible') continue;
+      const box = el.getBoundingClientRect();
+      // The root paints the whole window. A ::before or ::after has no box that a script can ask for; its computed size is read.
+      const area = el === doc.documentElement ? view.innerWidth * view.innerHeight : pseudo === '' ? box.width * box.height : (parseFloat(computed.width) || 0) * (parseFloat(computed.height) || 0);
+      if (area < 40_000) continue;
+      // A style sheet can write a color in many ways (hex, rgb, hsl, oklch, a name). The check paints each color of the fade on a
+      // canvas, off the page, and reads the drawn pixel back.
+      const stops = image.slice(0, 4000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? [];
+      const hues = stops.map((stop) => { const rgb = drawn(stop); return rgb ? hueOf(rgb[0], rgb[1], rgb[2]) : null; }).filter((h): h is number => h !== null);
+      if (hues.some((h) => h >= 200 && h < 250) && hues.some((h) => h >= 250 && h <= 310)) out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}${pseudo}`, measured: 'a fade from blue to purple over a large area', required: 'the colors of the design', fix: 'Use the background that the design names; if it names a fade, use its two colors.' });
+    }
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }

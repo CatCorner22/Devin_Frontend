@@ -273,6 +273,19 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(`${text}${blocking[0]!.replace('role="dialog"', 'role="dialog" aria-modal="true"')}`, 'dialogsAreMarked')).toEqual(['holds']);
     });
 
+    it('second review, F-22: the blue-to-purple fade is found on the root of the page and on a ::before or ::after', async () => {
+      const fade = 'linear-gradient(135deg,#667eea,#764ba2)';
+      const text = '<h1>Shop</h1><p>Bread, baked here every morning.</p>';
+      const where = async (body: string, style: string): Promise<(string | undefined)[]> => { const page = await pageOf(body, style); const out = (await run(page, 'purpleGradient')).map((f) => f.where); await page.context().close(); return out; };
+      expect(await where(text, `html{min-height:100%;background:${fade}}`)).toEqual(['html']);
+      expect(await where(`<div class="hero">${text}</div>`, `.hero{position:relative;height:400px} .hero::before{content:"";position:absolute;inset:0;background:${fade}}`)).toEqual(['div.hero::before']);
+      expect(await where(`<div class="hero">${text}</div>`, `.hero{position:relative;height:400px} .hero::after{content:"";display:block;width:600px;height:300px;background-image:${fade}}`)).toEqual(['div.hero::after']);
+      // A fade on a ::before that is not drawn, a small one, and one in the colors of a design all hold.
+      expect(await statuses(`<div class="hero">${text}</div>`, 'purpleGradient', `.hero::before{position:absolute;inset:0;background:${fade}}`)).toEqual(['holds']);
+      expect(await statuses(`<div class="hero">${text}</div>`, 'purpleGradient', `.hero::before{content:"";display:inline-block;width:40px;height:4px;background:${fade}}`)).toEqual(['holds']);
+      expect(await statuses(text, 'purpleGradient', 'html{min-height:100%;background:linear-gradient(#fff7ed,#fed7aa)}')).toEqual(['holds']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
