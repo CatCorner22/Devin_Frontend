@@ -455,3 +455,15 @@ Memos: SI = `memos/lens-structural-integrity.md`, MVS = `memos/lens-minimal-viab
 | RC change 11 | structural integrity | ACCEPTED | C13 | audited and delivered commit |
 | RC change 12 | recipient experience | ACCEPTED | S6 card | 4 earlier sessions and "no milestone" stated |
 | RC "The cheating agent" | trust and controls | ACCEPTED | C1, C3 | 2nd input; retry and timeout in the config files tested |
+
+### E-38 · 2026-11-24T20:28:21Z · CORRECTION · ORCHESTRATOR
+
+- Corrects: E-2
+- What was wrong: E-2 states the 5 parts and the mode in a form that `scripts/hinshitsu_check.py` does not read, so the script reports 6 failures on E-2 ("does not answer SWARM-CAPABLE part 1" to "part 5", "states no mode").
+- What is true: the content of E-2 stands, restated here in the script's form, with the same EVIDENCE (`evidence/capability-probe.md`, E-1).
+SWARM-CAPABLE part 1 (scope written by the ORCHESTRATOR): yes
+SWARM-CAPABLE part 2 (no BUILDER conversation): yes
+SWARM-CAPABLE part 3 (report returns whole): yes
+SWARM-CAPABLE part 4 (identifier not written by the ORCHESTRATOR): yes
+SWARM-CAPABLE part 5 (live test call): yes
+- Mode: SWARM

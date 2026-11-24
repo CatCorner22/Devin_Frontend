@@ -19,33 +19,40 @@ See `AUDIT-LOG.md` entry E-19 (`CRITERIA`, `PROPOSED`, C1 to C12) and each later
 ## 3. Naming conventions
 
 - The repository's defined terms (`CLAUDE.md`, table "Defined terms") keep their 1 meaning each.
-- Findings of the repository's own log keep the IDs `KIT-<n>`; FINDINGS of this run are `F-<n>`.
-- A page check returns findings with the status `holds`, `fails` or `could not measure`.
+- Findings of the repository's own log keep the IDs `KIT-<n>`; FINDINGS of this run are `F-<n>`. A row of `redteam/FINDINGS.md` that comes from the second review cites the judge's finding ID.
+- A finding of a page check has 1 of 4 statuses, spelled as in `packages/kit/src/shapes.ts` line 10: `fails`, `holds`, `not-applicable`, `could-not-measure`. (superseded 2026-11-24 → E-37: the earlier line named 3 statuses in other spellings.)
 - Dates are ISO (2026-11-24). Counts of tests are copied from command output.
+- "Base" is commit 9e50434. "Audited commit" and "delivered commit" are defined in E-35.
 
 ## 4. Contracts
 
 | Provider | Consumer | What is promised |
 |---|---|---|
-| `packages/kit/src/data/` | `packages/kit/src/logic/`, `packages/kit/src/page-checks/` | rule records with id, kind (floor or not), how measured |
-| `packages/kit/src/page-checks/` | `packages/kit/src/logic/grade.ts`, `repairPlan.ts`, `receipt.ts` | a list of findings, each with rule id and status |
-| `packages/kit/src/page-checks/` | `apps/studio/e2e/kit.e2e.ts` | functions that take a `Document` and run inside a page |
+| `packages/kit/src/shapes.ts` | `src/data/`, `src/logic/`, `src/page-checks/` | the types of a rule and a finding, and the 4 statuses |
+| `packages/kit/src/index.ts` | `apps/studio/e2e/kit.e2e.ts`, a later Fitter | the joined rules (`KIT_RULES`), the page checks, `grade`, `repairPlan`, `receipt` |
+| `packages/kit/src/page-checks/` | `packages/kit/src/logic/judge.ts` (`grade`, `repairPlan`, `receipt`) | a list of findings, each with a rule ID and 1 of the 4 statuses |
+| `packages/kit/fixtures/` | `apps/studio/e2e/kit.e2e.ts`, `packages/kit/README.md` example | 1 page built with care and pages with planted defects |
 | `packages/kit` | `redteam/FINDINGS.md`, `PROGRESS.md`, pull request 9 text, `packages/kit/README.md` | behavior that each written statement describes |
+| the judge report (`evidence/second-review/judge-report.md`) | WU-1, `redteam/FINDINGS.md` | the confirmed findings, each with an ID, a class and reproduction steps |
 
 ## 5. File ownership
 
 | Path | BUILDER | AUDITORS |
 |---|---|---|
-| `packages/kit/**`, `apps/studio/e2e/kit.e2e.ts` | ORCHESTRATOR | the 8 roles of section 13 |
-| `redteam/FINDINGS.md`, `PROGRESS.md`, `DECISIONS.md`, `packages/kit/README.md`, pull request 9 text | ORCHESTRATOR | the 8 roles of section 13 |
-| `hinshitsu/kit-repairs/**` | ORCHESTRATOR | final AUDITOR (section 17) |
+| `packages/kit/**`, `apps/studio/e2e/kit.e2e.ts` | ORCHESTRATOR | the 8 roles of the audit round |
+| `redteam/FINDINGS.md`, `PROGRESS.md`, `packages/kit/README.md`, pull request 9 text | ORCHESTRATOR | the 8 roles of the audit round |
+| `hinshitsu/kit-repairs/**` | ORCHESTRATOR | final AUDITOR |
+
+`DECISIONS.md` (superseded 2026-11-24 → E-37: removed from this table; the run adds no decision record of the repository).
 
 ## 6. WORK UNITS
 
 | ID | Content | Status | LENS memo | Swarm reports |
 |---|---|---|---|---|
-| WU-1 | The module `packages/kit` with its browser test: repairs of what the second review confirms | pending | `memos/` (S5) | `audits/WU-1-*.md` |
-| WU-2 | The records: `redteam/FINDINGS.md`, `PROGRESS.md`, `packages/kit/README.md`, pull request 9 text | pending | `memos/` (S5) | `audits/WU-2-*.md` |
+| WU-1 | The module `packages/kit` with its browser test: repairs of what the second review confirms, 1 commit per repair with its test | pending | `memos/lens-recipient-experience-WU-1.md` | `audits/WU-1-*.md` |
+| WU-2 | The records: `redteam/FINDINGS.md`, `PROGRESS.md`, `packages/kit/README.md`, pull request 9 text | pending | `memos/lens-minimal-viable-sequence-WU-2.md` | `audits/WU-2-*.md` |
+
+Order: the judge report is saved in the RUN FOLDER → the USER answers the S6 card → WU-1 → WU-2 → the head is frozen as the audited commit → C4, C5 and C6 are tested 1 time → delivery. WU-2 takes its counts from WU-1.
 
 ## 7. Existing implementations checked
 
@@ -56,5 +63,5 @@ See `AUDIT-LOG.md` entry E-19 (`CRITERIA`, `PROPOSED`, C1 to C12) and each later
 
 <!-- from the log: start -->
 Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
-- Newest CRITERIA entry: E-19 (PROPOSED)
+- Newest CRITERIA entry: E-35 (PROPOSED)
 <!-- from the log: end -->

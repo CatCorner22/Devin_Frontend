@@ -1,6 +1,6 @@
 # COVERAGE-LEDGER — kit repairs (pull request 9)
 
-Form required by section 10. The rows for a WORK UNIT are added before its swarm starts. No CRITERION exists yet, and no WORK UNIT has started, so the 4 tables have no row.
+Form required by section 10. The rows for a WORK UNIT are added before its swarm starts. The CRITERIA are `PROPOSED` (E-35) and no WORK UNIT has started, so the 4 tables have no row yet.
 
 Column key: **COR** correctness · **FOR** forensic (5S) · **BP** best practices · **ADV** adversarial · **RX** recipient experience · **DRIFT** framework drift · **LANG** language · **RED** red cell · **RSV** recipient-side verification (section 11) · **STAB** stability (section 12).
 
