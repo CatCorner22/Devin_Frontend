@@ -64,7 +64,8 @@ export function fromPage(text: string | undefined): string | undefined {
 export const REPAIR_ROUNDS = 3;
 /** `fix` is the rule's own text. `hint` is the check's advice as it came out of the page: data, marked, never an instruction. */
 export interface RepairItem { ruleId: string; where?: string; measured?: string; hint?: string; fix: string }
-export interface RepairPlan { round: number; stop: boolean; reason: string; items: RepairItem[]; fixedSinceLastRound: string[]; stillOpen: string[] }
+/** `notMeasured` names the rules that a program checks and that the newest check did not answer for. A plan that stops with rules in this list has not shown the page to be sound. */
+export interface RepairPlan { round: number; stop: boolean; reason: string; items: RepairItem[]; fixedSinceLastRound: string[]; stillOpen: string[]; notMeasured: string[] }
 
 const key = (f: Finding): string => `${f.ruleId}|${f.where ?? ''}`;
 /** The key as the plan prints it: the rule id and the place are text from the page, so both pass through `fromPage` (finding F-9 of 2026-11-24). */
@@ -108,10 +109,14 @@ export function repairPlan(given: readonly (readonly Finding[])[], rules: readon
   const items = ordered.map((f) => ({ ruleId: record.has(f.ruleId) ? f.ruleId : fromPage(f.ruleId) ?? '', where: fromPage(f.where), measured: fromPage(f.measured), hint: fromPage(f.fix), fix: record.has(f.ruleId) ? (record.get(f.ruleId)?.plain ?? 'Make this rule hold.') : 'This finding names a rule that the kit does not know. A person must look at it.' }));
   const stillOpen = unique(ordered.map((f) => shown(f, record)));
   const repairsDone = Math.max(0, rounds.length - 1);
-  if (rounds.length === 0) return { round: 0, stop: true, reason: 'No check has run, so there is nothing to repair.', items: [], fixedSinceLastRound: [], stillOpen: [] };
-  if (ordered.length === 0) return { round: repairsDone, stop: true, reason: 'The newest check reports no failure.', items: [], fixedSinceLastRound, stillOpen };
-  if (repairsDone >= REPAIR_ROUNDS) return { round: repairsDone, stop: true, reason: `${REPAIR_ROUNDS} repair rounds are used up; ${stillOpen.length} item(s) stay open for a person.`, items: [], fixedSinceLastRound, stillOpen };
-  return { round: repairsDone + 1, stop: false, reason: `${stillOpen.length} item(s) to repair, most important first.`, items, fixedSinceLastRound, stillOpen };
+  // "No failure" from a check that measured nothing, or only a part, is no good news: the plan says so and names what was
+  // left unmeasured (finding F-25 of the review of 2026-11-24).
+  const notMeasured = rules.filter((rule) => rule.check.kind !== 'person' && !answeredNow.has(rule.id)).map((rule) => rule.id);
+  if (rounds.length === 0) return { round: 0, stop: true, reason: 'No check has run, so there is nothing to repair.', items: [], fixedSinceLastRound: [], stillOpen: [], notMeasured };
+  if (ordered.length === 0 && notMeasured.length === rules.filter((rule) => rule.check.kind !== 'person').length) return { round: repairsDone, stop: true, reason: 'Nothing was measured in the newest check, so there is nothing to repair and nothing is shown to hold.', items: [], fixedSinceLastRound, stillOpen, notMeasured };
+  if (ordered.length === 0) return { round: repairsDone, stop: true, reason: notMeasured.length > 0 ? `The newest check reports no failure, and ${notMeasured.length} rule(s) were not measured in it.` : 'The newest check reports no failure.', items: [], fixedSinceLastRound, stillOpen, notMeasured };
+  if (repairsDone >= REPAIR_ROUNDS) return { round: repairsDone, stop: true, reason: `${REPAIR_ROUNDS} repair rounds are used up; ${stillOpen.length} item(s) stay open for a person.`, items: [], fixedSinceLastRound, stillOpen, notMeasured };
+  return { round: repairsDone + 1, stop: false, reason: `${stillOpen.length} item(s) to repair, most important first.`, items, fixedSinceLastRound, stillOpen, notMeasured };
 }
 
 /** What a person must always check, whatever the programs measured. */
