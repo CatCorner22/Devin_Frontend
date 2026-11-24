@@ -412,6 +412,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await radii('calc(20% + 5px)')).toEqual(['fails']);
     });
 
+    it('automated review of 2026-11-24, round 1: a pause button named through aria-labelledby counts', async () => {
+      const moving = '<style>@keyframes spin { to { transform: rotate(360deg); } } .spin { width: 40px; height: 40px; background: #333333; animation: spin 2s linear infinite; }</style><div class="spin"></div>';
+      const icon = '<svg aria-hidden="true" width="24" height="24"><rect width="24" height="24"/></svg>';
+      expect(await statuses(`${moving}<span id="p">Pause the animation</span><button data-pause-motion aria-labelledby="p">${icon}</button>`, 'noEndlessMotion')).toEqual(['holds']);
+      expect(await statuses(`${moving}<button data-pause-motion aria-labelledby="missing">${icon}</button>`, 'noEndlessMotion')).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

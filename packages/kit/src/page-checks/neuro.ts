@@ -40,7 +40,7 @@ export function noEndlessMotion(doc: Document): Finding[] {
     const wide = Math.max(doc.documentElement.scrollWidth, view.innerWidth);
     if (box.width < 8 || box.height < 8 || box.right + view.scrollX <= 0 || box.bottom + view.scrollY <= 0 || box.left + view.scrollX >= wide) return false;
     if (el.closest('[aria-hidden="true"], [inert]') || el.matches(':disabled, [aria-disabled="true"]') || el.tabIndex < 0) return false;
-    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}`;
+    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}${(el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join(' ')}`;
     // The mark data-pause-motion says it, and so does a name that says it in words: "Pause", or "Pause the moving text",
     // "Stop animation", "Turn off motion". A name that merely holds the word ("Bus stop finder", "Stop smoking") does not
     // (finding F-24 of the review of 2026-11-24; finding F-6 of the first review).
@@ -313,7 +313,7 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
     const wide = Math.max(doc.documentElement.scrollWidth, view.innerWidth);
     if (box.width < 8 || box.height < 8 || box.right + view.scrollX <= 0 || box.bottom + view.scrollY <= 0 || box.left + view.scrollX >= wide) return false;
     if (el.closest('[aria-hidden="true"], [inert]') || el.matches(':disabled, [aria-disabled="true"]') || el.tabIndex < 0) return false;
-    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}`;
+    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}${(el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join(' ')}`;
     // The mark data-pause-motion says it, and so does a name that says it in words: "Pause", or "Pause the moving text",
     // "Stop animation", "Turn off motion". A name that merely holds the word ("Bus stop finder", "Stop smoking") does not
     // (finding F-24 of the review of 2026-11-24; finding F-6 of the first review).
