@@ -273,7 +273,16 @@ describe('receipt', () => {
     const open = receipt([], RULES);
     const answered = receipt([holds('person-a')], RULES);
     expect(answered.forAPerson.length).toBe(open.forAPerson.length - 1);
-    expect(answered.measured.find((line) => line.ruleId === 'person-a')?.result).toBe('A person answered: holds');
+    // The person's answer stands in a list of its own, under its own heading, and never under "measured by a program" (review of 2026-11-24, F-29).
+    expect(answered.byAPerson.find((line) => line.ruleId === 'person-a')?.result).toBe('A person answered: holds');
+    expect(answered.measured.find((line) => line.ruleId === 'person-a')).toBeUndefined();
+    const printed = receiptText(answered);
+    const [program, person, rest] = [printed.indexOf('MEASURED BY A PROGRAM'), printed.indexOf('ANSWERED BY A PERSON'), printed.indexOf('NOT MEASURED')];
+    expect(program).toBeLessThan(person);
+    expect(person).toBeLessThan(rest);
+    expect(printed.slice(program, person)).not.toMatch(/A person answered/);
+    expect(printed.slice(person, rest)).toMatch(/A person answered: holds/);
+    expect(receiptText(open)).toMatch(/ANSWERED BY A PERSON\n- Nothing\./);
   });
   it('a check that did not run is listed as not measured, not as held', () => {
     expect(receipt([], RULES).measured).toEqual([]);

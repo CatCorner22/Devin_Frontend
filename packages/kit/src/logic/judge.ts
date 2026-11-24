@@ -129,20 +129,22 @@ export const ALWAYS_FOR_A_PERSON: readonly string[] = [
 ];
 
 export interface ReceiptLine { ruleId: string; plain: string; result: string }
-export interface Receipt { measured: ReceiptLine[]; notMeasured: ReceiptLine[]; forAPerson: string[]; grade: GradeResult }
+/** `byAPerson` holds what a person answered for a rule that only a person can check. It is never listed as measured by a program (finding F-29 of 2026-11-24). */
+export interface Receipt { measured: ReceiptLine[]; byAPerson: ReceiptLine[]; notMeasured: ReceiptLine[]; forAPerson: string[]; grade: GradeResult }
 
-/** The honest receipt: what programs measured, what they could not measure, and what a person must still check. The three lists never mix. */
+/** The honest receipt: what programs measured, what a person answered, what was not measured, and what a person must still check. The four lists never mix. */
 export function receipt(given: readonly Finding[], rules: readonly RuleRecord[]): Receipt {
   const findings = sound(given);
   const measured: ReceiptLine[] = [];
   const notMeasured: ReceiptLine[] = [];
+  const byAPerson: ReceiptLine[] = [];
   const forAPerson: string[] = [];
   for (const rule of rules) {
     if (rule.check.kind === 'person') {
       // A person's answer is listed as the person's, never as a measurement of the program; without one the question stays open.
       const said = findings.filter((f) => f.ruleId === rule.id && f.status !== 'could-not-measure');
       if (said.length === 0) forAPerson.push(rule.check.ask);
-      for (const f of said) measured.push({ ruleId: rule.id, plain: rule.plain, result: `A person answered: ${f.status === 'fails' ? 'fails' : f.status === 'holds' ? 'holds' : 'does not apply to this page'}` });
+      for (const f of said) byAPerson.push({ ruleId: rule.id, plain: rule.plain, result: `A person answered: ${f.status === 'fails' ? 'fails' : f.status === 'holds' ? 'holds' : 'does not apply to this page'}` });
       continue;
     }
     const own = findings.filter((f) => f.ruleId === rule.id);
@@ -158,7 +160,7 @@ export function receipt(given: readonly Finding[], rules: readonly RuleRecord[])
   }
   const known = new Set(rules.map((rule) => rule.id));
   for (const f of findings) if (!known.has(f.ruleId)) notMeasured.push({ ruleId: fromPage(f.ruleId) ?? '', plain: 'No rule of this set has this id.', result: `A finding with the status "${f.status}" names it. Check the spelling of the id.` }); // the status is one of the four: `sound` saw to it
-  return { measured, notMeasured, forAPerson: [...forAPerson, ...ALWAYS_FOR_A_PERSON], grade: grade(findings, rules) };
+  return { measured, byAPerson, notMeasured, forAPerson: [...forAPerson, ...ALWAYS_FOR_A_PERSON], grade: grade(findings, rules) };
 }
 
 /** The receipt as plain text. */
@@ -167,6 +169,7 @@ export function receiptText(r: Receipt): string {
   return [
     `Grade of the measured part: ${r.grade.grade}. ${r.grade.reason}`,
     lines('MEASURED BY A PROGRAM', r.measured.map((line) => `${line.plain} ${line.result}.`)),
+    lines('ANSWERED BY A PERSON', r.byAPerson.map((line) => `${line.plain} ${line.result}.`)),
     lines('NOT MEASURED', r.notMeasured.map((line) => `${line.plain} ${line.result}`)),
     lines('A PERSON MUST STILL CHECK', r.forAPerson),
     'This receipt states what was checked. It does not state that the page meets any standard.',
