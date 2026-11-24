@@ -263,6 +263,31 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<p>Read the <a href="/t">terms</a> and the <a href="/p">privacy note</a> before you <a href="/o">order</a>.</p>', 'targetSize')).toEqual(['holds']);
     });
 
+    it('second review, C14-1 to C14-3: a mouse-only control in an open window inside an inert part, or under an inert mark on an <svg>, fails', async () => {
+      const open = '<script>document.getElementById("d").showModal();</script>';
+      const cases = [
+        `<main inert><dialog id="d" aria-label="Basket"><button class="del" tabindex="-1">Delete</button><button>Close</button></dialog></main>${open}`,
+        `<main inert><dialog id="d" aria-label="Basket"><div class="del" style="cursor:pointer">Delete</div><button>Close</button></dialog></main>${open}<script>document.querySelector(".del").addEventListener("click", () => { document.title = "clicked"; });</script>`,
+        `<style>dialog{width:0;height:0;padding:0;border:0} dialog::backdrop{display:none} .panel{position:fixed;top:20px;left:20px}</style><main inert><dialog id="d" aria-label="Basket"><div class="panel"><div class="del" onclick="document.title='clicked'">Delete</div><button>Close</button></div></dialog></main>${open}`,
+        `<style>dialog{position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none;pointer-events:none} .del{pointer-events:auto}</style><main inert><dialog id="d" aria-label="Basket"><div class="del" onclick="document.title='clicked'">Delete</div></dialog></main>${open}`,
+        `<svg class="del" inert role="button" width="40" height="40" onclick="document.title='clicked'"><rect width="40" height="40"/></svg>`,
+        `<svg inert width="120" height="40"><foreignObject width="120" height="40"><div xmlns="http://www.w3.org/1999/xhtml" class="del" onclick="document.title='clicked'">Delete</div></foreignObject></svg>`,
+      ];
+      for (const html of cases) {
+        const page = await pageOf(html);
+        expect((await run(page, 'keyboardReachable')).filter((f) => f.status === 'fails').map((f) => f.where), html).toEqual([expect.stringContaining('.del')]);
+        // A real click of the mouse at the middle of the control: the page answers it, so the control is live.
+        const at = await page.evaluate(() => { const b = document.querySelector('.del')!.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+        await page.mouse.click(at.x, at.y);
+        if (html.includes('clicked')) expect(await page.title(), html).toBe('clicked');
+        await page.context().close();
+      }
+      // The mark still silences what it does switch off: a part marked inert with no open window in it.
+      expect(await statuses('<main inert><div class="del" onclick="1">Delete</div><button tabindex="-1">Close</button></main>', 'keyboardReachable')).toEqual(['holds']);
+      // A window under another open window stays blocked.
+      expect(await statuses('<main inert><dialog id="d" aria-label="A"><div class="del" onclick="1">Delete</div></dialog></main><dialog id="e" aria-label="B" style="position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none"><button>Close</button></dialog><script>document.getElementById("d").showModal();document.getElementById("e").showModal();</script>', 'keyboardReachable')).toEqual(['holds']);
+    }, 60000);
+
     it('second review, F-24: a pause button that says so in its name counts without the mark; a name that merely holds the word does not', async () => {
       const turn = '<style>@keyframes t { to { transform: rotate(360deg); } } .b { display: inline-block; animation: t 1s linear infinite; }</style><p class="b">Round and round</p>';
       for (const control of ['<button type="button">Pause the moving text</button>', '<button>Pause</button>', '<button>Stop animation</button>', '<button aria-label="Pause slideshow"><svg width="16" height="16"></svg></button>', '<span role="button" tabindex="0">Turn off motion</span>']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['holds']);

@@ -10,6 +10,26 @@ export function keyboardReachable(doc: Document): Finding[] {
   const out: Finding[] = [];
   const walked = '[role="tablist"], [role="menu"], [role="menubar"], [role="listbox"], [role="radiogroup"], [role="toolbar"], [role="tree"], [role="grid"]';
   const flagged = new Set<Element>();
+  // Nothing inside a part marked inert answers: the browser lets no click and no key reach it. Three cases escape the mark
+  // (findings C14-1 to C14-3 of the review of 2026-11-24). The mark is one of HTML, so on an <svg> element it does nothing.
+  // A window opened over the page (showModal) escapes the mark of a part around it, when it is the window on top; a second
+  // window opened over the first blocks it. The browser tells which is on top by what a click in the middle of the window
+  // would land on; where the window has no size or lets clicks through, by what a click on the element itself would land on.
+  const lands = (el: Element): boolean => {
+    const box = el.getBoundingClientRect();
+    const w = doc.defaultView;
+    const x = Math.min(Math.max(box.left + box.width / 2, 0), (w?.innerWidth ?? 1) - 1);
+    const y = Math.min(Math.max(box.top + box.height / 2, 0), (w?.innerHeight ?? 1) - 1);
+    const hit = doc.elementFromPoint(x, y);
+    return hit !== null && el.contains(hit);
+  };
+  const dead = (el: Element): boolean => {
+    let inertPart: Element | null = el.closest('[inert]');
+    while (inertPart && inertPart.namespaceURI !== 'http://www.w3.org/1999/xhtml') inertPart = inertPart.parentElement?.closest('[inert]') ?? null;
+    if (!inertPart) return false;
+    const modal = el.closest('dialog:modal');
+    return !(modal && inertPart !== modal && inertPart.contains(modal) && (lands(modal) || lands(el)));
+  };
   for (const el of doc.querySelectorAll<HTMLElement>('[onclick], [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="checkbox"], [role="switch"]')) {
     if (el.getClientRects().length === 0) continue;
     // A native control takes the Tab key by itself. One case stays in: a native control with tabindex -1 inside a group that
@@ -19,20 +39,7 @@ export function keyboardReachable(doc: Document): Finding[] {
     // A control that is switched off answers no click and needs no Tab stop. The mark aria-disabled switches nothing off:
     // the control still answers a click, so it is judged like any other.
     if (isNative && el.matches(':disabled')) continue;
-    // Nor does anything inside a part marked inert: the browser lets no click and no key reach it.
-    // Only the window on top answers: a second window opened over the first blocks it. The browser tells which is on top
-    // by what a click in the middle of the window would land on.
-    const onTop = (dialog: Element): boolean => {
-      const box = dialog.getBoundingClientRect();
-      const view = doc.defaultView;
-      const x = Math.min(Math.max(box.left + box.width / 2, 0), (view?.innerWidth ?? 1) - 1);
-      const y = Math.min(Math.max(box.top + box.height / 2, 0), (view?.innerHeight ?? 1) - 1);
-      return dialog.contains(doc.elementFromPoint(x, y));
-    };
-    // A window opened over the page (showModal) escapes the inert mark of a part around it, so what it holds is still judged.
-    const inertPart = el.closest('[inert]');
-    const modal = el.closest('dialog:modal');
-    if (inertPart && !(modal && inertPart !== modal && inertPart.contains(modal) && onTop(modal))) continue;
+    if (dead(el)) continue;
     // Inside a group that the arrow keys walk, an item with tabindex -1 is the pattern of the ARIA guide (F-15).
     // The group must still have a way in: one of its items, or the group itself, takes the Tab key.
     // A menu is the exception: the button that opens it moves the focus into it.
@@ -47,7 +54,7 @@ export function keyboardReachable(doc: Document): Finding[] {
   if (view) for (const el of doc.querySelectorAll<HTMLElement>('body *')) {
     if (flagged.has(el) || el.getClientRects().length === 0 || view.getComputedStyle(el).cursor !== 'pointer') continue;
     if (el.parentElement && el.parentElement !== doc.body && view.getComputedStyle(el.parentElement).cursor === 'pointer') continue;
-    if (el.closest(control) || el.querySelector(control) || el.closest('[aria-hidden="true"], [inert]') || view.getComputedStyle(el).visibility !== 'visible') continue;
+    if (el.closest(control) || el.querySelector(control) || el.closest('[aria-hidden="true"]') || dead(el) || view.getComputedStyle(el).visibility !== 'visible') continue;
     out.push({ ruleId, status: 'fails', where: name(el), measured: 'shows the hand pointer of a control, and the Tab key cannot reach it', required: 'reachable and usable by keyboard', fix: 'If this element answers a click, use a <button> element (or <a href> for a link). If it does not, remove cursor: pointer.' });
   }
   // The usual spam trap: a field that no person meets. It sits inside a part marked aria-hidden="true", and it is moved off
@@ -65,7 +72,7 @@ export function keyboardReachable(doc: Document): Finding[] {
   // A native control taken out of the Tab order. Inside a group that the arrow keys walk (tabs, a menu, a toolbar), one stop is right.
   for (const el of doc.querySelectorAll<HTMLElement>('a[href][tabindex], button[tabindex], input[tabindex], select[tabindex], textarea[tabindex]')) {
     // A control that nobody can see or use needs no stop: hidden, or switched off (also by a fieldset around it).
-    if (el.tabIndex >= 0 || el.getClientRects().length === 0 || el.matches(':disabled') || el.closest(walked) || el.closest('[inert]') || doc.defaultView?.getComputedStyle(el).visibility !== 'visible' || unmet(el)) continue;
+    if (el.tabIndex >= 0 || el.getClientRects().length === 0 || el.matches(':disabled') || el.closest(walked) || dead(el) || doc.defaultView?.getComputedStyle(el).visibility !== 'visible' || unmet(el)) continue;
     out.push({ ruleId, status: 'fails', where: name(el), measured: `tabindex ${el.tabIndex} keeps the Tab key from reaching this control`, required: 'reachable by keyboard', fix: 'Remove the negative tabindex, or hide the control from everyone if nobody should use it.' });
   }
   for (const el of doc.querySelectorAll<HTMLElement>('[tabindex]')) {
