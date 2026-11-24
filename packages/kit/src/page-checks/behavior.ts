@@ -274,7 +274,7 @@ export function dialogsAreMarked(doc: Document): Finding[] {
       return (position === 'fixed' || position === 'absolute') && box.width >= doc.documentElement.clientWidth * 0.9 && box.height >= view.innerHeight * 0.9;
     };
     let blocks = !view || doc.querySelector('[inert]') !== null;
-    for (let at: Element | null = el; at && at !== doc.body && !blocks; at = at.parentElement) blocks = covers(at) || [...(at.parentElement?.children ?? [])].slice(0, 200).some((beside) => beside !== at && beside.getClientRects().length > 0 && covers(beside));
+    for (let at: Element | null = el; at && at !== doc.body && !blocks; at = at.parentElement) blocks = covers(at) || [...(at.parentElement?.children ?? [])].slice(0, 200).some((beside) => beside !== at && beside.getClientRects().length > 0 && (covers(beside) || [...beside.querySelectorAll('*')].slice(0, 50).some((inside) => inside.getClientRects().length > 0 && covers(inside))));
     if (blocks && el.tagName !== 'DIALOG' && el.getAttribute('aria-modal') !== 'true') out.push({ ruleId, status: 'fails', where: name(el), measured: 'not marked as a window that blocks the page', required: 'the <dialog> element, or aria-modal="true"', fix: 'Use the <dialog> element and open it with showModal().' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

@@ -445,6 +445,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(trap(''), 'visibleLabels')).toEqual(['fails']);
     });
 
+    it('automated review of 2026-11-24, round 1: a window whose backdrop lies inside a neighboring box blocks the page', async () => {
+      const backdrop = '<div class="layers"><div style="position:fixed;inset:0;background:rgba(0,0,0,0.5)"></div></div>';
+      const box = '<div role="dialog" aria-label="Sign in" style="position:fixed;top:100px;left:100px;width:300px;background:#ffffff"><p>Sign in to go on.</p><button>Close</button></div>';
+      expect(await statuses(`<main><p>Page</p></main>${backdrop}${box}`, 'dialogsAreMarked')).toEqual(['fails']);
+      expect(await statuses(`<main><p>Page</p></main><div class="layers"><p>A note</p></div>${box}`, 'dialogsAreMarked')).toEqual(['holds']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
