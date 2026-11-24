@@ -328,6 +328,7 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     expect(await statuses(buttons('0'), 'keyboardReachable')).not.toContain('fails');
     // Tabs that are all switched off answer no click and need no Tab stop (second automated review of pull request 9).
     expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" disabled>One</button><button role="tab" tabindex="-1" disabled>Two</button></div>', 'keyboardReachable')).not.toContain('fails');
+    expect(await statuses('<div role="tablist" inert><button role="tab" tabindex="-1">One</button><button role="tab" tabindex="-1">Two</button></div>', 'keyboardReachable')).not.toContain('fails');
     // The mark aria-disabled switches no click off: tabs that carry it and have no way in still fail.
     expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" aria-disabled="true">One</button><button role="tab" tabindex="-1" aria-disabled="true">Two</button></div>', 'keyboardReachable')).toContain('fails');
     // A web component with no box of its own (display: contents) whose shadow content is drawn still hides that content from the checks.

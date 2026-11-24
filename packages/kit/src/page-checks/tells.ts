@@ -5,10 +5,10 @@ import type { Finding } from '../shapes.js';
 /** Placeholder words and stock marketing phrases. The list must equal PLACEHOLDER_PHRASES in data/placeholders.ts; a test compares the two. */
 export function placeholderCopy(doc: Document): Finding[] {
   const ruleId = 'tell-placeholder-copy';
-  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'your company', 'company name', 'insert text', 'placeholder', 'john doe', 'jane doe', 'example.com', '555-0', 'acme', 'welcome to our website', 'service 1', 'description goes here', 'todo', '000-000-0000', 'name@email.com', '123 main street', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced'];
-  // A phrase counts as whole words: "unleash" is not in "unleashed". Five of the phrases are also plain words or names of ordinary sentences
+  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'your company', 'company name', 'insert text', 'placeholder', 'john doe', 'jane doe', 'example.com', '555-0', 'acme', 'welcome to our website', 'service 1', 'description goes here', 'todo', '000-000-0000', 'name@email.com', '123 main street', 'anytown', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced'];
+  // A phrase counts as whole words: "unleash" is not in "unleashed". Six of the phrases are also plain words or names of ordinary sentences
   // and of forms, so they count only in a short text (4 words or fewer) that is not the label or the hint of a form field.
-  const slots = ['your company', 'company name', 'placeholder', 'example.com', 'acme'];
+  const slots = ['your company', 'company name', 'placeholder', 'example.com', 'acme', '123 main street'];
   const edge = '[^a-z0-9]';
   const found = (text: string, phrase: string): boolean => new RegExp(`(^|${edge})${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : `($|${edge})`}`).test(text);
   const described = new Set([...doc.querySelectorAll('[aria-describedby]')].flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/)));

@@ -353,6 +353,7 @@ describe('the Brief', () => {
     expect(placeholderIn('Your Company')).toBe('your company');
     expect(placeholderIn('Visit us at 123 Main Street, Franklin, Tennessee 37064.')).toBeNull();
     expect(placeholderIn('123 Main Street')).toBe('123 main street');
+    expect(placeholderIn('123 Main Street, Anytown, USA')).toBe('anytown');
     expect(placeholderIn('For a test account we use an address that ends in example.com')).toBeNull();
     expect(placeholderIn('hello@example.com')).toBe('example.com');
     expect(placeholderIn('Call 555-0142')).toBe('555-0');
