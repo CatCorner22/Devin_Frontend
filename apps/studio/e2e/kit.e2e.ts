@@ -484,6 +484,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<button aria-label="Close"></button>', 'focusIsVisible', `${base} button::before{color:#333333} button:focus{color:#d00000}`)).toEqual(['fails']);
     });
 
+    it('automated review of 2026-11-24, round 3: a ::before with no content, or hidden, shows no change of color', async () => {
+      const base = 'button{outline:none;border:0;background:#ffffff;color:#000000;width:32px;height:32px} button:focus{color:#d00000}';
+      expect(await statuses('<button aria-label="Close"></button>', 'focusIsVisible', `${base} button::before{content:""}`)).toEqual(['fails']);
+      expect(await statuses('<button aria-label="Close"></button>', 'focusIsVisible', `${base} button::before{content:"\\2715";visibility:hidden}`)).toEqual(['fails']);
+      expect(await statuses('<button aria-label="Close"></button>', 'focusIsVisible', `${base} button::before{content:"\\2715";display:none}`)).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
