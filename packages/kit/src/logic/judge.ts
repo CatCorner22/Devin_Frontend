@@ -67,6 +67,8 @@ export interface RepairItem { ruleId: string; where?: string; measured?: string;
 export interface RepairPlan { round: number; stop: boolean; reason: string; items: RepairItem[]; fixedSinceLastRound: string[]; stillOpen: string[] }
 
 const key = (f: Finding): string => `${f.ruleId}|${f.where ?? ''}`;
+/** The key as the plan prints it: the rule id and the place are text from the page, so both pass through `fromPage` (finding F-9 of 2026-11-24). */
+const shown = (f: Finding, record: Map<string, RuleRecord>): string => `${record.has(f.ruleId) ? f.ruleId : (fromPage(f.ruleId) ?? '')}|${fromPage(f.where) ?? ''}`;
 const failing = (findings: readonly Finding[]): Finding[] => findings.filter((f) => f.status === 'fails');
 
 /**
@@ -97,14 +99,14 @@ export function repairPlan(given: readonly (readonly Finding[])[], rules: readon
   const refusedNow = new Set(newest.filter((f) => f.status === 'could-not-measure').map((f) => f.ruleId));
   const answeredNow = new Set(newest.filter((f) => (f.status === 'holds' || f.status === 'not-applicable' || f.status === 'fails') && !refusedNow.has(f.ruleId)).map((f) => f.ruleId));
   const unanswered = before.filter((f) => !answeredNow.has(f.ruleId));
-  const fixedSinceLastRound = unique(before.filter((f) => !openKeys.has(key(f)) && answeredNow.has(f.ruleId)).map(key));
+  const fixedSinceLastRound = unique(before.filter((f) => !openKeys.has(key(f)) && answeredNow.has(f.ruleId)).map((f) => shown(f, record)));
   const rank = (f: Finding): number => { const rule = record.get(f.ruleId); return rule?.level === 'floor' ? 0 : rule?.group === 'fit' && rule.level === 'rule' ? 1 : rule?.level === 'rule' ? 2 : 3; };
   const carried = unanswered.filter((f) => !openKeys.has(key(f))).map((f) => ({ ...f, measured: `not measured again in the newest check (before: ${f.measured ?? 'failed'})` }));
   const ordered = [...now, ...carried].map((f, index) => ({ f, index })).sort((a, b) => rank(a.f) - rank(b.f) || a.index - b.index).map(({ f }) => f);
   // The repair sentence is the rule's own text, never the finding's: a finding comes out of the page, and a page can shape it.
   // The check's own advice travels beside it as `hint`, marked as text from the page (hard rule 10).
   const items = ordered.map((f) => ({ ruleId: record.has(f.ruleId) ? f.ruleId : fromPage(f.ruleId) ?? '', where: fromPage(f.where), measured: fromPage(f.measured), hint: fromPage(f.fix), fix: record.has(f.ruleId) ? (record.get(f.ruleId)?.plain ?? 'Make this rule hold.') : 'This finding names a rule that the kit does not know. A person must look at it.' }));
-  const stillOpen = unique(ordered.map(key));
+  const stillOpen = unique(ordered.map((f) => shown(f, record)));
   const repairsDone = Math.max(0, rounds.length - 1);
   if (rounds.length === 0) return { round: 0, stop: true, reason: 'No check has run, so there is nothing to repair.', items: [], fixedSinceLastRound: [], stillOpen: [] };
   if (ordered.length === 0) return { round: repairsDone, stop: true, reason: 'The newest check reports no failure.', items: [], fixedSinceLastRound, stillOpen };
