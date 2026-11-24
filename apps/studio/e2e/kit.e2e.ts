@@ -352,6 +352,24 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await where(`<input type="image" alt="Search" src="${gif}" style="width:30px;height:30px"><input type="button" value="Add"><input type="submit"><input type="reset">`)).toEqual([]);
     });
 
+    it('second review F-5: a spam-trap field that no person meets is not blamed; a field that people can see or reach still is', async () => {
+      const form = (trap: string): string => `<form><label for="mail">Email</label><input id="mail" type="email">${trap}<button>Send</button></form>`;
+      const both = async (body: string, style = ''): Promise<string[][]> => {
+        const page = await pageOf(body, `button, input { min-height: 44px; min-width: 44px; } ${style}`);
+        const out = [(await run(page, 'visibleLabels')).map((f) => f.status), (await run(page, 'keyboardReachable')).map((f) => f.status)];
+        await page.context().close();
+        return out;
+      };
+      const field = '<input type="text" name="website" tabindex="-1" autocomplete="off">';
+      expect(await both(form(`<div class="hp" aria-hidden="true">${field}</div>`), '.hp { position: absolute; left: -9999px; }')).toEqual([['holds'], ['holds']]);
+      expect(await both(form(`<div aria-hidden="true" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">${field}</div>`))).toEqual([['holds'], ['holds']]);
+      expect(await both(form(`<div aria-hidden="true" style="opacity: 0; position: absolute">${field}</div>`))).toEqual([['holds'], ['holds']]);
+      // One sign alone is not enough. Off the page without the mark: a screen reader still meets the field.
+      expect(await both(form(`<div class="hp">${field}</div>`), '.hp { position: absolute; left: -9999px; }')).toEqual([['fails'], ['fails']]);
+      // The mark without the move: a person sees a field with no label and cannot reach it by keyboard.
+      expect(await both(form(`<div aria-hidden="true">${field}</div>`))).toEqual([['fails'], ['fails']]);
+    });
+
     it('second review F-4: endless movement drawn by ::before or ::after, or written into an SVG drawing, fails; short movement holds', async () => {
       const spin = '@keyframes spin { to { transform: rotate(360deg); } }';
       const motion = async (body: string, style = ''): Promise<[string, string | undefined][]> => {

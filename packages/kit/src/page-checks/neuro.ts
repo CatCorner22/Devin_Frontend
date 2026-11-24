@@ -142,8 +142,20 @@ export function visibleLabels(doc: Document): Finding[] {
     const computed = view.getComputedStyle(el);
     return box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath);
   };
+  // The usual spam trap: a field that no person meets. It sits inside a part marked aria-hidden="true", and it is moved off
+  // the page, shrunk to a pixel, or clipped away, so neither the eye nor a screen reader finds it; only a program fills it in
+  // (finding F-5 of the review of 2026-11-24). Both signs are needed: a field that people can see is judged like any other.
+  const unmet = (el: Element): boolean => {
+    if (!el.closest('[aria-hidden="true"]')) return false;
+    for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
+      const box = at.getBoundingClientRect();
+      const computed = view.getComputedStyle(at);
+      if (box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
+    }
+    return false;
+  };
   const seen = (el: Element): boolean => el.getClientRects().length > 0 && !tiny(el) && view.getComputedStyle(el).visibility === 'visible' && parseFloat(view.getComputedStyle(el).opacity) > 0 && (el.textContent ?? '').trim().length > 0;
-  const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0);
+  const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0 && !unmet(el));
   if (fields.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
   for (const el of fields) {

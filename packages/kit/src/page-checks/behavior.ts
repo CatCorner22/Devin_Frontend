@@ -50,10 +50,22 @@ export function keyboardReachable(doc: Document): Finding[] {
     if (el.closest(control) || el.querySelector(control) || el.closest('[aria-hidden="true"], [inert]') || view.getComputedStyle(el).visibility !== 'visible') continue;
     out.push({ ruleId, status: 'fails', where: name(el), measured: 'shows the hand pointer of a control, and the Tab key cannot reach it', required: 'reachable and usable by keyboard', fix: 'If this element answers a click, use a <button> element (or <a href> for a link). If it does not, remove cursor: pointer.' });
   }
+  // The usual spam trap: a field that no person meets. It sits inside a part marked aria-hidden="true", and it is moved off
+  // the page, shrunk to a pixel, or clipped away, so neither the eye nor a screen reader finds it; only a program fills it in
+  // (finding F-5 of the review of 2026-11-24). Both signs are needed: a field that people can see is judged like any other.
+  const unmet = (el: Element): boolean => {
+    if (!el.closest('[aria-hidden="true"]')) return false;
+    for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
+      const box = at.getBoundingClientRect();
+      const computed = (view ?? window).getComputedStyle(at);
+      if (box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + (view?.scrollY ?? 0) <= 0 || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
+    }
+    return false;
+  };
   // A native control taken out of the Tab order. Inside a group that the arrow keys walk (tabs, a menu, a toolbar), one stop is right.
   for (const el of doc.querySelectorAll<HTMLElement>('a[href][tabindex], button[tabindex], input[tabindex], select[tabindex], textarea[tabindex]')) {
     // A control that nobody can see or use needs no stop: hidden, or switched off (also by a fieldset around it).
-    if (el.tabIndex >= 0 || el.getClientRects().length === 0 || el.matches(':disabled') || el.closest(walked) || el.closest('[inert]') || doc.defaultView?.getComputedStyle(el).visibility !== 'visible') continue;
+    if (el.tabIndex >= 0 || el.getClientRects().length === 0 || el.matches(':disabled') || el.closest(walked) || el.closest('[inert]') || doc.defaultView?.getComputedStyle(el).visibility !== 'visible' || unmet(el)) continue;
     out.push({ ruleId, status: 'fails', where: name(el), measured: `tabindex ${el.tabIndex} keeps the Tab key from reaching this control`, required: 'reachable by keyboard', fix: 'Remove the negative tabindex, or hide the control from everyone if nobody should use it.' });
   }
   for (const el of doc.querySelectorAll<HTMLElement>('[tabindex]')) {
