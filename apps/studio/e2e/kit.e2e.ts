@@ -385,6 +385,18 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await size('.card img{display:block;width:100%;height:50%}')).toEqual(['fails']);
     });
 
+    it('second review, F-21: text in columns is measured by the line of one column', async () => {
+      const text = 'The bakery opens at seven each morning and the first loaves leave the oven a little before that. '.repeat(12);
+      const length = async (style: string): Promise<string[]> => { const page = await pageOf(`<div class="story"><p>${text}</p></div>`, style); const out = (await run(page, 'readingComfort')).filter((f) => f.ruleId === 'neuro-line-length').map((f) => f.status); await page.context().close(); return out; };
+      const base = 'body{font:16px/1.6 Arial} ';
+      expect(await length(base + '.story{width:760px;column-count:2;column-gap:40px}')).toEqual(['holds']);
+      expect(await length(base + '.story{width:1000px;column-width:300px}')).toEqual(['holds']);
+      expect(await length(base + '.story p{width:760px;columns:2}')).toEqual(['holds']);
+      // Columns that are each too wide still fail, and so does the same text in one column.
+      expect(await length(base + '.story{width:2400px;column-count:2;column-gap:40px}')).toEqual(['fails']);
+      expect(await length(base + '.story{width:1200px}')).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

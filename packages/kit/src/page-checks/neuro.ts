@@ -131,10 +131,25 @@ export function readingComfort(doc: Document): Finding[] {
     const lines = new Map<number, number>();
     const range = doc.createRange();
     let drawn = 0;
+    // Text set in columns: a line ends at the edge of its column, so two pieces at one height in two columns are two lines
+    // (finding F-21 of the review of 2026-11-24). The columns are told apart by their place across the box that makes them.
+    let columns: Element | null = el;
+    while (columns && view.getComputedStyle(columns).columnCount === 'auto' && view.getComputedStyle(columns).columnWidth === 'auto') columns = columns.parentElement;
+    const column = (left: number): number => {
+      if (!columns) return 0;
+      const made = view.getComputedStyle(columns);
+      const gap = made.columnGap === 'normal' ? parseFloat(made.fontSize) : parseFloat(made.columnGap) || 0;
+      const inner = columns.clientWidth - parseFloat(made.paddingLeft) - parseFloat(made.paddingRight);
+      const asked = parseFloat(made.columnWidth);
+      const count = Math.max(1, Math.min(parseInt(made.columnCount, 10) || Infinity, asked > 0 ? Math.floor((inner + gap) / (asked + gap)) : Infinity));
+      if (!Number.isFinite(count) || count < 2) return 0;
+      const start = columns.getBoundingClientRect().left + parseFloat(made.borderLeftWidth) + parseFloat(made.paddingLeft);
+      return Math.max(0, Math.min(count - 1, Math.floor((left - start + gap / 2) / ((inner + gap) / count))));
+    };
     for (const node of el.childNodes) {
       if (node.nodeType !== 3) continue;
       range.selectNodeContents(node);
-      for (const rect of range.getClientRects()) { lines.set(Math.round(rect.top), (lines.get(Math.round(rect.top)) ?? 0) + rect.width); drawn += rect.width; }
+      for (const rect of range.getClientRects()) { const key = Math.round(rect.top) + column(rect.left) * 1e6; lines.set(key, (lines.get(key) ?? 0) + rect.width); drawn += rect.width; }
     }
     const letter = drawn / ownText(el).length;
     // The longest line is found in a loop: a text of many thousand lines is too long to hand to Math.max at once
