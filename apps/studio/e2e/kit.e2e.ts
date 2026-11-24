@@ -286,6 +286,18 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(text, 'purpleGradient', 'html{min-height:100%;background:linear-gradient(#fff7ed,#fed7aa)}')).toEqual(['holds']);
     });
 
+    it('C14-8, C14-9: a color inside the address of a picture, or inside a picture given as data, is no color of the page', async () => {
+      const colors = async (style: string): Promise<(string | undefined)[]> => { const page = await pageOf('<div class="hero"><h1>Shop</h1></div>', `body{color:#1a1a1a;background:#ffffff} .hero{height:300px;${style}}`); const out = (await run(page, 'tokenFit')).filter((f) => f.ruleId === 'fit-colors' && f.status === 'fails').map((f) => f.measured); await page.context().close(); return out; };
+      const fade = 'linear-gradient(#ffffff,#d0d5dd)';
+      const picture = (q: string): string => `data:image/svg+xml,<svg xmlns=${q}http://www.w3.org/2000/svg${q} width=${q}8${q} height=${q}8${q}><rect width=${q}8${q} height=${q}8${q} fill=${q}hotpink${q} style=${q}stroke:rgb(255,0,170)${q}/></svg>`;
+      expect(await colors(`background-image:url('${picture('"')}'), ${fade}`)).toEqual([]);
+      expect(await colors(`background-image:url("${picture("'")}"), ${fade}`)).toEqual([]);
+      expect(await colors(`background-image:url("a\\")#ff00aa.png"), linear-gradient(#ffffff,#ffffff)`)).toEqual([]);
+      expect(await colors(`background-image:url(a\\)rgb(255,0,170).png), ${fade}`)).toEqual([]);
+      // A color of the fade itself that the design does not name is still found, also behind a picture.
+      expect(await colors(`background-image:url('${picture('"')}'), linear-gradient(#ffffff,#ff00aa)`)).toEqual(['background fade color rgb(255, 0, 170)']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

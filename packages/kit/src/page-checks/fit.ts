@@ -43,6 +43,28 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     return result;
   };
 
+  // The text of a style value with every url(...) taken out, so that a color written inside the address of a picture, or
+  // inside a picture given as data, is not read as a color of the page. It reads from left to right: inside quotes a
+  // backslash keeps the next letter, and the quote that opened the address closes it (findings C14-8 and C14-9 of 2026-11-24).
+  const withoutUrls = (text: string): string => {
+    let out = '';
+    let i = 0;
+    while (i < text.length) {
+      if (text.slice(i, i + 4).toLowerCase() !== 'url(') { out += text[i]; i += 1; continue; }
+      i += 4;
+      while (text[i] === ' ') i += 1;
+      const quote = text[i] === '"' || text[i] === "'" ? text[i] : '';
+      if (quote !== '') {
+        i += 1;
+        while (i < text.length && text[i] !== quote) i += text[i] === '\\' ? 2 : 1;
+        i += 1;
+      }
+      while (i < text.length && text[i] !== ')') i += text[i] === '\\' ? 2 : 1;
+      i += 1;
+      out += ' ';
+    }
+    return out;
+  };
   const tokenColors = new Map<string, string>();
   const tokenFamilies = new Set<string>();
   const tokenLengths = new Set<number>();
@@ -66,7 +88,7 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     if (hasText) colors.push(['text', style.color]);
     for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) if (parseFloat(style[`border${side}Width`]) > 0 && style[`border${side}Style`] !== 'none') colors.push(['border', style[`border${side}Color`]]);
     // The colors inside a shadow and inside a fade, however the style sheet writes them (F-32). Only the first 2,000 letters are read.
-    for (const [part, text] of [['shadow', style.boxShadow], ['background fade', style.backgroundImage.includes('gradient') ? style.backgroundImage.replace(/url\((?:"[^"]*"|'[^']*'|[^)]*)\)/gi, ' ') : '']] as const) {
+    for (const [part, text] of [['shadow', style.boxShadow], ['background fade', style.backgroundImage.includes('gradient') ? withoutUrls(style.backgroundImage) : '']] as const) {
       for (const color of text.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push([part, color]);
     }
     for (const [part, value] of colors) {
