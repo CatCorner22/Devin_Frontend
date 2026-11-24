@@ -309,8 +309,26 @@ describe('design ID', () => {
     expect(designId({ i: 'URL(hero.png)  no-repeat' })).not.toBe(designId({ i: 'url(Hero.png) no-repeat' }));
     expect(designId({ u: 'Underline' })).toBe(designId({ u: 'underline' }));
   });
+  it('keeps its word on capitals: outside quotation marks, url() and custom names they do not count; inside they do (review of 2026-11-24, F-26)', () => {
+    const same = (a: unknown, b: unknown): boolean => designId({ t: a }) === designId({ t: b });
+    expect(same('URL(a.png)', 'url(a.png)')).toBe(true);
+    expect(same('URL(A.png)', 'url(a.png)')).toBe(false);
+    expect(same('"a\\"B.png"', '"a\\"b.png"')).toBe(false);
+    expect(same('"a\\\\" B', '"a\\\\" b')).toBe(true);
+    expect(same('url("A)B.png")', 'url("A)b.png")')).toBe(false);
+    expect(same('"Hero.png', '"hero.png')).toBe(false);
+    expect(same('var(--Brand)', 'var(--brand)')).toBe(false);
+    expect(same('VAR(--brand)', 'var(--brand)')).toBe(true);
+    expect(same('var(--Brand, RED)', 'var(--Brand, red)')).toBe(true);
+    // A value that is not text is read as its text, and does not throw.
+    expect(same(8, '8')).toBe(true);
+    expect(same(8, 9)).toBe(false);
+    expect(same(true, 'true')).toBe(true);
+    expect(same(null, '')).toBe(true);
+    expect(designId({ t: { a: 1 } })).toMatch(/^rx-[0-9a-f]{16}$/);
+  });
   it('answers within seconds for a value of 320,000 letters, whatever its letters are (review of 2026-11-24, F-27)', () => {
-    for (const piece of ['url(', 'url("', '"', "'", 'u', 'url( ', ') url("a', 'a  ']) {
+    for (const piece of ['url(', 'url("', '"', "'", 'u', 'url( ', ') url("a', 'a  ', '\\\\"', '"\\\\', '--', 'url("\\\\"']) {
       const started = performance.now();
       expect(designId({ '--bg': piece.repeat(Math.ceil(320_000 / piece.length)) })).toMatch(/^rx-[0-9a-f]{16}$/);
       expect(performance.now() - started).toBeLessThan(5000);
