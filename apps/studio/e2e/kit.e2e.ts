@@ -162,6 +162,9 @@ describe('the kit on a page with one planted defect for every check', () => {
     expect((await fit()).join('|')).toMatch(/fit-colors: shadow color/);
     await drop(); await add('background-image: linear-gradient(#ff8800, #ffaa00)');
     expect((await fit()).join('|')).toMatch(/fit-colors: background fade color/);
+    // A picture's address is no color: the part after # in it is not read as one.
+    await drop(); await add('background-image: url("sprite.svg#abc"), linear-gradient(#1a1a1a, #0b5fff)');
+    expect(await fit()).toEqual([]);
     await drop(); await add('border-radius: 9999px; padding: 4px 16px');
     expect(await fit()).toEqual([]);
     await drop(); await add('border-radius: 13px');
@@ -325,6 +328,8 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     expect(await statuses(buttons('0'), 'keyboardReachable')).not.toContain('fails');
     // Tabs that are all switched off answer no click and need no Tab stop (second automated review of pull request 9).
     expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" disabled>One</button><button role="tab" tabindex="-1" disabled>Two</button></div>', 'keyboardReachable')).not.toContain('fails');
+    // The mark aria-disabled switches no click off: tabs that carry it and have no way in still fail.
+    expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" aria-disabled="true">One</button><button role="tab" tabindex="-1" aria-disabled="true">Two</button></div>', 'keyboardReachable')).toContain('fails');
     // A web component with no box of its own (display: contents) whose shadow content is drawn still hides that content from the checks.
     const boxless = await pageOf('<h1>Shop</h1><x-box id="box" style="display: contents"></x-box>');
     await boxless.evaluate(() => { const root = document.getElementById('box')?.attachShadow({ mode: 'open' }); const button = document.createElement('button'); button.textContent = 'Buy'; root?.append(button); });

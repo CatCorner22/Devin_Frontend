@@ -250,6 +250,7 @@ describe('design ID', () => {
     expect(designId({ f: '"Inter Display", serif' })).not.toBe(designId({ f: '"inter display", serif' }));
     expect(designId({ f: '"Inter  Display"' })).not.toBe(designId({ f: '"Inter Display"' }));
     expect(designId({ i: 'url(Hero.png)' })).not.toBe(designId({ i: 'url(hero.png)' }));
+    expect(designId({ i: 'url("Product (1).PNG")' })).not.toBe(designId({ i: 'url("Product (1).png")' }));
     expect(designId({ i: 'URL(hero.png)  no-repeat' })).not.toBe(designId({ i: 'url(Hero.png) no-repeat' }));
     expect(designId({ u: 'Underline' })).toBe(designId({ u: 'underline' }));
   });
@@ -350,6 +351,8 @@ describe('the Brief', () => {
     expect(placeholderIn('Unleash your team')).toBe('unleash');
     expect(placeholderIn('We keep the books of your company in order every month.')).toBeNull();
     expect(placeholderIn('Your Company')).toBe('your company');
+    expect(placeholderIn('Visit us at 123 Main Street, Franklin, Tennessee 37064.')).toBeNull();
+    expect(placeholderIn('123 Main Street')).toBe('123 main street');
     expect(placeholderIn('For a test account we use an address that ends in example.com')).toBeNull();
     expect(placeholderIn('hello@example.com')).toBe('example.com');
     expect(placeholderIn('Call 555-0142')).toBe('555-0');
