@@ -279,3 +279,80 @@ Started at S5 in parallel with the 4 other S5 runs. Written when the runtime ret
 - Report: `memos/lens-structural-integrity-redcell-counts.md`
 
 A second message to the session of E-24, not a new session. Counted as 1 SUB-AGENT run all the same: 7 of 30 used.
+
+### E-28 · 2026-11-24T20:25:50Z · FINDING · auditor: RED CELL
+
+- ID: F-1
+- Class: BLOCKER
+- Where: E-19, test of C11
+- Trigger: Run `git diff 86287c2..HEAD | grep -i -E "^\+.*(WCAG compliant|ADA compliant)"`; it prints 2 lines from the RUN FOLDER
+- Violates: C11's own test; the CRITERION cannot be VERIFIED as written
+- Raised by: RED CELL, LAUNCH E-26, `audits/redcell-plan.md`, finding F-1
+- Lens: structural integrity
+- Forward work stopped: yes — BLOCKER
+
+### E-29 · 2026-11-24T20:25:50Z · FINDING · auditor: RED CELL
+
+- ID: F-2
+- Class: BLOCKER
+- Where: E-19, test of C12; E-1, E-2
+- Trigger: Run `hinshitsu_check.py hinshitsu/kit-repairs`; 8 failures sit in entries that the append-only log forbids rewriting
+- Violates: C12's own test
+- Raised by: RED CELL, LAUNCH E-26, `audits/redcell-plan.md`, finding F-2
+- Lens: trust and controls
+- Forward work stopped: yes — BLOCKER
+
+### E-30 · 2026-11-24T20:25:50Z · FINDING · auditor: RED CELL
+
+- ID: F-3
+- Class: BLOCKER
+- Where: E-19, baseline 86287c2 of C3, C8, C11
+- Trigger: Run the 2 diffs from 9e50434; 10 removed assertion lines and 4 added lines that hold Neon or Vercel lie outside every test
+- Violates: C3 ("no test is ... weakened"), CLAUDE.md hard rule 3
+- Raised by: RED CELL, LAUNCH E-26, `audits/redcell-plan.md`, finding F-3
+- Lens: trust and controls
+- Forward work stopped: yes — BLOCKER
+
+### E-31 · 2026-11-24T20:25:51Z · FINDING · auditor: RED CELL
+
+- ID: F-4
+- Class: BLOCKER
+- Where: D-003, C1
+- Trigger: `git diff --stat 83eced7..86287c2 -- packages/kit/src` prints 5 files, 24 insertions, 9 deletions made after the commit the judge reproduces at
+- Violates: CLAUDE.md hard rule 12; the pattern KIT-46 records
+- Raised by: RED CELL, LAUNCH E-26, `audits/redcell-plan.md`, finding F-4
+- Lens: trust and controls
+- Forward work stopped: yes — BLOCKER
+
+### E-32 · 2026-11-24T20:25:51Z · FINDING · auditor: RED CELL
+
+- ID: F-5
+- Class: BLOCKER
+- Where: E-19, C5; A-2
+- Trigger: Unset PW_CHROMIUM and run the kit browser test: 77 skipped, 1 file failed
+- Violates: C5 is not repeatable as written
+- Raised by: RED CELL, LAUNCH E-26, `audits/redcell-plan.md`, finding F-5
+- Lens: recipient experience
+- Forward work stopped: yes — BLOCKER
+
+### E-33 · 2026-11-24T20:25:51Z · FINDING · auditor: RED CELL
+
+- ID: F-6
+- Class: BLOCKER
+- Where: E-19, C8
+- Trigger: Edit PROGRESS.md line 42 as WU-2 must; the diff rule of C8 then fails
+- Violates: C8 and C7 cannot both pass
+- Raised by: RED CELL, LAUNCH E-26, `audits/redcell-plan.md`, finding F-6
+- Lens: structural integrity
+- Forward work stopped: yes — BLOCKER
+
+### E-34 · 2026-11-24T20:25:51Z · FINDING · auditor: RED CELL
+
+- ID: F-7
+- Class: BLOCKER
+- Where: E-19, C1 to C3
+- Trigger: A judge report with 0 blockers and 0 majors, as on 2026-11-18
+- Violates: V2 and V9: delivery VERIFIED with 0 repairs
+- Raised by: RED CELL, LAUNCH E-26, `audits/redcell-plan.md`, finding F-7
+- Lens: minimal viable sequence
+- Forward work stopped: yes — BLOCKER
