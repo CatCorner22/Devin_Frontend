@@ -51,3 +51,7 @@ Count: 1 probe (E-1); 5 at S5 (4 LENS, 1 RED CELL); 2 WORK UNITS at S7, each 1 s
 - Event: end
 
 Artifacts: evidence/capability-probe.md, evidence/capability-commands.txt, prompts/capability-probe.md, entries E-1 to E-4.
+
+### E-6 · 2026-11-24T20:00:52Z · CORRECTION · ORCHESTRATOR
+
+Corrects E-4. The measured number in E-4 is blank because the command that found the base commit failed. Measured now against origin/claude/brave-mayer-sawqz9 (base 9e504344b5fab5403c2f24f2753affdd0b552758): 30 files changed, 780 insertions(+), 149 deletions(-) (evidence/tier-diffstat.txt). The TIER stays FULL and the planned number stays 30.

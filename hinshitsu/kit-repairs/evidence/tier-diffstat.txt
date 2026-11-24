@@ -1,0 +1,2 @@
+$ git diff --stat 9e504344b5fab5403c2f24f2753affdd0b552758 HEAD -- . ':!hinshitsu' | tail -1
+ 30 files changed, 780 insertions(+), 149 deletions(-)
