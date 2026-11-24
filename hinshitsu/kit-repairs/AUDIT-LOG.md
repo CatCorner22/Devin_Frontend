@@ -467,3 +467,9 @@ SWARM-CAPABLE part 3 (report returns whole): yes
 SWARM-CAPABLE part 4 (identifier not written by the ORCHESTRATOR): yes
 SWARM-CAPABLE part 5 (live test call): yes
 - Mode: SWARM
+
+### E-39 · 2026-11-24T20:28:46Z · CORRECTION · ORCHESTRATOR
+
+- Corrects: E-22, E-23, E-24, E-25, E-26, E-27, and the paths that E-35, E-36 and E-37 cite
+- What was wrong: the 6 report files had names that did not hold the ID of their LAUNCH entry.
+- What is true: the files were renamed with `git mv`, content unchanged: `memos/E-22-lens-recipient-experience.md`, `memos/E-23-lens-minimal-viable-sequence.md`, `memos/E-24-lens-structural-integrity.md`, `memos/E-25-lens-trust-controls.md`, `audits/E-26-redcell-plan.md`, `memos/E-27-lens-structural-integrity-redcell-counts.md`. The LAUNCH entries keep the old paths, because the log is append-only.
