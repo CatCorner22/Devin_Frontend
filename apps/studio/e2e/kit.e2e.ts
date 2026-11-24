@@ -329,6 +329,17 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await fails(sound, style, 'fit-radii')).toEqual([]);
     });
 
+    it('second review, F-11: a focus mark in a clear color, or a color that moves by one step, is no visible focus mark', async () => {
+      const controls = '<a href="/a">Menu</a> <button>Order</button>';
+      const base = 'a{text-decoration:none} a,button{outline:none;color:#000000;background:#ffffff;border:1px solid #333333}';
+      const unseen = ['a:focus,button:focus{outline:1px solid transparent}', 'a:focus,button:focus{color:#000001}', 'a:focus,button:focus{box-shadow:0 0 0 3px transparent}', 'a:focus,button:focus{box-shadow:0 0 0 3px rgba(0,0,0,0.02)}', 'a:focus,button:focus{border-color:#333334}', 'a:focus,button:focus{background:#fffffe}', 'a:focus,button:focus{outline:3px solid rgba(0,0,255,0.05)}'];
+      for (const style of unseen) expect(await statuses(controls, 'focusIsVisible', `${base} ${style}`), style).toEqual(['fails', 'fails']);
+      const seen = ['a:focus-visible,button:focus-visible{outline:2px solid #0b5fff}', 'a:focus,button:focus{box-shadow:0 0 0 3px #0b5fff}', 'a:focus,button:focus{background:#ffe08a}', 'a:focus,button:focus{border-color:#0b5fff}', 'a:focus,button:focus{text-decoration:underline}', 'a:focus,button:focus{color:#0b5fff}'];
+      for (const style of seen) expect(await statuses(controls, 'focusIsVisible', `${base} ${style}`), style).toEqual(['holds']);
+      // The ring that the browser itself draws still counts.
+      expect(await statuses(controls, 'focusIsVisible')).toEqual(['holds']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

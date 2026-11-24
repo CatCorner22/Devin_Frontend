@@ -87,7 +87,34 @@ export function focusIsVisible(doc: Document): Finding[] {
   const view = doc.defaultView;
   if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-  const look = (el: Element): string => { const s = view.getComputedStyle(el); return [s.outlineStyle === 'none' ? '0' : s.outlineWidth, s.outlineColor, s.boxShadow, s.borderTopColor, s.borderBottomColor, s.borderBottomWidth, s.backgroundColor, s.textDecorationLine].join('|'); };
+// A change counts only when an eye can see it (finding F-11 of the review of 2026-11-24). Each color is painted on a canvas,
+  // off the page, and read back as four numbers. An outline, a border, or a shadow in a clear color is no mark, and a color
+  // that moves by less than 30 of 255 steps (#000000 to #000001) is no change. Whether the change stands out enough from
+  // what is around it (3 to 1, as WCAG 2.4.13 asks) is not measured.
+  const pen = doc.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  if (!pen) return [{ ruleId, status: 'could-not-measure', measured: 'this browser gives no canvas to compare colors on' }];
+  const rgba = (color: string): number[] => {
+    pen.clearRect(0, 0, 1, 1);
+    pen.fillStyle = '#000';
+    pen.fillStyle = color;
+    pen.fillRect(0, 0, 1, 1);
+    // The canvas hands back the color as it lies on a clear ground: a clear color is four zeros.
+    const [r = 0, g = 0, b = 0, alpha = 0] = pen.getImageData(0, 0, 1, 1).data;
+    return [r * alpha / 255, g * alpha / 255, b * alpha / 255, alpha];
+  };
+  const far = (one: number[], other: number[]): boolean => one.reduce((sum, value, i) => sum + Math.abs(value - (other[i] ?? 0)), 0) >= 30;
+  const colorsIn = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi;
+  interface Look { outline: number; shape: string; colors: number[][] }
+  const look = (el: Element): Look => {
+    const s = view.getComputedStyle(el);
+    const outlineColor = rgba(s.outlineColor);
+    const outline = s.outlineStyle === 'none' || (outlineColor[3] ?? 0) < 51 ? 0 : parseFloat(s.outlineWidth);
+    const shadows = (s.boxShadow.slice(0, 2000).match(colorsIn) ?? []).map(rgba);
+    const shadow = shadows.some((c) => (c[3] ?? 0) >= 51) ? s.boxShadow.slice(0, 2000).replace(colorsIn, '') : '';
+    const edge = (rgba(s.borderBottomColor)[3] ?? 0) < 51 ? '0' : s.borderBottomWidth;
+    return { outline, shape: [shadow, edge, s.textDecorationLine, s.fontWeight].join('|'), colors: [outline > 0 ? outlineColor : [], ...(shadow === '' ? [] : shadows), rgba(s.borderTopColor), rgba(s.borderBottomColor), rgba(s.backgroundColor), rgba(s.color)] };
+  };
+  const same = (one: Look, other: Look): boolean => one.outline === other.outline && one.shape === other.shape && one.colors.length === other.colors.length && one.colors.every((color, i) => !far(color, other.colors[i] ?? []));
   const controls = [...doc.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [tabindex]')].filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled && el.getAttribute('type') !== 'hidden');
   if (controls.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const before = doc.activeElement as HTMLElement | null;
@@ -102,7 +129,7 @@ export function focusIsVisible(doc: Document): Finding[] {
     const focused = look(el);
     el.blur();
     if (!seen) continue;
-    if (focused === rest) out.push({ ruleId, status: 'fails', where: name(el), measured: 'looks the same with and without the keyboard focus', required: 'a visible focus mark', fix: 'Add a :focus-visible style with an outline of at least 2 px in a color that stands out from the background.' });
+    if (same(focused, rest)) out.push({ ruleId, status: 'fails', where: name(el), measured: 'looks the same with and without the keyboard focus', required: 'a visible focus mark', fix: 'Add a :focus-visible style with an outline of at least 2 px in a color that stands out from the background.' });
   }
   before?.focus({ preventScroll: true });
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
