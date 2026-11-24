@@ -370,6 +370,24 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await both(form(`<div aria-hidden="true">${field}</div>`))).toEqual([['fails'], ['fails']]);
     });
 
+    it('second review F-6: a box that hides an ornament over its edge is not blamed for cut-off text; a box that cuts words still is', async () => {
+      const spacing = async (body: string, style = ''): Promise<[string, string | undefined][]> => {
+        const page = await pageOf(body, style);
+        const out = (await run(page, 'survivesTextSpacing')).map((f): [string, string | undefined] => [f.status, f.where]);
+        await page.context().close();
+        return out;
+      };
+      const hero = '.hero { position: relative; overflow: hidden; padding: 24px; } .dot { position: absolute; right: -80px; top: -40px; width: 240px; height: 240px; border-radius: 50%; background: #dde; }';
+      expect(await spacing('<section class="hero"><div class="dot"></div><h1>Fresh bread every morning</h1><p>Baked on the spot since 1987.</p></section>', hero)).toEqual([['holds', undefined]]);
+      // An ornament below the fold of the box, and a picture that is cropped on purpose.
+      expect(await spacing('<section class="hero" style="height: 200px"><h1>Fresh bread</h1><div class="dot" style="top: 120px"></div></section>', hero)).toEqual([['holds', undefined]]);
+      expect(await spacing('<figure style="overflow: hidden; width: 200px; height: 100px; margin: 0"><img alt="" width="400" height="300" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="></figure><p>Our shop.</p>')).toEqual([['holds', undefined]]);
+      // Words that are cut still fail: at the bottom, at the side, and in the same box as an ornament.
+      expect(await spacing('<div id="card" style="height: 20px; width: 120px; overflow: hidden">These words need several full lines of room to be read</div>')).toEqual([['fails', 'div#card']]);
+      expect(await spacing('<div id="row" style="width: 120px; overflow: hidden; white-space: nowrap">These words need more room than one short line has</div>')).toEqual([['fails', 'div#row']]);
+      expect(await spacing('<section class="hero" style="height: 40px; padding: 0"><div class="dot"></div><p>Baked on the spot since 1987, and sold in three shops in the old town every day.</p><p>Second paragraph.</p></section>', hero)).toEqual([['fails', 'section.hero']]);
+    });
+
     it('second review F-4: endless movement drawn by ::before or ::after, or written into an SVG drawing, fails; short movement holds', async () => {
       const spin = '@keyframes spin { to { transform: rotate(360deg); } }';
       const motion = async (body: string, style = ''): Promise<[string, string | undefined][]> => {

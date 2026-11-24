@@ -187,14 +187,27 @@ export function survivesTextSpacing(doc: Document): Finding[] {
     // Every element that holds text of its own, also beside a line break or another element.
     if (el.getClientRects().length === 0 || ![...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '')) continue;
     const hides = (value: string): boolean => value === 'hidden' || value === 'clip';
-    // The box that cuts the text off is the text's own box or one around it.
+    // The box that cuts the text off is the text's own box or one around it. What counts is where the letters themselves lie:
+    // a box that hides an ornament which reaches over its edge, while every word stays inside, cuts no text
+    // (finding F-6 of the review of 2026-11-24).
+    const letters: DOMRect[] = [];
+    for (const node of el.childNodes) {
+      if (node.nodeType !== 3 || (node.textContent ?? '').trim() === '') continue;
+      const range = doc.createRange();
+      range.selectNodeContents(node);
+      letters.push(...range.getClientRects());
+    }
     let box: HTMLElement | null = el;
     let cutAcross = false;
     let cutDown = false;
     for (; box && box !== doc.body && !cutAcross && !cutDown; box = cutAcross || cutDown ? box : box.parentElement) {
       const computed: CSSStyleDeclaration = view.getComputedStyle(box);
-      cutAcross = hides(computed.overflowX) && box.scrollWidth > box.clientWidth + 1;
-      cutDown = hides(computed.overflowY) && box.scrollHeight > box.clientHeight + 1;
+      if (!hides(computed.overflowX) && !hides(computed.overflowY)) continue;
+      const outer = box.getBoundingClientRect();
+      const left = outer.left + box.clientLeft;
+      const top = outer.top + box.clientTop;
+      cutAcross = hides(computed.overflowX) && letters.some((r) => r.width > 0 && (r.right > left + box!.clientWidth + 1 || r.left < left - 1));
+      cutDown = hides(computed.overflowY) && letters.some((r) => r.height > 0 && (r.bottom > top + box!.clientHeight + 1 || r.top < top - 1));
     }
     if (box && box !== doc.body && (cutAcross || cutDown) && !tiny(box) && !tiny(el) && !seen.has(box) && seen.add(box)) out.push({ ruleId, status: 'fails', where: name(box), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
   }
