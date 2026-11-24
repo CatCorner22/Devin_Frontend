@@ -473,3 +473,9 @@ SWARM-CAPABLE part 5 (live test call): yes
 - Corrects: E-22, E-23, E-24, E-25, E-26, E-27, and the paths that E-35, E-36 and E-37 cite
 - What was wrong: the 6 report files had names that did not hold the ID of their LAUNCH entry.
 - What is true: the files were renamed with `git mv`, content unchanged: `memos/E-22-lens-recipient-experience.md`, `memos/E-23-lens-minimal-viable-sequence.md`, `memos/E-24-lens-structural-integrity.md`, `memos/E-25-lens-trust-controls.md`, `audits/E-26-redcell-plan.md`, `memos/E-27-lens-structural-integrity-redcell-counts.md`. The LAUNCH entries keep the old paths, because the log is append-only.
+
+### E-40 · 2026-11-24T20:29:11Z · CORRECTION · ORCHESTRATOR
+
+- Corrects: E-39
+- What was wrong: after the rename of E-39 the check script found no report at the paths the 6 LAUNCH entries name, and reported 10 failures where it had reported 6.
+- What is true: the rename is undone with `git mv`; the 6 files are again at the paths that E-22 to E-27 name, content unchanged. 6 failures of the form "file name does not hold" the LAUNCH ID stay for these 6 files and cannot be cleared, because the LAUNCH entries cannot be rewritten. Each later report path holds the ID of its LAUNCH entry.
