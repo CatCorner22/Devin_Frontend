@@ -73,3 +73,7 @@ D-001: the run starts on work that exists (E-2). D-002: no change to the DELIVER
 - Event: end
 
 Artifacts: FRAMEWORK.md, CONNECTIONS.md, COVERAGE-LEDGER.md, MINDMAP.md, SESSION-STATE.md.
+
+### E-10 · 2026-11-24T20:02:11Z · CORRECTION · ORCHESTRATOR
+
+Corrects E-1. E-1 wrote its 2 paths without backticks and put a comma after the identifier, so `scripts/hinshitsu_check.py` reports "E-1 LAUNCH scope file is missing" and "E-1 LAUNCH has no saved report". Both files exist: Scope: `prompts/capability-probe.md`; Report: `evidence/capability-probe.md`; SUB-AGENT identifier: 8694a10570204f93b16215c4c38b6bbd. E-1 stays as written (rule 9.6); if the script still fails on E-1 at delivery, the delivery report states it.
