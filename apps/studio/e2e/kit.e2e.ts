@@ -427,6 +427,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(svg(''), 'noEndlessMotion')).toEqual(['fails']);
     });
 
+    it('automated review of 2026-11-24, round 1: the label "Address line 1" over a real field is no filler; the same words as a line of text are', async () => {
+      expect(await statuses('<form><label for="a">Address line 1</label><input id="a" autocomplete="address-line1"><label for="b">Address line 2</label><input id="b"></form>', 'placeholderCopy')).toEqual(['holds']);
+      expect(await statuses('<footer><p>Business Name</p><p>Address line 1</p></footer>', 'placeholderCopy')).toContain('fails');
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
