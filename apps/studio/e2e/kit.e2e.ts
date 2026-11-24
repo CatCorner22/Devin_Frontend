@@ -266,6 +266,24 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect((await comfort(`<ul style="width:1100px"><li><p style="max-width:60ch;line-height:1.6">${text}</p></li></ul>`))['neuro-line-length']).toBe('holds');
     });
 
+    it('automated review, round 9: parts that are not shown are not judged; packed links and a tab group with no way in are', async () => {
+      // A closed <dialog> without a name is no window that a visitor meets.
+      expect(await statuses('<h1>Shop</h1><p>Text.</p><dialog><p>Later.</p></dialog>', 'dialogsAreMarked')).not.toContain('fails');
+      // A web component and an endless animation inside a hidden part.
+      const hidden = await pageOf('<h1>Shop</h1><div hidden><x-box id="box"></x-box><p class="spin">x</p></div>', '@keyframes turn { to { transform: rotate(360deg); } } .spin { animation: turn 1s linear infinite; }');
+      await hidden.evaluate(() => { document.getElementById('box')?.attachShadow({ mode: 'open' }); });
+      expect(await run(hidden, 'unseenParts')).toEqual([]);
+      expect((await run(hidden, 'noEndlessMotion')).map((f) => f.status)).not.toContain('fails');
+      await hidden.context().close();
+      // Small links side by side in a nav are targets, not words of a sentence; a link inside a sentence is still exempt.
+      expect(await statuses('<nav style="font-size:8px;line-height:1"><a href="#a">Home</a><a href="#b">Shop</a><a href="#c">Help</a></nav>', 'targetSize')).toContain('fails');
+      expect(await statuses('<p>Read the <a href="#a">terms</a> before you order.</p>', 'targetSize')).not.toContain('fails');
+      // Tabs that all carry tabindex -1: the Tab key finds no way into the group.
+      const tabs = (first: string) => `<div role="tablist"><span role="tab" tabindex="${first}" style="display:inline-block;padding:12px">One</span><span role="tab" tabindex="-1" style="display:inline-block;padding:12px">Two</span></div>`;
+      expect(await statuses(tabs('-1'), 'keyboardReachable')).toContain('fails');
+      expect(await statuses(tabs('0'), 'keyboardReachable')).not.toContain('fails');
+    });
+
     it('F-24: a button made with input and a button named by a letter that draws nothing have no name', async () => {
       const where = async (html: string): Promise<(string | undefined)[]> => {
         const page = await pageOf(html);

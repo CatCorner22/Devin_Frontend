@@ -35,5 +35,9 @@
 | 2026-11-18, 05:55 EST | "You go ahead and make the changes.  Please conduct a full review." (after the builder wrote instructions for another tool to build the North Star kit: neurodivergence rules, states, craft rules, fit checks, a blind test). | D58 |
 | 2026-11-18, 06:27 EST | "proceed" (after the builder set out its plan for the kit: a new package, the kit not yet connected to the Studio or the Fitter, three reviewers and a judge, one pull request, not merged). | D58 |
 | 2026-11-18, 12:00 EST | "I trust you.  I defer to you.  Decide for me.  Proceed." (after the builder asked for five decisions: the audit advisory against `picomatch`; hard rule 5 and the kit's records; the grade and the person-only floors; the reading of the owner's words in D58; the minor findings and a second review). | D59 |
+| 2026-11-18, 12:07 EST | "merge" (after the builder wrote that merging pull requests 5 and 6 was not among the five choices and stayed with the owner). The builder merged pull request 5 at once, and pull request 6 after CI passed on it. | D59 |
+| 2026-11-18, 12:18 EST | "please pause for now.  I am at 90% of usage (10% remaining) and I really need the hinshitsu skill pack done". The builder stopped. Nothing in this repository names that skill pack. | none |
+| 2026-11-24, 12:50 EST | "continue.  Also, I do not want to use Neon or Vercel." | D60 |
+| 2026-11-24, 12:51 EST | "Please also do research to get use closer to the North Star (indistinguishable vibe-coding for frontend UI and UX that is indistinguishable from the best human coders)." | D60 |
 
 **Entries with no owner statement behind them.** D8, D9, D10, D11, D15, D20, D21, D24, D25, D27, D28 (replaced by D53), D29, D30, D31, D32, D35, D36, D37. `DECISIONS.md` marks each as "Recorded" or "Pending the owner".

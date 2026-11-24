@@ -14,7 +14,10 @@ export function keyboardReachable(doc: Document): Finding[] {
     if (el.getClientRects().length === 0) continue;
     if (native.includes(el.tagName) && !(el.tagName === 'A' && !el.hasAttribute('href'))) continue;
     // Inside a group that the arrow keys walk, an item with tabindex -1 is the pattern of the ARIA guide (F-15).
-    if (el.hasAttribute('tabindex') && el.tabIndex < 0 && el.closest(walked)) continue;
+    // The group must still have a way in: one of its items, or the group itself, takes the Tab key.
+    // A menu is the exception: the button that opens it moves the focus into it.
+    const group = el.hasAttribute('tabindex') && el.tabIndex < 0 ? el.closest<HTMLElement>(walked) : null;
+    if (group && (group.getAttribute('role') === 'menu' || group.tabIndex >= 0 || [...group.querySelectorAll<HTMLElement>('[role], a[href], button, input, select, textarea, [tabindex]')].some((item) => item.tabIndex >= 0 && item.getClientRects().length > 0))) continue;
     if ((el.tabIndex < 0 || !el.hasAttribute('tabindex')) && flagged.add(el)) out.push({ ruleId, status: 'fails', where: name(el), measured: 'answers a click, and the Tab key cannot reach it', required: 'reachable and usable by keyboard', fix: 'Use a <button> element (or <a href> for a link) in place of this element.' });
   }
   // A click that a script attached leaves no mark in the page that this check can read. The hand-shaped pointer is the usual
@@ -96,7 +99,7 @@ export function targetSize(doc: Document): Finding[] {
     });
   };
   for (const el of targets) {
-    const inSentence = el.tagName === 'A' && view.getComputedStyle(el).display === 'inline' && (el.parentElement?.textContent ?? '').trim().length > (el.textContent ?? '').trim().length;
+    const inSentence = el.tagName === 'A' && view.getComputedStyle(el).display === 'inline' && [...(el.parentElement?.childNodes ?? [])].some((n) => n.nodeType === 3 && /[^\s|·•,;:/()\-–—]/.test(n.textContent ?? ''));
     if (inSentence) continue;
     let box = boxOf(el);
     // A skip link is one pixel large until it has the focus; it is measured as the person meets it (F-13).
@@ -150,7 +153,8 @@ export function dialogsAreMarked(doc: Document): Finding[] {
   const ruleId = 'behavior-dialog-marked';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const marks = 'dialog, [role="dialog"], [role="alertdialog"]';
-  const dialogs = [...doc.querySelectorAll<HTMLElement>(marks)];
+  // A window that is not shown (a closed <dialog>, a hidden part) is not judged: no visitor meets it.
+  const dialogs = [...doc.querySelectorAll<HTMLElement>(marks)].filter((el) => el.getClientRects().length > 0);
   const out: Finding[] = [];
   // A window with no mark at all (finding F-8): a fixed layer that covers the window, lies on top, takes the pointer, and
   // has page content beside it. A page whose whole content sits in one fixed shell has nothing beside the shell, and holds.
