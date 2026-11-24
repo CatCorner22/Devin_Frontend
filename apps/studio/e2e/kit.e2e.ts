@@ -452,6 +452,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(`<main><p>Page</p></main><div class="layers"><p>A note</p></div>${box}`, 'dialogsAreMarked')).toEqual(['holds']);
     });
 
+    it('automated review of 2026-11-24, round 1: a text color that changes on a button with no text and an icon of its own color is no focus mark', async () => {
+      const style = 'button{outline:none;border:0;background:#ffffff;color:#000000} button:focus{color:#d00000}';
+      expect(await statuses('<button aria-label="Close"><svg width="24" height="24"><path fill="#333333" d="M0 0h24v24H0z"/></svg></button>', 'focusIsVisible', style)).toEqual(['fails']);
+      expect(await statuses('<button aria-label="Close"><svg width="24" height="24"><path fill="currentColor" d="M0 0h24v24H0z"/></svg></button>', 'focusIsVisible', style)).toEqual(['holds']);
+      expect(await statuses('<button>Close</button>', 'focusIsVisible', style)).toEqual(['holds']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

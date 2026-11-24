@@ -105,6 +105,12 @@ export function focusIsVisible(doc: Document): Finding[] {
   const far = (one: number[], other: number[]): boolean => one.reduce((sum, value, i) => sum + Math.abs(value - (other[i] ?? 0)), 0) >= 30;
   const colorsIn = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi;
   interface Look { outline: number; shape: string; colors: number[][] }
+  // An edge of no width shows no color, though its color follows the text color. The color of the text shows only where text is drawn. A button that holds an icon and no word shows the colors of the
+  // icon's shapes; a shape drawn in currentColor follows the text color, a shape with a color of its own does not.
+  const ink = (el: Element, s: CSSStyleDeclaration): number[][] => {
+    if ((el.textContent ?? '').trim() !== '' || el.matches('input, select, textarea')) return [rgba(s.color)];
+    return [...el.querySelectorAll('svg, path, circle, rect, line, polyline, polygon, ellipse, use')].slice(0, 8).flatMap((shape) => { const drawn = view.getComputedStyle(shape); return [rgba(drawn.fill), rgba(drawn.stroke)]; });
+  };
   const look = (el: Element): Look => {
     const s = view.getComputedStyle(el);
     const outlineColor = rgba(s.outlineColor);
@@ -112,7 +118,7 @@ export function focusIsVisible(doc: Document): Finding[] {
     const shadows = (s.boxShadow.slice(0, 2000).match(colorsIn) ?? []).map(rgba);
     const shadow = shadows.some((c) => (c[3] ?? 0) >= 51) ? s.boxShadow.slice(0, 2000).replace(colorsIn, '') : '';
     const edge = (rgba(s.borderBottomColor)[3] ?? 0) < 51 ? '0' : s.borderBottomWidth;
-    return { outline, shape: [shadow, edge, s.textDecorationLine, s.fontWeight].join('|'), colors: [outline > 0 ? outlineColor : [], ...(shadow === '' ? [] : shadows), rgba(s.borderTopColor), rgba(s.borderBottomColor), rgba(s.backgroundColor), rgba(s.color)] };
+    return { outline, shape: [shadow, edge, s.textDecorationLine, s.fontWeight].join('|'), colors: [outline > 0 ? outlineColor : [], ...(shadow === '' ? [] : shadows), parseFloat(s.borderTopWidth) > 0 ? rgba(s.borderTopColor) : [], parseFloat(s.borderBottomWidth) > 0 ? rgba(s.borderBottomColor) : [], rgba(s.backgroundColor), ...ink(el, s)] };
   };
   const same = (one: Look, other: Look): boolean => one.outline === other.outline && one.shape === other.shape && one.colors.length === other.colors.length && one.colors.every((color, i) => !far(color, other.colors[i] ?? []));
   const controls = [...doc.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [tabindex]')].filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled && el.getAttribute('type') !== 'hidden');
