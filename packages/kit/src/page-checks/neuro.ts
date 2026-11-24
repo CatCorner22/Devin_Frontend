@@ -30,7 +30,19 @@ export function noEndlessMotion(doc: Document): Finding[] {
   for (const el of doc.querySelectorAll('marquee, blink')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'text that moves or blinks without end', required: 'still text', fix: 'Replace the moving text with still text.' });
   // A pause control counts only if a person can see it.
   // Only a visible button that the builder marked for this job counts. A label that merely holds the word "stop" does not (finding F-6).
-  const hasPause = [...doc.querySelectorAll('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
+  // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
+  // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
+  // (finding F-10 of the review of 2026-11-24). Its size as a target is the business of the target-size rule.
+  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => {
+    if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible') return false;
+    for (let up: Element | null = el; up; up = up.parentElement) if (parseFloat(view.getComputedStyle(up).opacity) < 0.1) return false;
+    const box = el.getBoundingClientRect();
+    const wide = Math.max(doc.documentElement.scrollWidth, view.innerWidth);
+    if (box.width < 8 || box.height < 8 || box.right + view.scrollX <= 0 || box.bottom + view.scrollY <= 0 || box.left + view.scrollX >= wide) return false;
+    if (el.closest('[aria-hidden="true"], [inert]') || el.matches(':disabled, [aria-disabled="true"]') || el.tabIndex < 0) return false;
+    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}`;
+    return named.trim() !== '';
+  });
   const required = 'at most 5 s, or a control that pauses it';
   const fix = 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with the attribute data-pause-motion.';
   for (const el of doc.querySelectorAll('body *')) {
@@ -267,7 +279,19 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
   const ruleId = 'neuro-motion-can-stop';
   const view = doc.defaultView as (Window & { MutationObserver?: typeof MutationObserver }) | null;
   if (!view || !view.MutationObserver) return Promise.resolve([{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }]);
-  const hasPause = [...doc.querySelectorAll('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
+  // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
+  // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
+  // (finding F-10 of the review of 2026-11-24). Its size as a target is the business of the target-size rule.
+  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => {
+    if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible') return false;
+    for (let up: Element | null = el; up; up = up.parentElement) if (parseFloat(view.getComputedStyle(up).opacity) < 0.1) return false;
+    const box = el.getBoundingClientRect();
+    const wide = Math.max(doc.documentElement.scrollWidth, view.innerWidth);
+    if (box.width < 8 || box.height < 8 || box.right + view.scrollX <= 0 || box.bottom + view.scrollY <= 0 || box.left + view.scrollX >= wide) return false;
+    if (el.closest('[aria-hidden="true"], [inert]') || el.matches(':disabled, [aria-disabled="true"]') || el.tabIndex < 0) return false;
+    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}`;
+    return named.trim() !== '';
+  });
   if (hasPause) return Promise.resolve([{ ruleId, status: 'holds', measured: 'a pause control is in view' }]);
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const start = view.performance.now();

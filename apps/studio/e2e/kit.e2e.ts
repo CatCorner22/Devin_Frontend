@@ -255,6 +255,28 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(Date.now() - started).toBeLessThan(40000);
     }, 60000);
 
+    it('second review, F-10: a pause control that nobody can see or reach does not switch the motion floor off', async () => {
+      const turn = '<style>@keyframes t { to { transform: rotate(360deg); } } .b { display: inline-block; animation: t 1s linear infinite; }</style><p class="b">Round and round</p>';
+      const hidden = [
+        '<button data-pause-motion style="opacity:0;position:absolute;left:-9999px;width:1px;height:1px" tabindex="-1" aria-hidden="true"></button>',
+        '<button data-pause-motion style="opacity:0">Pause</button>',
+        '<div style="opacity:0"><button data-pause-motion>Pause</button></div>',
+        '<button data-pause-motion style="position:absolute;left:-9999px">Pause</button>',
+        '<button data-pause-motion style="width:1px;height:1px;padding:0;border:0;overflow:hidden">Pause</button>',
+        '<button data-pause-motion tabindex="-1">Pause</button>',
+        '<button data-pause-motion></button>',
+        '<button data-pause-motion disabled>Pause</button>',
+        '<div aria-hidden="true"><button data-pause-motion>Pause</button></div>',
+        '<span role="button" data-pause-motion>Pause</span>',
+      ];
+      for (const control of hidden) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['fails']);
+      for (const control of ['<button data-pause-motion>Pause</button>', '<button data-pause-motion aria-label="Pause the movement"><svg width="16" height="16"></svg></button>', '<span role="button" tabindex="0" data-pause-motion>Pause</span>']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['holds']);
+      // The check of movement that a script drives reads the control in the same way.
+      const page = await pageOf('<p id="s">Offer 0</p><button data-pause-motion style="opacity:0">Pause</button><script>let n = 0; setInterval(() => { document.getElementById("s").textContent = "Offer " + (++n); }, 700);</script>');
+      expect((await run(page, 'noScriptedMotion')).map((f) => f.status)).toEqual(['fails']);
+      await page.context().close();
+    }, 60000);
+
     it('F-13: text hidden on purpose for screen readers, and a skip link, fail neither the spacing floor nor the size floor', async () => {
       const body = '<a class="skip" href="#main">Skip to the main part</a><p id="main">Read <span class="sr">this hidden note for screen readers, which is long enough to be cut</span> on.</p>';
       expect(await statuses(body, 'survivesTextSpacing')).toEqual(['holds']);
