@@ -4,7 +4,7 @@ Last rewritten: 2026-11-24 — log entry E-7
 
 <!-- from the log: start -->
 Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
-- Newest CRITERIA entry: none
+- Newest CRITERIA entry: E-19 (PROPOSED)
 - STAGE now running: none
 - Open FINDINGS: none
 <!-- from the log: end -->

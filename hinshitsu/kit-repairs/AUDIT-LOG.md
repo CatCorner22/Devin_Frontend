@@ -164,3 +164,51 @@ Artifacts: entries VOC and GAP, evidence/s3-facts.txt.
 - Event: start
 
 SKILL.md read whole: /opt/.devin/plugins_cache/cache/account-upload_user-hinshitsu-c1ff27d2/9d4cbe73a691fdaa8a8958dbfbf8d51742c2be63fd0679b5315429be49141784/skills/hinshitsu-baby-bird-plan/SKILL.md, 10810 bytes, SHA-256 a78531ae274b8f69e947ce88e41a213c84c58983ae2907006a2b4b355092319c. Conductor SKILL.md SHA-256 7df73e003a007bf200541911c42a518e8747708e793e387ed120df4c4ebcd260. GLOSSARY.md SHA-256 92b526977fb5d1fc507f934ddba2a5c43144cfbe477c75adba9b7219bb46d599.
+
+### E-16 · 2026-11-24T20:04:47Z · CORRECTION · ORCHESTRATOR
+
+Corrects E-12 (VOC), part O1. The 3 `gh api` commands in evidence/s3-facts.txt failed with "Bad credentials (HTTP 401)", so that file does not show the state of pull request 9. Replaced by evidence/pr9-refs.txt: GitHub serves `refs/pull/9/merge`, a ref it keeps only for a pull request that is open, and `refs/pull/9/head` equals the branch head. The refs of CatCorner22/Frontend at this time are saved whole in evidence/frontend-refs-before.txt as the baseline for the CRITERION on that repository.
+
+### E-17 · 2026-11-24T20:04:47Z · ASSUMPTION · ORCHESTRATOR
+
+A-1 The judge session 3c6a5f2597bf40daa4dd5ed38e214bca ends with a report that rules on each of the 125 attempts. Rests on it: D-003 (the judge report names what WU-1 repairs). EVIDENCE: not verified; the judge is running. If false: the ORCHESTRATOR sends the USER a card, because C1 and C2 then have no list to test against.
+A-2 Chromium revision 1255, used on this machine through `PW_CHROMIUM`, gives the same test results as revision 1254, which Playwright 1.65.0 expects and CI installs. Rests on it: D-004 (local browser runs count as EVIDENCE for C4 and C5). EVIDENCE: not verified by a side-by-side run; CI is the control (C6). If false: a local pass is not a pass in CI, and C6 fails.
+A-3 "First, please use Hinshitsu." covers the work in flight on pull request 9 and not the milestones M5 to M12 (VA1). Rests on it: D-005 (scope of the run is 2 WORK UNITS). EVIDENCE: not verified; the S6 card asks. If false: the CRITERIA and the planned number of SUB-AGENT runs change.
+A-4 The USER accepts 30 SUB-AGENT runs (VA2). Rests on it: D-005. EVIDENCE: not verified; the S6 card asks. If false: the TIER or the number of AUDITORS per WORK UNIT changes by the USER's word only.
+A-5 The 3 reviewer reports of the second review are complete as saved. Rests on it: D-003. EVIDENCE: 6 files in /home/ubuntu/kitrt2/raw/ (SEC, TRU, USR; each 1 report and 1 attempts file), 125 attempts in the combined input; the files are outside the repository. If false: a claim is lost before the judge sees it.
+A-6 Pull request 9 is open and its head is the branch head. Rests on it: D-005. EVIDENCE: evidence/pr9-refs.txt. Verified.
+A-7 The repository has no dependency or configuration for Neon or Vercel now. Rests on it: C8 starts from a clean state. EVIDENCE: evidence/s3-facts.txt (0 matches in the 4 package.json files; the 20 files that hold either word are documents, records and 2 Catalog files that cite Vercel's published guidelines as a source). Verified for the package files; the 2 Catalog files were read earlier in the session, before this run.
+A-8 The intermittent failure of 4 Studio tests (KIT-41) is not caused by the kit. Rests on it: D-004. EVIDENCE: not verified; the cause is unknown. If false: C5 fails and the failure is a FINDING.
+Sent to: the 4 LENS SUB-AGENTS and the RED CELL at S5 (in each scope); A-3 and A-4 to the USER on the S6 card.
+
+### E-18 · 2026-11-24T20:04:47Z · DECISION · ORCHESTRATOR
+
+D-003 The judge's report of the second review is the list of what WU-1 repairs; this run's own AUDITORS, not the judge, check the repairs. Rests on A-1, A-5. Reason: the review was started on the USER's delegation ("Decide for me.") before V1, and a second reproduction of 125 attempts would spend runs for no new facts. Rejected: (a) discard the review and audit the kit from zero under this run, about 8 more runs and the loss of 125 saved attempts; (b) treat the judge as an AUDITOR of this run, rejected because its scope was not written and logged under this run.
+D-004 Local runs with Chromium revision 1255 count as EVIDENCE, and CI on the pull request is the control. Rests on A-2, A-8. Reason: revision 1254 is absent on this machine. Rejected: install revision 1254, rejected because CI already runs it on each push.
+D-005 The run covers 2 WORK UNITS on pull request 9 (WU-1 the module `packages/kit` with its browser test, WU-2 the records) and does not start M5. Rests on A-3, A-4, A-6. Reason: `CLAUDE.md` hard rule 1 and O3. Rejected: fold M5 to M7 into this run, rejected because milestone order belongs to the USER.
+Cites the ASSUMPTION entry directly above.
+
+### E-19 · 2026-11-24T20:04:47Z · CRITERIA · ORCHESTRATOR
+
+- Status: PROPOSED
+
+"Delivered commit" means the head of branch `devin/1795542703-kit-minors` named in the delivery report. "Judge report" means the report of session 3c6a5f2597bf40daa4dd5ed38e214bca, saved whole in the RUN FOLDER.
+C1 Each finding the judge report confirms with the class blocker or major has 1 row in `redteam/FINDINGS.md`, and its reproduction steps no longer produce the faulty output at the delivered commit. Test: the correctness AUDITOR runs each confirmed reproduction at the delivered commit and saves the output; 0 reproduce.
+C2 Each finding the judge report confirms with the class minor has 1 row in `redteam/FINDINGS.md` that states either the repair with its commit or the words "open" with a reason. Test: the framework-drift AUDITOR compares the judge report with the file, row by row; 0 missing.
+C3 Each repair under C1 has a test that fails when the repair is removed, and no test is skipped, deleted or weakened. Test: the seeder removes or breaks 1 repair in a copy and the swarm's test run goes red; the adversarial AUDITOR reverts each repair commit in a scratch copy and records which test fails; `git diff` of the test files against commit 86287c2 shows no removed assertion and `grep -rn "\.skip\|\.only\|\.todo"` over the test files prints nothing new.
+C4 `npm run check` exits with code 0 at the delivered commit. Test: an AUDITOR runs it and saves the output.
+C5 `npm run e2e` exits with code 0 at the delivered commit 3 times in a row. Test: an AUDITOR runs it 3 times and saves the 3 outputs.
+C6 Every CI check on pull request 9 at the delivered commit ends in success. Test: the CI status of the pull request, saved as EVIDENCE.
+C7 Each number and status in `PROGRESS.md`, `packages/kit/README.md`, `redteam/FINDINGS.md` and the text of pull request 9 that describes the kit equals what a command prints at the delivered commit; `PROGRESS.md` names M4 as the current milestone with its exit test open; `docs/research/11-north-star-gap-2026-11-24.md` is present. Test: the framework-drift AUDITOR lists each number and status with the command that confirms it; 0 mismatches.
+C8 The repository holds no dependency, configuration file or network address for Neon or Vercel. Test: `grep -c -i -E "\"(@neondatabase|@vercel|vercel)"` over every package.json prints 0 for each; no `vercel.json`, `.vercel` or `neon` configuration file exists; `git diff 86287c2..<delivered commit>` adds no line that holds "neon" or "vercel" outside the RUN FOLDER.
+C9 The repository CatCorner22/Frontend has the same refs after the run as before it. Test: `git ls-remote https://github.com/CatCorner22/Frontend` at delivery equals evidence/frontend-refs-before.txt.
+C10 Pull request 9 is open and not merged at delivery, unless the USER has written an instruction to merge during the run. Test: `git ls-remote origin 'refs/pull/9/*'` shows the merge ref, and the pull request's state is saved as EVIDENCE.
+C11 No line added by the run states that output is "WCAG compliant", "ADA compliant" or "accessible". Test: `git diff 86287c2..<delivered commit> | grep -i -E "^\+.*(WCAG compliant|ADA compliant)"` prints nothing, and the language AUDITOR reads each added line that holds "accessible".
+C12 The RUN FOLDER holds the full record of the run: each of the 12 STAGES has a start entry and an end or skipped entry, each SUB-AGENT run has its scope and its whole report saved, and the delivery report states for every CRITERION one of VERIFIED, FAIL or UNVERIFIED and states the number of SUB-AGENT runs used against 30 planned. Test: `python3 <plugin folder>/scripts/hinshitsu_check.py hinshitsu/kit-repairs` and the final AUDITOR's reading.
+
+### E-20 · 2026-11-24T20:04:47Z · STAGE · ORCHESTRATOR
+
+- Stage: S4
+- Event: end
+
+Artifacts: entries ASSUMPTION, DECISION (D-003 to D-005), CRITERIA (PROPOSED), CORRECTION; evidence/pr9-refs.txt, evidence/frontend-refs-before.txt.
