@@ -7,7 +7,7 @@
  * Two different designs can share an ID by chance; with 64 bits that takes about four billion designs to become likely.
  */
 export function designId(tokens: Readonly<Record<string, string>>): string {
-  const tidy = (value: string): string => value.trim().replace(/url\([^)]*\)|"[^"]*"|'[^']*'|[^"'u]+|[\s\S]/gi, (part) => (/^(url\(|"|')/i.test(part) ? part : part.toLowerCase().replace(/\s+/g, ' ')));
+  const tidy = (value: string): string => value.trim().replace(/url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)[^)]*\)|"[^"]*"|'[^']*'|[^"'u]+|[\s\S]/gi, (part) => (/^(url\(|"|')/i.test(part) ? part : part.toLowerCase().replace(/\s+/g, ' ')));
   const text = Object.keys(tokens).sort().map((key) => JSON.stringify([key.trim(), tidy(tokens[key] ?? '')])).join('');
   // FNV-1a, 64 bits: a public, simple way to turn a text into a number.
   let hash = 0xcbf29ce484222325n;
