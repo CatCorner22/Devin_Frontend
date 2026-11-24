@@ -814,6 +814,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     });
     it('F-28: the marks of a trademark and of copyright are no emoji; an emoji before a heading is found in any element', async () => {
       expect(await statuses('<h2>Harbor™ pipes</h2><p>© 2026 Harbor Street Plumbing®</p>', 'emojiAsIcons')).not.toContain('fails');
+      // The three cases of the first review, each where the check looks: at the edge of a heading or of a link. Without
+      // the repair each one fails (finding F-32 of the review of 2026-11-24).
+      expect(await statuses('<h2>BrightSmile™</h2>', 'emojiAsIcons')).not.toContain('fails');
+      expect(await statuses('<p><a href="/terms">Sold under licence ®</a></p>', 'emojiAsIcons')).not.toContain('fails');
+      expect(await statuses('<h3>© Crown copyright</h3>', 'emojiAsIcons')).not.toContain('fails');
       expect(await statuses('<section><div>🚀</div><h3>Fast</h3></section><section><div>🔒</div><h3>Safe</h3></section><section><div>💡</div><h3>Smart</h3></section>', 'emojiAsIcons')).toContain('fails');
     });
     it('F-29: a purple fade written in oklch or hsl is found; a fade of greys is not', async () => {
@@ -830,6 +835,15 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       for (const fn of ['tabularNumerals', 'typographicMarks', 'placeholderCopy', 'emojiAsIcons']) await run(page, fn);
       expect(Date.now() - started).toBeLessThan(10_000);
       await page.context().close();
+    });
+    it('second review, F-32: each check that reads a text reads its first 2,000 letters and no more', async () => {
+      // The limit is told by what lies past it: a fault after letter 2,000 of one run of text is not read. A test by the
+      // clock alone passed with the limit removed.
+      const filler = 'word '.repeat(500);
+      expect(await statuses(`<p>${filler}He said "no" to that.</p>`, 'typographicMarks')).not.toContain('fails');
+      expect(await statuses('<p>He said "no" to that.</p>', 'typographicMarks')).toContain('fails');
+      expect(await statuses(`<p>${filler}Lorem ipsum dolor sit amet.</p>`, 'placeholderCopy')).not.toContain('fails');
+      expect(await statuses('<p>Lorem ipsum dolor sit amet.</p>', 'placeholderCopy')).toContain('fails');
     });
   });
 
