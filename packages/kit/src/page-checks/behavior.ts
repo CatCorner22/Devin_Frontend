@@ -12,7 +12,10 @@ export function keyboardReachable(doc: Document): Finding[] {
   const flagged = new Set<Element>();
   for (const el of doc.querySelectorAll<HTMLElement>('[onclick], [role="button"], [role="link"], [role="tab"], [role="menuitem"], [role="checkbox"], [role="switch"]')) {
     if (el.getClientRects().length === 0) continue;
-    if (native.includes(el.tagName) && !(el.tagName === 'A' && !el.hasAttribute('href'))) continue;
+    // A native control takes the Tab key by itself. One case stays in: a native control with tabindex -1 inside a group that
+    // the arrow keys walk, because the group can then have no way in (all tabs built as buttons with tabindex -1).
+    const isNative = native.includes(el.tagName) && !(el.tagName === 'A' && !el.hasAttribute('href'));
+    if (isNative && !(el.tabIndex < 0 && el.closest(walked))) continue;
     // Inside a group that the arrow keys walk, an item with tabindex -1 is the pattern of the ARIA guide (F-15).
     // The group must still have a way in: one of its items, or the group itself, takes the Tab key.
     // A menu is the exception: the button that opens it moves the focus into it.
@@ -183,18 +186,21 @@ export function dialogsAreMarked(doc: Document): Finding[] {
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }
 
-/** A list or table with nothing in it and no word about why. */
+/** A list or table that is shown, with nothing in it and no word about why: no marked element near it and no sentence directly after it. */
 export function emptyStatesExplain(doc: Document): Finding[] {
   const ruleId = 'state-empty-explained';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-  const holders = [...doc.querySelectorAll<HTMLElement>('ul, ol, tbody, [role="list"], [role="grid"], [role="listbox"], [data-list]')].filter((el) => el.isConnected && !el.closest('[hidden]'));
+  const holders = [...doc.querySelectorAll<HTMLElement>('ul, ol, tbody, [role="list"], [role="grid"], [role="listbox"], [data-list]')].filter((el) => el.isConnected && !el.closest('[hidden]') && el.getClientRects().length > 0);
   if (holders.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
   for (const el of holders) {
     if (el.children.length > 0 || (el.textContent ?? '').trim() !== '') continue;
     const around = (el.tagName === 'TBODY' ? el.parentElement?.parentElement : el.parentElement) ?? null;
     const told = around?.querySelector('[data-empty], [role="status"]') ?? null;
-    if (!told || (told.textContent ?? '').trim() === '') out.push({ ruleId, status: 'fails', where: name(el), measured: 'an empty list with no explanation', required: 'a sentence that says what belongs here and what to do next', fix: 'Beside the empty list, add an element marked data-empty that says what belongs in the list and offers the next action.' });
+    // A sentence that is shown directly after the list (or after its table) explains it as a marked element does.
+    const next = (el.tagName === 'TBODY' ? el.parentElement : el)?.nextElementSibling ?? null;
+    const nextTells = next !== null && next.getClientRects().length > 0 && !['UL', 'OL', 'TABLE'].includes(next.tagName) && (next.textContent ?? '').trim().length >= 10;
+    if (!nextTells && (!told || (told.textContent ?? '').trim() === '')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'an empty list with no explanation', required: 'a sentence that says what belongs here and what to do next', fix: 'Beside the empty list, add an element marked data-empty that says what belongs in the list and offers the next action.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }

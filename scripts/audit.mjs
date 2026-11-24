@@ -15,23 +15,23 @@
 // cannot keep dead rows.
 import { execFileSync } from 'node:child_process';
 
-const EXCEPTIONS = [
-  {
-    id: 'GHSA-fc5q-39xc-vjpf',
-    package: 'picomatch',
-    reason: 'A pattern with repeated extglobs can make matching very slow. Only the lint, boundary, build, and test tools use picomatch here, and every pattern they read is written in this repository. The page carries no copy. No patched version existed on 2026-11-18.',
-    until: '2026-12-18'
-  }
-];
+// No exception is in force. The one of 2026-11-18 (GHSA-fc5q-39xc-vjpf against picomatch, decision D59) was removed on
+// 2026-11-24: `npm audit` no longer lists that advisory for picomatch 4.0.7. A row has the form
+// { id: 'GHSA-...', package: 'name', reason: 'why it does not matter here', until: 'YYYY-MM-DD' }.
+const EXCEPTIONS = [];
 
 function audit(args) {
+  let report;
   try {
-    return JSON.parse(execFileSync('npm', ['audit', '--json', ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }));
+    report = JSON.parse(execFileSync('npm', ['audit', '--json', ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] }));
   } catch (error) {
     // npm exits with 1 when it finds anything; the report is still on its standard output.
-    if (error.stdout) return JSON.parse(error.stdout);
-    throw error;
+    if (!error.stdout) throw error;
+    report = JSON.parse(error.stdout);
   }
+  // A report of an error (no network, no lock file) lists no advisory. It is no clean result: the audit did not run.
+  if (report.error || typeof report.vulnerabilities !== 'object' || report.vulnerabilities === null) throw new Error(`npm audit ${args.join(' ')} gave no result: ${JSON.stringify(report.error ?? report).slice(0, 300)}`);
+  return report;
 }
 
 /** The advisories of high or critical severity in a report: one row for each advisory, not for each package that inherits it. */

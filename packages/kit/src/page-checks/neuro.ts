@@ -254,8 +254,9 @@ export function unseenParts(doc: Document): Finding[] {
   for (const el of doc.querySelectorAll('iframe, frame, object, embed')) if (el.getClientRects().length > 0) parts.push(name(el));
   // Only a part that the other checks cannot read counts. A web component without a shadow root keeps its content in the page,
   // where every check reads it. A closed shadow root cannot be told from none; a component that uses one goes unreported.
-  // A component in a part that is not drawn shows nothing, and hides nothing from the checks.
-  for (const el of doc.querySelectorAll('body *')) if (el.shadowRoot && el.getClientRects().length > 0) parts.push(name(el));
+  // A component in a part that is not drawn shows nothing, and hides nothing from the checks. A component with no box of its own
+  // (display: contents) still counts when something inside it is drawn.
+  for (const el of doc.querySelectorAll('body *')) if (el.shadowRoot && (el.getClientRects().length > 0 || [...el.shadowRoot.querySelectorAll('*')].some((inner) => inner.getClientRects().length > 0))) parts.push(name(el));
   if (parts.length === 0) return [];
   const measured = `the checks cannot see inside ${parts.slice(0, 5).join(', ')}${parts.length > 5 ? ` and ${parts.length - 5} more` : ''}`;
   return floors.map((ruleId) => ({ ruleId, status: 'could-not-measure' as const, where: parts[0], measured }));
