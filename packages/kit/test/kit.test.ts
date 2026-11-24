@@ -2,9 +2,9 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  KIT_RULES, NEURO_QUESTIONS, PLACEHOLDER_PHRASES, REPAIR_ROUNDS, STATE_LOOK, STATE_SHEET, STATES,
+  KIT_RULES, NEURO_QUESTIONS, PLACEHOLDER_PHRASES, REPAIR_ROUNDS, SHORT_PHRASES, STATE_LOOK, STATE_SHEET, STATES,
   blindScore, checkBrief, comparePixels, designId, dialogWalk, differences, grade, isFairDuel, placeholderIn, preferences,
-  WHOLE_PAGE_CHECKS, fromPage, receipt, receiptText, repairPlan, ruleRecordSchema, shareOf, tabOrderWalk, tabsWalk,
+  WHOLE_PAGE_CHECKS, WHOLE_PHRASES, fromPage, receipt, receiptText, repairPlan, ruleRecordSchema, shareOf, tabOrderWalk, tabsWalk,
   type BlindAnswer, type Finding, type RuleRecord,
 } from '../src/index.js';
 import * as pageChecks from '../src/page-checks/index.js';
@@ -89,9 +89,11 @@ describe('the kit stands alone', () => {
   });
   it('the placeholder list of the page check equals the list of the Brief', () => {
     const text = sources.find((s) => s.path === join('page-checks', 'tells.ts'))?.text ?? '';
-    const list = /const phrases = \[(.*)\];/.exec(text)?.[1] ?? '';
-    const inCheck = [...list.matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => (m[1] ?? '').replace(/\\'/g, '\''));
-    expect(inCheck).toEqual([...PLACEHOLDER_PHRASES]);
+    const listOf = (name: string): string[] => [...(new RegExp(`const ${name} = \\[(.*)\\];`).exec(text)?.[1] ?? '').matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => (m[1] ?? '').replace(/\\'/g, '\''));
+    expect(listOf('phrases')).toEqual([...PLACEHOLDER_PHRASES]);
+    expect(listOf('slots')).toEqual([...SHORT_PHRASES]);
+    expect(listOf('whole')).toEqual([...WHOLE_PHRASES]);
+    expect(PLACEHOLDER_PHRASES.length).toBeGreaterThan(40);
   });
 });
 
@@ -447,12 +449,22 @@ describe('the Brief', () => {
     expect(placeholderIn('We keep the books of your company in order every month.')).toBeNull();
     expect(placeholderIn('Your Company')).toBe('your company');
     expect(placeholderIn('Visit us at 123 Main Street, Franklin, Tennessee 37064.')).toBeNull();
-    expect(placeholderIn('123 Main Street')).toBe('123 main street');
-    expect(placeholderIn('123 Main Street, Anytown, USA')).toBe('anytown');
+    // A real business can stand at 123 Main Street; only the stock town marks the filler (review of 2026-11-24, F-13 and C14-4).
+    expect(placeholderIn('123 Main Street')).toBeNull();
+    expect(placeholderIn('123 Main Street, Anytown, USA')).toBe('anytown, usa');
     expect(placeholderIn('For a test account we use an address that ends in example.com')).toBeNull();
     expect(placeholderIn('hello@example.com')).toBe('example.com');
     expect(placeholderIn('Call 555-0142')).toBe('555-0');
     expect(placeholderIn(`${'a '.repeat(3000)}lorem ipsum`)).toBeNull();
+  });
+  it('blames no real name or real word, and finds filler across line breaks and in template forms (review of 2026-11-24, F-13, F-14, F-15, C14-4, C14-5)', () => {
+    for (const real of ['Acme Plumbing & Heating', 'Todo Para Mascotas', 'Todo para tu desayuno', 'Todo', '123 Main Street, Leeds LS1 4AB', 'Anytown Music School', 'Our company name is on every van we drive in town.']) expect(placeholderIn(real), real).toBeNull();
+    expect(checkBrief({ ...good, businessName: 'Acme Plumbing & Heating' })).toEqual([]);
+    expect(checkBrief({ ...good, businessName: 'Todo Para Mascotas' })).toEqual([]);
+    for (const filler of ['Lorem\nipsum', 'Lorem  ipsum', 'Lorem\u00a0ipsum', 'Lorem\t\n ipsum dolor']) expect(placeholderIn(filler), JSON.stringify(filler)).toBe('lorem ipsum');
+    expect(checkBrief({ ...good, headline: 'Lorem\nipsum' })).toMatchObject([{ field: 'headline' }]);
+    const hits: [string, string][] = [['Business Name', 'business name'], ['Headline goes here', 'goes here'], ['Service One', 'service one'], ['you@yourdomain.com', 'yourdomain'], ['Address line 1', 'address line 1'], ['Testimonial text will appear in this space.', 'will appear in this space'], ['Customer Name', 'customer name'], ['Sample text', 'sample text'], ['Acme', 'acme'], ['ACME Inc.', 'acme inc'], ['TODO', 'todo'], ['TODO: write the headline', 'todo']];
+    for (const [filler, phrase] of hits) expect(placeholderIn(filler), filler).toBe(phrase);
   });
   it('names missing and malformed fields, and a word the owner banned', () => {
     expect(checkBrief({}).length).toBeGreaterThan(5);

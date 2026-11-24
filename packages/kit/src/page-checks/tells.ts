@@ -5,22 +5,53 @@ import type { Finding } from '../shapes.js';
 /** Placeholder words and stock marketing phrases. The list must equal PLACEHOLDER_PHRASES in data/placeholders.ts; a test compares the two. */
 export function placeholderCopy(doc: Document): Finding[] {
   const ruleId = 'tell-placeholder-copy';
-  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'your company', 'company name', 'insert text', 'placeholder', 'john doe', 'jane doe', 'example.com', '555-0', 'acme', 'welcome to our website', 'service 1', 'description goes here', 'todo', '000-000-0000', 'name@email.com', '123 main street', 'anytown', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced'];
-  // A phrase counts as whole words: "unleash" is not in "unleashed". Six of the phrases are also plain words or names of ordinary sentences
+  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'insert text', 'john doe', 'jane doe', '555-0', 'welcome to our website', 'service 1', 'service one', 'description goes here', 'goes here', 'sample text', 'will appear in this space', 'address line 1', 'yourdomain', '000-000-0000', 'name@email.com', 'anytown, usa', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced', 'your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com', 'acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation'];
+  // A phrase counts as whole words: "unleash" is not in "unleashed". Some phrases are also plain words of ordinary sentences
   // and of forms, so they count only in a short text (4 words or fewer) that is not the label or the hint of a form field.
-  const slots = ['your company', 'company name', 'placeholder', 'example.com', 'acme', '123 main street'];
+  const slots = ['your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com'];
+  // Others are also real names and real words ("Acme Plumbing"): they count only as the whole text. "TODO" counts only in capitals,
+  // as the whole text or as "TODO:"; "todo" is the Spanish word for "all".
+  const whole = ['acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation'];
   const edge = '[^a-z0-9]';
   const found = (text: string, phrase: string): boolean => new RegExp(`(^|${edge})${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : `($|${edge})`}`).test(text);
   const described = new Set([...doc.querySelectorAll('[aria-describedby]')].flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/)));
-  const out: Finding[] = [];
+  const view = doc.defaultView;
+  // The text is read block by block, not text node by text node: "Lorem <b>ipsum</b>" and a line break inside a paragraph
+  // are one text to the reader (finding F-14 of the review of 2026-11-24). A block is the nearest part that is not inline.
+  const inline = (el: Element): boolean => !view || /^(inline|contents)/.test(view.getComputedStyle(el).display);
+  const formText = 'label, legend, option, form small, form [class*="hint" i], form [class*="help" i]';
+  const blocks = new Set<Element>();
   const walker = doc.createTreeWalker(doc.body, 4);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const parent = node.parentElement;
-    const text = (node.textContent ?? '').slice(0, 2000).toLowerCase().replace(/’/g, '\'');
-    if (!parent || parent.closest('script, style, code, pre') || text.trim() === '') continue;
-    const short = text.trim().split(/\s+/).length <= 4 && !parent.closest('label, legend, option, form small, form [class*="hint" i], form [class*="help" i]') && !(parent.id !== '' && described.has(parent.id));
-    const hit = phrases.find((phrase) => found(text, phrase) && (short || !slots.includes(phrase)));
-    if (hit) out.push({ ruleId, status: 'fails', where: `${parent.tagName.toLowerCase()}: "${text.trim().slice(0, 40)}"`, measured: `the phrase "${hit}"`, required: 'the owner\'s own words', fix: 'Replace the phrase with the real content from the Brief.' });
+    let el = node.parentElement;
+    if (!el || el.closest('script, style, code, pre, template, noscript') || (node.textContent ?? '').trim() === '') continue;
+    // The label and the hint of a form field are texts of their own, also where they are drawn inline.
+    while (el !== doc.body && el.parentElement && inline(el) && !el.matches(formText)) el = el.parentElement;
+    blocks.add(el);
+  }
+  const textOf = (block: Element): string => {
+    let text = '';
+    const read = (el: Element): void => {
+      for (const child of el.childNodes) {
+        if (text.length > 2000) return;
+        if (child.nodeType === 3) text += child.textContent ?? '';
+        else if (child.nodeType === 1 && (child as Element).tagName === 'BR') text += ' ';
+        else if (child.nodeType === 1 && !blocks.has(child as Element) && !(child as Element).matches('script, style, code, pre, template, noscript') && inline(child as Element)) read(child as Element);
+        else text += ' ';
+      }
+    };
+    read(block);
+    return text.slice(0, 2000).replace(/\s+/g, ' ').trim();
+  };
+  const out: Finding[] = [];
+  for (const block of blocks) {
+    const given = textOf(block);
+    if (given === '') continue;
+    const text = given.toLowerCase().replace(/’/g, '\'');
+    const short = text.split(' ').length <= 4 && !block.closest(formText) && !(block.id !== '' && described.has(block.id));
+    const all = text.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
+    const hit = /(^|[^A-Za-z0-9])TODO:|^[^A-Za-z0-9]*TODO[^A-Za-z0-9]*$/.test(given) ? 'todo' : phrases.find((phrase) => (whole.includes(phrase) ? all === phrase : found(text, phrase) && (short || !slots.includes(phrase))));
+    if (hit) out.push({ ruleId, status: 'fails', where: `${block.tagName.toLowerCase()}: "${given.slice(0, 40)}"`, measured: `the phrase "${hit}"`, required: 'the owner\'s own words', fix: 'Replace the phrase with the real content from the Brief.' });
   }
   return out.length > 0 ? out.slice(0, 8) : [{ ruleId, status: 'holds' }];
 }

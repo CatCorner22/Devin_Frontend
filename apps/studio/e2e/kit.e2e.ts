@@ -603,6 +603,12 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<h1>Unleash your team</h1>', 'placeholderCopy')).toContain('fails');
       expect(await statuses('<h2>Your Company</h2>', 'placeholderCopy')).toContain('fails');
     });
+    it('second review, F-13 to F-15, C14-4, C14-5: real names and words hold; filler split by a line break or a tag, and template forms, fail', async () => {
+      for (const sound of ['<h2>Todo para tu desayuno</h2>', '<h2>Todo</h2>', '<h1>Acme Plumbing &amp; Heating</h1>', '<address>Corner Bakery<br>123 Main Street<br>Leeds LS1 4AB</address>', '<table><tr><td>123 Main Street</td></tr></table>', '<h1>Anytown Music School</h1>', '<p>Our business name is painted on every van.</p>']) expect(await statuses(sound, 'placeholderCopy'), sound).toEqual(['holds']);
+      for (const filler of ['<p>Lorem\nipsum</p>', '<p>Lorem <b>ipsum</b></p>', '<p>Lorem&nbsp;ipsum</p>', '<h1>Headline goes here</h1>', '<p>Sample text</p>', '<h2>Business Name</h2>', '<h3>Service One</h3>', '<p>123 Main Street, Anytown, USA</p>', '<p>TODO: write this part</p>', '<h1>Acme</h1>']) expect(await statuses(filler, 'placeholderCopy'), filler).toEqual(['fails']);
+      // One block gives one finding, and a block inside a block is read once.
+      expect(await statuses('<div>Intro <div><p>Lorem <i>ipsum</i> dolor</p></div></div>', 'placeholderCopy')).toEqual(['fails']);
+    });
     it('F-28: the marks of a trademark and of copyright are no emoji; an emoji before a heading is found in any element', async () => {
       expect(await statuses('<h2>Harbor™ pipes</h2><p>© 2026 Harbor Street Plumbing®</p>', 'emojiAsIcons')).not.toContain('fails');
       expect(await statuses('<section><div>🚀</div><h3>Fast</h3></section><section><div>🔒</div><h3>Safe</h3></section><section><div>💡</div><h3>Smart</h3></section>', 'emojiAsIcons')).toContain('fails');
