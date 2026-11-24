@@ -496,4 +496,11 @@ describe('walks', () => {
     expect(() => tabsWalk(['#a'])).toThrow();
     expect(tabsWalk(['#a', '#b']).steps).toContainEqual({ do: 'expect-attribute', on: '#a', name: 'aria-selected', value: 'true' });
   });
+
+  it('second review, F-28 and F-34: the README advises no check with JavaScript switched off, and states the limit of the typeface check', () => {
+    const readme = readFileSync(join(root, '..', 'README.md'), 'utf8');
+    expect(readme).not.toMatch(/with JavaScript switched off for the page, or/);
+    expect(readme).toMatch(/Switching JavaScript off for the page is no way to do this/);
+    expect(readme).toMatch(/A typeface under a borrowed name/);
+  });
 });
