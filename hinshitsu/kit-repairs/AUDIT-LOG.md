@@ -212,3 +212,10 @@ C12 The RUN FOLDER holds the full record of the run: each of the 12 STAGES has a
 - Event: end
 
 Artifacts: entries ASSUMPTION, DECISION (D-003 to D-005), CRITERIA (PROPOSED), CORRECTION; evidence/pr9-refs.txt, evidence/frontend-refs-before.txt.
+
+### E-21 · 2026-11-24T20:05:17Z · STAGE · ORCHESTRATOR
+
+- Stage: S5
+- Event: start
+
+SKILL.md read whole: /opt/.devin/plugins_cache/cache/account-upload_user-hinshitsu-c1ff27d2/9d4cbe73a691fdaa8a8958dbfbf8d51742c2be63fd0679b5315429be49141784/skills/hinshitsu-challenge/SKILL.md, 8654 bytes, SHA-256 48369af037a95b914cf5cdee9b7185c58ea0754a76a92ab60aa7160af3c3e444. Conductor SKILL.md SHA-256 7df73e003a007bf200541911c42a518e8747708e793e387ed120df4c4ebcd260. GLOSSARY.md SHA-256 92b526977fb5d1fc507f934ddba2a5c43144cfbe477c75adba9b7219bb46d599. A copy of GLOSSARY.md is saved at reference/GLOSSARY.md, because a child session cannot read the plugin folder.

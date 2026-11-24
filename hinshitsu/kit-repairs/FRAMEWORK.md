@@ -4,14 +4,17 @@ Form required by section 7. A superseded line is marked `(superseded <date> → 
 
 ## 1. CRITERIA
 
-No `CRITERIA` entry exists yet. The CRITERIA are written as `PROPOSED` at S4 and the entry that freezes them at S6 controls.
+See `AUDIT-LOG.md` entry E-19 (`CRITERIA`, `PROPOSED`, C1 to C12) and each later `CRITERIA` and `CRITERIA-CHANGE` entry. Those entries control.
 
 ## 2. Architecture decisions
 
 | ID | Decision | Log entry |
 |---|---|---|
-| D-001 | The run starts on work that exists: the kit repairs on branch `devin/1795542703-kit-minors`. Reports of the 4 review sessions started before E-1 are inputs, not audits of this run. | E-2 |
-| D-002 | No change to the DELIVERABLE between E-1 and the USER's answer to the S6 card, except work that no pending answer can change (rule 23.5). | E-7 |
+| D-001 | The run starts on work that exists: the kit repairs on branch `devin/1795542703-kit-minors`. Reports of the 4 review sessions started before E-1 are inputs, not audits of this run. | E-8 |
+| D-002 | No change to the DELIVERABLE between E-1 and the USER's answer to the S6 card, except work that no pending answer can change (rule 23.5). | E-8 |
+| D-003 | The judge's report of the second review names what WU-1 repairs; this run's AUDITORS check the repairs. | E-18 |
+| D-004 | Local runs with Chromium revision 1255 count as EVIDENCE; CI is the control. | E-18 |
+| D-005 | The run covers WU-1 and WU-2 on pull request 9 and does not start M5. | E-18 |
 
 ## 3. Naming conventions
 
