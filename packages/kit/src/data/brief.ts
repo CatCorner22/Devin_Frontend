@@ -47,15 +47,23 @@ export function checkBrief(input: unknown): BriefProblem[] {
   const parsed = briefSchema.safeParse(input);
   const problems: BriefProblem[] = parsed.success ? [] : parsed.error.issues.map((issue) => ({ field: issue.path.join('.') || 'brief', problem: plain(issue, input) }));
   const avoid = at(input, ['wordsToAvoid']);
-  const banned = Array.isArray(avoid) ? avoid.filter((word): word is string => typeof word === 'string' && word.trim().length >= 2) : [];
-  const look = (field: string, value: unknown): void => {
+  // The Brief allows 30 words to avoid of 40 letters each. Words beyond that are reported by the schema and not searched for.
+  const banned = Array.isArray(avoid) ? avoid.slice(0, 30).filter((word): word is string => typeof word === 'string' && word.trim().length >= 2 && word.length <= 200) : [];
+  // The second pass reads at most 400 texts, at most 8 levels deep. No valid Brief comes near either number; a file that
+  // passes them gets one problem that says so, in place of minutes of work or a crash (finding F-27 of 2026-11-24).
+  let read = 0;
+  let tooMuch = false;
+  const look = (field: string, value: unknown, depth = 0): void => {
+    if (tooMuch) return;
+    if (depth > 8 || read >= 400) { tooMuch = true; problems.push({ field, problem: 'The Brief holds more here than a Brief can hold, so the rest was not read for placeholder wording or words to avoid.' }); return; }
     if (typeof value === 'string') {
+      read++;
       const hit = placeholderIn(value);
       if (hit) problems.push({ field, problem: `This still holds placeholder or stock wording ("${hit}"). Write your own words.` });
       const word = banned.find((candidate) => wholeWord(value, candidate));
       if (word) problems.push({ field, problem: `This uses "${word}", which is on your list of words to avoid.` });
-    } else if (Array.isArray(value)) value.forEach((item, i) => { look(`${field}.${i}`, item); });
-    else if (typeof value === 'object' && value !== null) for (const [key, item] of Object.entries(value)) look(`${field}.${key}`, item);
+    } else if (Array.isArray(value)) { for (let i = 0; i < value.length && !tooMuch; i++) look(`${field}.${i}`, value[i], depth + 1); }
+    else if (typeof value === 'object' && value !== null) { for (const [key, item] of Object.entries(value)) { if (tooMuch) break; look(`${field}.${key}`, item, depth + 1); } }
   };
   for (const field of ['businessName', 'whatItDoes', 'audience', 'mainJob', 'headline', 'services', 'contact', 'proof']) look(field, at(input, [field]));
   return problems;

@@ -420,6 +420,21 @@ describe('the Brief', () => {
     voice: { tone: 'friendly', length: 'brief', stance: 'confident' }, wordsToAvoid: ['solutions'],
   };
   it('accepts real content', () => { expect(checkBrief(good)).toEqual([]); });
+  it('answers in seconds, and without a crash, for a file far larger than any Brief (review of 2026-11-24, F-27)', () => {
+    const many = { ...good, services: Array.from({ length: 4000 }, (_, i) => ({ name: `Service ${i}`, description: `We repair item ${i} for you.` })), wordsToAvoid: Array.from({ length: 4000 }, (_, i) => `word${i}`) };
+    let started = performance.now();
+    const problems = checkBrief(many);
+    expect(performance.now() - started).toBeLessThan(3000);
+    expect(problems.filter((p) => /more here than a Brief can hold/.test(p.problem))).toHaveLength(1);
+    let deep: unknown = 'Lorem ipsum';
+    for (let i = 0; i < 200000; i++) deep = [deep];
+    started = performance.now();
+    const nested = checkBrief({ ...good, proof: deep });
+    expect(performance.now() - started).toBeLessThan(3000);
+    expect(nested.some((p) => /more here than a Brief can hold/.test(p.problem))).toBe(true);
+    // The limit does not hide a placeholder or a word to avoid in a Brief of ordinary size.
+    expect(checkBrief({ ...good, wordsToAvoid: ['plumbing', 'cheap'], headline: 'Cheap plumbing, done right the first time' }).some((p) => /words to avoid/.test(p.problem))).toBe(true);
+  });
   it('names the field that still holds a placeholder', () => {
     expect(checkBrief({ ...good, headline: 'Your tagline here' })).toMatchObject([{ field: 'headline' }]);
     expect(checkBrief({ ...good, services: [...good.services.slice(0, 2), { name: 'More', description: 'Lorem ipsum dolor sit amet.' }] })).toMatchObject([{ field: 'services.2.description' }]);

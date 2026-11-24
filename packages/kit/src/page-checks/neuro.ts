@@ -120,7 +120,11 @@ export function readingComfort(doc: Document): Finding[] {
       for (const rect of range.getClientRects()) { lines.set(Math.round(rect.top), (lines.get(Math.round(rect.top)) ?? 0) + rect.width); drawn += rect.width; }
     }
     const letter = drawn / ownText(el).length;
-    const letters = letter > 0 ? Math.round(Math.max(...lines.values()) / letter) : 0;
+    // The longest line is found in a loop: a text of many thousand lines is too long to hand to Math.max at once
+    // (finding F-27 of the review of 2026-11-24).
+    let longest = 0;
+    for (const width of lines.values()) if (width > longest) longest = width;
+    const letters = letter > 0 ? Math.round(longest / letter) : 0;
     if (letters > 80) fails.push({ ruleId: 'neuro-line-length', status: 'fails', where: name(el), measured: `about ${letters} letters in a line`, required: 'at most 80', fix: 'Give the text a max-width of about 65ch.' });
     const lineHeight = style.lineHeight === 'normal' ? 1.2 : parseFloat(style.lineHeight) / size;
     if (lineHeight < 1.5) fails.push({ ruleId: 'neuro-line-height', status: 'fails', where: name(el), measured: `line height ${lineHeight.toFixed(2)}${style.lineHeight === 'normal' ? ' (the browser\'s default, taken as 1.2)' : ''}`, required: 'at least 1.5', fix: 'Set line-height to 1.5 or more on reading text.' });

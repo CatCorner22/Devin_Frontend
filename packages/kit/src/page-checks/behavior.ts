@@ -109,11 +109,18 @@ export function targetSize(doc: Document): Finding[] {
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const targets = [...doc.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [role="button"], [role="tab"], [role="menuitem"]')].filter((el) => el.getClientRects().length > 0 && el.getAttribute('type') !== 'hidden');
   if (targets.length === 0) return [{ ruleId, status: 'not-applicable' }];
+  // Every small target is compared with every other target. Beyond this count the check would hold the checker for minutes,
+  // so it says that it did not measure (finding F-27 of the review of 2026-11-24).
+  const MOST = 3000;
+  if (targets.length > MOST) return [{ ruleId, status: 'could-not-measure', measured: `the page has ${targets.length} controls, and this check measures at most ${MOST}` }];
   const out: Finding[] = [];
-  const boxOf = (el: HTMLElement): DOMRect => {
+  const measure = (el: HTMLElement): DOMRect => {
     const label = (el as HTMLInputElement).labels?.[0];
     return (el.getAttribute('type') === 'checkbox' || el.getAttribute('type') === 'radio') && label ? label.getBoundingClientRect() : el.getBoundingClientRect();
   };
+  // Each box is measured once, before any target is given the focus.
+  const boxes = new Map<HTMLElement, DOMRect>(targets.map((el) => [el, measure(el)]));
+  const boxOf = (el: HTMLElement): DOMRect => boxes.get(el) ?? measure(el);
   const small = (box: DOMRect): boolean => box.width < 24 || box.height < 24;
   // The spacing exception of WCAG 2.5.8: a circle 24 pixels across, centered on the small target, meets no other target
   // and no other small target's circle (F-14).
@@ -139,7 +146,7 @@ export function targetSize(doc: Document): Finding[] {
     if (hiddenOnPurpose) {
       const before = doc.activeElement as HTMLElement | null;
       el.focus({ preventScroll: true });
-      box = boxOf(el);
+      box = measure(el);
       if (before && before !== el && typeof before.focus === 'function') before.focus({ preventScroll: true }); else el.blur();
       if (box.width <= 1.5 || box.height <= 1.5 || box.right <= 0) continue;
     }

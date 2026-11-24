@@ -240,6 +240,21 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<label for="e">Email</label><input id="e" placeholder="Email">', 'visibleLabels')).toEqual(['holds']);
     });
 
+    it('second review, F-27: a page of 20,000 buttons, and a text of 600,000 letters, get an answer and no crash', async () => {
+      const started = Date.now();
+      expect(await statuses('<button>x</button>'.repeat(20000), 'targetSize')).toEqual(['could-not-measure']);
+      // 2,500 small buttons are under the limit, and each one is still found.
+      const small = await statuses('<button style="font-size:6px;padding:0;border:0;margin:0">x</button>'.repeat(2500), 'targetSize');
+      expect(small).toHaveLength(2500);
+      expect(new Set(small)).toEqual(new Set(['fails']));
+      const page = await pageOf(`<p style="width: 2ch; overflow-wrap: anywhere">${'ab'.repeat(300000)}</p>`);
+      const comfort = await run(page, 'readingComfort');
+      await page.context().close();
+      expect(comfort.length).toBeGreaterThan(0);
+      expect(comfort.some((f) => f.ruleId === 'neuro-line-length' && f.status === 'fails')).toBe(false);
+      expect(Date.now() - started).toBeLessThan(40000);
+    }, 60000);
+
     it('F-13: text hidden on purpose for screen readers, and a skip link, fail neither the spacing floor nor the size floor', async () => {
       const body = '<a class="skip" href="#main">Skip to the main part</a><p id="main">Read <span class="sr">this hidden note for screen readers, which is long enough to be cut</span> on.</p>';
       expect(await statuses(body, 'survivesTextSpacing')).toEqual(['holds']);
