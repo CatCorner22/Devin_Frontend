@@ -475,7 +475,11 @@ export const useStudio = create<StudioState>((set, get) => {
         notice = { text: `On the Step “${leaving.name}” you looked at “${looked}” but did not pick it. Your design did not change.`, actions: [{ label: `Go back to “${leaving.name}”`, run: () => { get().go('steps', from); get().show(leaving.options.find((o) => o.label === looked)!.id); } }] };
       }
     }
-    set({ view, stepId: step.id, variations: null, region: 'auto', shownId: appliedCardId(state.project, step), notice, focusTick: state.focusTick + 1 });
+    // The browser's report of a move that the Studio itself made (see above) must not move the keyboard focus a second time:
+    // it arrives a moment after the move, and it took the focus away from a control that the person had already reached
+    // (finding ISO-15: the focus left the Undo button for the card on show).
+    const echo = samePlace && !push;
+    set({ view, stepId: step.id, variations: null, region: 'auto', shownId: appliedCardId(state.project, step), notice, focusTick: echo ? state.focusTick : state.focusTick + 1 });
     const wanted = hashFor(view, step.id);
     if (window.location.hash !== wanted) {
       if (push) window.location.hash = wanted;
