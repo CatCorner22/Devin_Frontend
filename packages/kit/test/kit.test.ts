@@ -22,6 +22,14 @@ describe('rule records', () => {
     const ids = KIT_RULES.map((rule) => rule.id);
     expect(ids.filter((id, i) => ids.indexOf(id) !== i)).toEqual([]);
   });
+  it('a record that cites no source the builder read carries the grade "expert-opinion" (review of 2026-11-18, F-34)', () => {
+    for (const r of KIT_RULES) if (r.sources.every((source) => source.basis === 'builder')) expect(r.evidence, r.id).toBe('expert-opinion');
+  });
+  it('the rule against surprises names the two choices of the owner that allow one (review of 2026-11-18, F-36)', () => {
+    const noSurprise = KIT_RULES.find((r) => r.id === 'neuro-no-surprise');
+    expect(noSurprise?.appliesWhen).toMatch(/page-may-ask/);
+    expect(NEURO_QUESTIONS.flatMap((q) => q.choices.map((c) => c.id))).toContain('page-may-ask');
+  });
   it('the id of a record starts with the name of its group', () => {
     const prefix: Record<string, string[]> = { neuro: ['neuro-'], state: ['state-'], behavior: ['behavior-'], craft: ['craft-'], tell: ['tell-'], fit: ['fit-'] };
     for (const rule of KIT_RULES) expect(prefix[rule.group]?.some((p) => rule.id.startsWith(p)), rule.id).toBe(true);
@@ -229,13 +237,21 @@ describe('receipt', () => {
 describe('design ID', () => {
   it('is stable, ignores order and spacing, and changes with one value', () => {
     const a = designId({ '--color-ink': '#111', '--radius': '8px' });
-    expect(a).toMatch(/^rx-[0-9a-f]{8}$/);
+    expect(a).toMatch(/^rx-[0-9a-f]{16}$/);
     expect(designId({ '--radius': ' 8px', '--color-ink': '#111 ' })).toBe(a);
     expect(designId({ '--color-ink': '#112', '--radius': '8px' })).not.toBe(a);
-    expect(designId({})).toMatch(/^rx-[0-9a-f]{8}$/);
+    expect(designId({})).toMatch(/^rx-[0-9a-f]{16}$/);
   });
   it('keeps a name and its value apart', () => {
     expect(designId({ a: 'b:c' })).not.toBe(designId({ 'a:b': 'c' }));
+  });
+  it('ignores capitals in a color, and counts them inside quotation marks and url() (review of 2026-11-18, F-31)', () => {
+    expect(designId({ c: '#FFAA00' })).toBe(designId({ c: '#ffaa00' }));
+    expect(designId({ f: '"Inter Display", serif' })).not.toBe(designId({ f: '"inter display", serif' }));
+    expect(designId({ f: '"Inter  Display"' })).not.toBe(designId({ f: '"Inter Display"' }));
+    expect(designId({ i: 'url(Hero.png)' })).not.toBe(designId({ i: 'url(hero.png)' }));
+    expect(designId({ i: 'URL(hero.png)  no-repeat' })).not.toBe(designId({ i: 'url(Hero.png) no-repeat' }));
+    expect(designId({ u: 'Underline' })).toBe(designId({ u: 'underline' }));
   });
 });
 
@@ -304,6 +320,15 @@ describe('blind test', () => {
     expect(blindScore(answers('tool', 2, 4)).statement).toMatch(/both kinds/);
     expect(blindScore([]).reviewers).toBe(0);
   });
+  it('the fewest pages and reviewers that the protocol asks for are enough for the count, and the protocol asks nothing the count ignores (review of 2026-11-18, F-39)', () => {
+    const protocol = readFileSync(join(root, '..', 'blind-test', 'PROTOCOL.md'), 'utf8');
+    const pages = Number(/At least (\d+) tool-built pages/.exec(protocol)?.[1]);
+    const reviewers = Number(/At least (\d+) reviewers/i.exec(protocol)?.[1]);
+    const all: BlindAnswer[] = [];
+    for (let r = 0; r < reviewers; r++) for (let p = 0; p < pages; p++) all.push({ reviewer: `r${r}`, page: `t${p}`, madeBy: 'tool', judgedPerson: p % 2 === 0 }, { reviewer: `r${r}`, page: `h${p}`, madeBy: 'person', judgedPerson: p % 2 === 0 });
+    expect(blindScore(all).statement).not.toMatch(/^Too few/);
+    expect(protocol).not.toMatch(/1 to 7|from 1 \(/);
+  });
 });
 
 describe('the Brief', () => {
@@ -320,6 +345,16 @@ describe('the Brief', () => {
     expect(placeholderIn('In today’s fast-paced world')).toBe('in today\'s fast-paced');
     expect(placeholderIn('A plumber at your door')).toBeNull();
   });
+  it('counts a phrase as whole words, and a word of ordinary sentences only in a short text (review of 2026-11-18, F-27)', () => {
+    expect(placeholderIn('Our dogs run unleashed in the yard')).toBeNull();
+    expect(placeholderIn('Unleash your team')).toBe('unleash');
+    expect(placeholderIn('We keep the books of your company in order every month.')).toBeNull();
+    expect(placeholderIn('Your Company')).toBe('your company');
+    expect(placeholderIn('For a test account we use an address that ends in example.com')).toBeNull();
+    expect(placeholderIn('hello@example.com')).toBe('example.com');
+    expect(placeholderIn('Call 555-0142')).toBe('555-0');
+    expect(placeholderIn(`${'a '.repeat(3000)}lorem ipsum`)).toBeNull();
+  });
   it('names missing and malformed fields, and a word the owner banned', () => {
     expect(checkBrief({}).length).toBeGreaterThan(5);
     expect(checkBrief(null)).toMatchObject([{ field: 'brief' }]);
@@ -327,6 +362,14 @@ describe('the Brief', () => {
     expect(checkBrief({ ...good, services: good.services.slice(0, 2) })).toMatchObject([{ field: 'services' }]);
     expect(checkBrief({ ...good, headline: 'Plumbing solutions at your door' })).toMatchObject([{ field: 'headline', problem: expect.stringContaining('solutions') }]);
     expect(checkBrief({ ...good, extra: 1 }).length).toBe(1);
+  });
+  it('lists every fault at once, in plain words, and still reads the text of a Brief with a fault in its shape (review of 2026-11-18, F-30)', () => {
+    const problems = checkBrief({ ...good, businessName: undefined, headline: 'Your tagline here', contact: { email: 'not an address' }, proof: [{ text: 'Lorem ipsum dolor sit amet, more words.', from: 'Dana' }] });
+    expect(problems.map((p) => p.field).sort()).toEqual(['businessName', 'contact.email', 'headline', 'proof.0.text']);
+    for (const p of problems) expect(p.problem).not.toMatch(/invalid input|expected string|received/i);
+    // A banned word counts as a whole word, in every text of the Brief.
+    expect(checkBrief({ ...good, wordsToAvoid: ['art'] })).toEqual([]);
+    expect(checkBrief({ ...good, wordsToAvoid: ['drains'] }).map((p) => p.field)).toContain('services.2.name');
   });
 });
 

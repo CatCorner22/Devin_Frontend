@@ -29,6 +29,20 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
   const family = (text: string): string => (text.split(',')[0] ?? '').trim().replace(/^["']|["']$/g, '').toLowerCase();
 
+  // Is a typeface drawn here? A browser gives no list of its typefaces. The check measures one line of text with the family
+  // before each of two fallbacks; when both widths equal those of the fallbacks alone, the browser drew the fallbacks (F-32).
+  // A typeface with exactly the widths of both fallbacks would be missed. Generic names (serif, system-ui) always count as drawn.
+  const drawnCache = new Map<string, boolean>();
+  const drawn = (face: string): boolean => {
+    if (/^(serif|sans-serif|monospace|cursive|fantasy|system-ui|ui-serif|ui-sans-serif|ui-monospace|ui-rounded|math|emoji|fangsong)$/.test(face) || /["\\;{}]/.test(face)) return true;
+    const cached = drawnCache.get(face);
+    if (cached !== undefined) return cached;
+    const width = (font: string): number => { pen.font = `72px ${font}`; return pen.measureText('mmmmmmmmlli Wgq 0123').width; };
+    const result = width(`"${face}", monospace`) !== width('monospace') || width(`"${face}", serif`) !== width('serif');
+    drawnCache.set(face, result);
+    return result;
+  };
+
   const tokenColors = new Map<string, string>();
   const tokenFamilies = new Set<string>();
   const tokenLengths = new Set<number>();
@@ -50,17 +64,24 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     const hasText = [...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '');
     const colors: [string, string][] = [['background', style.backgroundColor]];
     if (hasText) colors.push(['text', style.color]);
-    if (parseFloat(style.borderTopWidth) > 0 && style.borderTopStyle !== 'none') colors.push(['border', style.borderTopColor]);
+    for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) if (parseFloat(style[`border${side}Width`]) > 0 && style[`border${side}Style`] !== 'none') colors.push(['border', style[`border${side}Color`]]);
+    // The colors inside a shadow and inside a fade, however the style sheet writes them (F-32). Only the first 2,000 letters are read.
+    for (const [part, text] of [['shadow', style.boxShadow], ['background fade', style.backgroundImage.includes('gradient') ? style.backgroundImage : '']] as const) {
+      for (const color of text.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push([part, color]);
+    }
     for (const [part, value] of colors) {
       const color = paint(value);
       if (!color || color === 'clear') continue;
       seenColors.add(color);
       if (tokenColors.size > 0 && !tokenColors.has(color)) once({ ruleId: 'fit-colors', status: 'fails', where: name(el), measured: `${part} color ${value}`, required: 'a color of the design', fix: 'Replace the color with the design token (a custom property from tokens.css) that has this job.' });
     }
-    if (hasText && tokenFamilies.size > 0 && !tokenFamilies.has(family(style.fontFamily))) once({ ruleId: 'fit-fonts', status: 'fails', where: name(el), measured: `typeface ${family(style.fontFamily)}`, required: `one of: ${[...tokenFamilies].join(', ')}`, fix: 'Set font-family from the design token.' });
+    if (hasText && tokenFamilies.size > 0 && tokenFamilies.has(family(style.fontFamily)) && !drawn(family(style.fontFamily))) once({ ruleId: 'fit-fonts', status: 'fails', where: name(el), measured: `typeface ${family(style.fontFamily)} is named, and this browser draws another in its place`, required: 'the typeface of the design, drawn', fix: 'Ship the font file with the page (see FONTS.md), or check the spelling of the family name.' });
+    else if (hasText && tokenFamilies.size > 0 && !tokenFamilies.has(family(style.fontFamily))) once({ ruleId: 'fit-fonts', status: 'fails', where: name(el), measured: `typeface ${family(style.fontFamily)}`, required: `one of: ${[...tokenFamilies].join(', ')}`, fix: 'Set font-family from the design token.' });
     const radius = parseFloat(style.borderTopLeftRadius);
     const box = el.getBoundingClientRect();
-    const round = radius >= Math.min(box.width, box.height) / 2;
+    // A round shape needs no radius of the design: a pill (a radius far larger than the box) or a circle (F-32).
+    const side = Math.min(box.width, box.height);
+    const round = radius >= 999 || (Math.abs(box.width - box.height) <= side * 0.1 && radius >= side / 2);
     if (radius > 0 && !round && !style.borderTopLeftRadius.includes('%') && tokenLengths.size > 0 && ![...tokenLengths].some((length) => Math.abs(length - radius) <= 0.5)) once({ ruleId: 'fit-radii', status: 'fails', where: name(el), measured: `corner radius ${radius} px`, required: 'a radius of the design', fix: 'Set border-radius from the design token.' });
   }
   for (const [color, token] of tokenColors) if (!seenColors.has(color)) fails.push({ ruleId: 'fit-unused-color', status: 'fails', where: token, measured: `the page never uses the color of ${token}`, required: 'every color of the design is used, or the page has no part that needs it', fix: 'Check whether a part that should carry this color has another color.' });

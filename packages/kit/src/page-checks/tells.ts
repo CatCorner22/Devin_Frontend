@@ -5,14 +5,21 @@ import type { Finding } from '../shapes.js';
 /** Placeholder words and stock marketing phrases. The list must equal PLACEHOLDER_PHRASES in data/placeholders.ts; a test compares the two. */
 export function placeholderCopy(doc: Document): Finding[] {
   const ruleId = 'tell-placeholder-copy';
-  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'your company', 'company name', 'insert text', 'placeholder', 'john doe', 'jane doe', 'example.com', '555-0', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced'];
+  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'your company', 'company name', 'insert text', 'placeholder', 'john doe', 'jane doe', 'example.com', '555-0', 'acme', 'welcome to our website', 'service 1', 'description goes here', 'todo', '000-000-0000', 'name@email.com', '123 main street', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced'];
+  // A phrase counts as whole words: "unleash" is not in "unleashed". Five of the phrases are also plain words or names of ordinary sentences
+  // and of forms, so they count only in a short text (4 words or fewer) that is not the label or the hint of a form field.
+  const slots = ['your company', 'company name', 'placeholder', 'example.com', 'acme'];
+  const edge = '[^a-z0-9]';
+  const found = (text: string, phrase: string): boolean => new RegExp(`(^|${edge})${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : `($|${edge})`}`).test(text);
+  const described = new Set([...doc.querySelectorAll('[aria-describedby]')].flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/)));
   const out: Finding[] = [];
   const walker = doc.createTreeWalker(doc.body, 4);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
     const parent = node.parentElement;
-    const text = (node.textContent ?? '').toLowerCase().replace(/’/g, '\'');
+    const text = (node.textContent ?? '').slice(0, 2000).toLowerCase().replace(/’/g, '\'');
     if (!parent || parent.closest('script, style, code, pre') || text.trim() === '') continue;
-    const hit = phrases.find((phrase) => text.includes(phrase));
+    const short = text.trim().split(/\s+/).length <= 4 && !parent.closest('label, legend, option, form small, form [class*="hint" i], form [class*="help" i]') && !(parent.id !== '' && described.has(parent.id));
+    const hit = phrases.find((phrase) => found(text, phrase) && (short || !slots.includes(phrase)));
     if (hit) out.push({ ruleId, status: 'fails', where: `${parent.tagName.toLowerCase()}: "${text.trim().slice(0, 40)}"`, measured: `the phrase "${hit}"`, required: 'the owner\'s own words', fix: 'Replace the phrase with the real content from the Brief.' });
   }
   return out.length > 0 ? out.slice(0, 8) : [{ ruleId, status: 'holds' }];
@@ -22,9 +29,20 @@ export function placeholderCopy(doc: Document): Finding[] {
 export function emojiAsIcons(doc: Document): Finding[] {
   const ruleId = 'tell-emoji-icons';
   const out: Finding[] = [];
+  // ©, ® and ™ are marks of text, not pictures; a sign drawn as text (with the text selector U+FE0E) is none either.
+  const emoji = /(?![©®™])\p{Extended_Pictographic}(?!\uFE0E)/u;
+  const atEdge = (text: string): boolean => { const marks = [...text]; return emoji.test(marks.slice(0, 2).join('')) || emoji.test(marks.slice(-2).join('')); };
+  const seen = new Set<Element>();
+  const report = (el: Element, text: string): void => { if (!seen.has(el)) { seen.add(el); out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}: "${text.slice(0, 30)}"`, measured: 'an emoji used as an icon', required: 'one drawn icon set, or no icon', fix: 'Replace the emoji with an icon from one icon set (inline SVG), or remove it.' }); } };
   for (const el of doc.querySelectorAll<HTMLElement>('h1, h2, h3, h4, button, a, [class*="icon" i]')) {
     const text = (el.textContent ?? '').trim();
-    if (el.getClientRects().length > 0 && /^\p{Extended_Pictographic}|\p{Extended_Pictographic}$/u.test(text)) out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}: "${text.slice(0, 30)}"`, measured: 'an emoji used as an icon', required: 'one drawn icon set, or no icon', fix: 'Replace the emoji with an icon from one icon set (inline SVG), or remove it.' });
+    if (el.getClientRects().length > 0 && atEdge(text)) report(el, text);
+  }
+  // An element that holds nothing but one or two emoji, directly before a heading: an icon above a card's title.
+  for (const heading of doc.querySelectorAll<HTMLElement>('h2, h3, h4')) {
+    const before = heading.previousElementSibling;
+    const text = (before?.textContent ?? '').trim();
+    if (before && before.getClientRects().length > 0 && text !== '' && [...text].length <= 4 && emoji.test(text) && !/[\p{L}\p{N}]/u.test(text)) report(before, text);
   }
   return out.length > 0 ? out.slice(0, 8) : [{ ruleId, status: 'holds' }];
 }
@@ -40,12 +58,25 @@ export function purpleGradient(doc: Document): Finding[] {
     const hue = max === r ? ((g - b) / spread) % 6 : max === g ? (b - r) / spread + 2 : (r - g) / spread + 4;
     return (hue * 60 + 360) % 360;
   };
+  const pen = doc.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  if (!pen) return [{ ruleId, status: 'could-not-measure', measured: 'this browser gives no canvas to read colors with' }];
+  const drawn = (color: string): [number, number, number] | null => {
+    pen.clearRect(0, 0, 1, 1);
+    pen.fillStyle = '#000';
+    pen.fillStyle = color;
+    pen.fillRect(0, 0, 1, 1);
+    const pixel = pen.getImageData(0, 0, 1, 1).data;
+    return (pixel[3] ?? 0) < 128 ? null : [pixel[0] ?? 0, pixel[1] ?? 0, pixel[2] ?? 0];
+  };
   const out: Finding[] = [];
   for (const el of doc.querySelectorAll<HTMLElement>('body, body *')) {
     const image = view.getComputedStyle(el).backgroundImage;
     const box = el.getBoundingClientRect();
     if (!image.includes('gradient') || box.width * box.height < 40_000) continue;
-    const hues = [...image.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)].map((m) => hueOf(Number(m[1]), Number(m[2]), Number(m[3]))).filter((h): h is number => h !== null);
+    // A style sheet can write a color in many ways (hex, rgb, hsl, oklch, a name). The check paints each color of the fade on a
+    // canvas, off the page, and reads the drawn pixel back.
+    const stops = image.slice(0, 4000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? [];
+    const hues = stops.map((stop) => { const rgb = drawn(stop); return rgb ? hueOf(rgb[0], rgb[1], rgb[2]) : null; }).filter((h): h is number => h !== null);
     if (hues.some((h) => h >= 200 && h < 250) && hues.some((h) => h >= 250 && h <= 310)) out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}`, measured: 'a fade from blue to purple over a large area', required: 'the colors of the design', fix: 'Use the background that the design names; if it names a fade, use its two colors.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

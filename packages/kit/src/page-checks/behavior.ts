@@ -16,6 +16,8 @@ export function keyboardReachable(doc: Document): Finding[] {
     // the arrow keys walk, because the group can then have no way in (all tabs built as buttons with tabindex -1).
     const isNative = native.includes(el.tagName) && !(el.tagName === 'A' && !el.hasAttribute('href'));
     if (isNative && !(el.tabIndex < 0 && el.closest(walked))) continue;
+    // A control that is switched off answers no click and needs no Tab stop.
+    if (isNative && (el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true')) continue;
     // Inside a group that the arrow keys walk, an item with tabindex -1 is the pattern of the ARIA guide (F-15).
     // The group must still have a way in: one of its items, or the group itself, takes the Tab key.
     // A menu is the exception: the button that opens it moves the focus into it.
@@ -186,7 +188,7 @@ export function dialogsAreMarked(doc: Document): Finding[] {
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }
 
-/** A list or table that is shown, with nothing in it and no word about why: no marked element near it and no sentence directly after it. */
+/** A list or table that is shown, with nothing in it and no word about why: no marked element near it and no sentence directly after it. A sentence two elements away, or inside a wrapper that starts a new part, is not seen. */
 export function emptyStatesExplain(doc: Document): Finding[] {
   const ruleId = 'state-empty-explained';
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
@@ -199,7 +201,8 @@ export function emptyStatesExplain(doc: Document): Finding[] {
     const told = around?.querySelector('[data-empty], [role="status"]') ?? null;
     // A sentence that is shown directly after the list (or after its table) explains it as a marked element does.
     const next = (el.tagName === 'TBODY' ? el.parentElement : el)?.nextElementSibling ?? null;
-    const nextTells = next !== null && next.getClientRects().length > 0 && !['UL', 'OL', 'TABLE'].includes(next.tagName) && (next.textContent ?? '').trim().length >= 10;
+    // A heading after the list opens the next part of the page, and text that is not drawn tells nobody anything.
+    const nextTells = next !== null && next.getClientRects().length > 0 && doc.defaultView?.getComputedStyle(next).visibility === 'visible' && !/^(UL|OL|TABLE|H[1-6]|HR|SECTION|ARTICLE|NAV|ASIDE|FOOTER|HEADER)$/.test(next.tagName) && next.getAttribute('role') !== 'heading' && (next.textContent ?? '').trim().length >= 10;
     if (!nextTells && (!told || (told.textContent ?? '').trim() === '')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'an empty list with no explanation', required: 'a sentence that says what belongs here and what to do next', fix: 'Beside the empty list, add an element marked data-empty that says what belongs in the list and offers the next action.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

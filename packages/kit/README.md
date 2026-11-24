@@ -52,7 +52,7 @@ for (const fn of Object.keys(checks)) {
 grade(findings, KIT_RULES);               // { grade: 'Below floor' | 'Meets floor' | 'Crafted' | 'Not graded', ... }
 repairPlan([findings], KIT_RULES);        // what to repair next, floors first; stops after 3 rounds
 receiptText(receipt(findings, KIT_RULES)); // measured / not measured / a person must still check
-designId(tokens);                         // 'rx-1a2b3c4d': links a build to a design; not secret, proves nothing about authorship
+designId(tokens);                         // 'rx-1a2b3c4d5e6f7a8b': links a build to a design; not secret, proves nothing about authorship
 ```
 
 `tokenFit` takes a second argument, the design's tokens. `noSidewaysScroll` answers only in a window 320 pixels wide, where the reflow floor is defined; at any other width it reports "could not measure", and the grade is then "Not graded". `layoutShift` and `noScriptedMotion` return a promise; `noScriptedMotion` takes 11 seconds unless a pause button is in view. `unseenParts` belongs to no single rule (`WHOLE_PAGE_CHECKS`); run it with the others, as the loop above does. A rule record may name further checks under `also`.
@@ -72,7 +72,7 @@ The example needs a TypeScript-aware runner (Playwright's own, Vitest, or `tsx`)
 - **A check that judges by a simple sign.** The loading check looks for class names that contain "loading", "spinner", or "skeleton". The purple-fade check looks only at CSS color fades, not at pictures. A page can pass a check and still have the fault.
 - **A check that depends on the browser.** `balancedHeadings` and `layoutShift` report "could not measure" in a browser that lacks the feature. They were tested in Chromium only.
 - **Stricter than the source.** Some rules ask for more than the standard they cite. The record's source line says so for each such rule that the review of 2026-11-18 found (finding F-35); a person who compares the remaining records with their sources may find more.
-- **Sources.** The builder read the text of each WCAG criterion cited, the summaries of the COGA objectives, and the keyboard sections of two patterns of the ARIA guide. It did not read the longer explanatory pages. Records whose only source is "the builder's judgment" carry the grade "expert-opinion".
+- **Sources.** The builder read the text of each WCAG criterion cited, the summaries of the COGA objectives, and the keyboard sections of two patterns of the ARIA guide. It did not read the longer explanatory pages. A record that cites no source the builder read (its judgment, this tool's plan, or a page it did not open) carries the grade "expert-opinion"; a unit test holds this.
 - **The design ID** is a short public fingerprint. Anyone can copy it onto any page.
 
 ## How to test it

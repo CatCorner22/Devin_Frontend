@@ -9,7 +9,7 @@ import * as checks from '../../../packages/kit/src/page-checks/index.js';
 
 const LOCAL_BROWSER = process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {};
 const fixture = (name: string): string => pathToFileURL(join(import.meta.dirname, '..', '..', '..', 'packages', 'kit', 'fixtures', name)).href;
-const TOKENS = { '--ink': '#1a1a1a', '--paper': '#ffffff', '--accent': '#0b5fff', '--line': '#d0d5dd', '--radius': '8px', '--radius-in': '4px', '--font-body': 'Georgia, serif' };
+const TOKENS = { '--ink': '#1a1a1a', '--paper': '#ffffff', '--accent': '#0b5fff', '--line': '#d0d5dd', '--radius': '8px', '--radius-in': '4px', '--font-body': 'serif' };
 const CHECKS = checks as unknown as Record<string, (...args: never[]) => unknown>;
 const PAGE_RULES = KIT_RULES.filter((rule) => rule.check.kind === 'page-check');
 
@@ -124,6 +124,7 @@ describe('the kit on a page with one planted defect for every check', () => {
   }
   it('every failure says where, what was found, what is required, and how to repair it', () => {
     for (const f of findings.filter((x) => x.status === 'fails')) {
+      expect(f.where, f.ruleId).toBeTruthy();
       expect(f.measured, f.ruleId).toBeTruthy();
       expect(f.required, f.ruleId).toBeTruthy();
       expect(f.fix, f.ruleId).toBeTruthy();
@@ -133,6 +134,42 @@ describe('the kit on a page with one planted defect for every check', () => {
     const page = await open('flawed.html');
     expect(await walk(page, dialogWalk('#open', '#fake', 2))).toMatch(/^step \d+/);
     expect(await walk(page, tabsWalk(['#tab-a', '#tab-b']))).toMatch(/^step 3 /);
+    await page.context().close();
+  });
+  it('F-33: the planted line itself is what three checks report, and the tab-order walk has a planted defect', async () => {
+    const at = (ruleId: string): (string | undefined)[] => findings.filter((f) => f.ruleId === ruleId && f.status === 'fails').map((f) => f.where);
+    expect(at('fit-radii')).toContain('p.off');
+    expect(at('fit-unused-color')).toEqual(['--line']);
+    // Without the planted wide box, the page no longer scrolls sideways at 320 pixels.
+    const narrow = await open('flawed.html', 320);
+    expect((await run(narrow, 'noSidewaysScroll')).map((f) => f.status)).toContain('fails');
+    await narrow.evaluate(() => document.querySelector('[data-defect="neuro-reflow"]')?.remove());
+    expect((await run(narrow, 'noSidewaysScroll')).map((f) => f.status)).not.toContain('fails');
+    await narrow.context().close();
+    const page = await open('flawed.html');
+    expect(await walk(page, tabOrderWalk('#order-a', ['#order-b', '#order-c']))).toMatch(/^step \d+/);
+    await page.context().close();
+  });
+  it('F-32: a color in one border, in a shadow, and in a fade is read; a typeface that is named and not drawn fails; a pill holds', async () => {
+    const page = await open('good.html');
+    const fit = async (): Promise<string[]> => (await run(page, 'tokenFit')).filter((f) => f.status === 'fails').map((f) => `${f.ruleId}: ${f.measured ?? ''}`);
+    expect(await fit()).toEqual([]);
+    const add = (style: string) => page.evaluate((css) => { const p = document.createElement('p'); p.id = 'probe'; p.textContent = 'A probe paragraph.'; p.setAttribute('style', css); document.querySelector('main, body')?.append(p); }, style);
+    const drop = () => page.evaluate(() => document.getElementById('probe')?.remove());
+    await add('border-left: 4px solid #ff69b4');
+    expect((await fit()).join('|')).toMatch(/fit-colors: border color/);
+    await drop(); await add('box-shadow: 0 0 12px oklch(0.9 0.3 130)');
+    expect((await fit()).join('|')).toMatch(/fit-colors: shadow color/);
+    await drop(); await add('background-image: linear-gradient(#ff8800, #ffaa00)');
+    expect((await fit()).join('|')).toMatch(/fit-colors: background fade color/);
+    await drop(); await add('border-radius: 9999px; padding: 4px 16px');
+    expect(await fit()).toEqual([]);
+    await drop(); await add('border-radius: 13px');
+    expect((await fit()).join('|')).toMatch(/fit-radii/);
+    await drop();
+    const source = String(CHECKS.tokenFit);
+    const missing = await page.evaluate(`(() => { document.body.style.fontFamily = '"No Such Face 4711", serif'; return (${source})(document, ${JSON.stringify({ ...TOKENS, '--font-body': '"No Such Face 4711", serif' })}); })()`) as Finding[];
+    expect(missing.filter((f) => f.ruleId === 'fit-fonts' && f.status === 'fails').map((f) => f.measured).join('|')).toMatch(/draws another in its place/);
     await page.context().close();
   });
   it('grades "Below floor", and the repair plan puts every floor before every other item', () => {
@@ -286,6 +323,8 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     const buttons = (first: string) => `<div role="tablist"><button role="tab" tabindex="${first}">One</button><button role="tab" tabindex="-1">Two</button></div>`;
     expect(await statuses(buttons('-1'), 'keyboardReachable')).toContain('fails');
     expect(await statuses(buttons('0'), 'keyboardReachable')).not.toContain('fails');
+    // Tabs that are all switched off answer no click and need no Tab stop (second automated review of pull request 9).
+    expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" disabled>One</button><button role="tab" tabindex="-1" disabled>Two</button></div>', 'keyboardReachable')).not.toContain('fails');
     // A web component with no box of its own (display: contents) whose shadow content is drawn still hides that content from the checks.
     const boxless = await pageOf('<h1>Shop</h1><x-box id="box" style="display: contents"></x-box>');
     await boxless.evaluate(() => { const root = document.getElementById('box')?.attachShadow({ mode: 'open' }); const button = document.createElement('button'); button.textContent = 'Buy'; root?.append(button); });
@@ -376,6 +415,59 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await page.context().close();
       // A card that holds a real link, a button, and a label show the same pointer and hold.
       expect(await statuses('<div style="cursor: pointer"><a href="#r">Open the report</a></div><button style="cursor: pointer">Go</button><label style="cursor: pointer">Name <input></label>', 'keyboardReachable')).toEqual(['holds']);
+    });
+    it('F-23: text sizes one pixel apart fail; a scale with clear steps holds', async () => {
+      const sizes = (list: number[]) => list.map((n) => `<p style="font-size: ${n}px">Text at ${n} pixels for the test.</p>`).join('');
+      expect(await statuses(sizes([14, 15, 16, 17]), 'oneTypeScale')).toContain('fails');
+      expect(await statuses(sizes([14, 16, 20, 28, 40]), 'oneTypeScale')).not.toContain('fails');
+    });
+    it('F-25: a hidden empty list is not judged; a sentence shown after an empty list explains it; an empty list alone fails', async () => {
+      expect(await statuses('<ul id="menu" style="display: none"></ul><p>Text.</p>', 'emptyStatesExplain')).not.toContain('fails');
+      expect(await statuses('<ul id="orders" style="min-height: 20px"></ul><p>You have no orders yet. Place your first order from the shop.</p>', 'emptyStatesExplain')).not.toContain('fails');
+      expect(await statuses('<div><ul id="orders" style="min-height: 20px"></ul></div><p>Other text of the page that stands elsewhere.</p>', 'emptyStatesExplain')).toContain('fails');
+      // A heading after the list opens the next part, and a sentence that is not drawn explains nothing (second automated review of pull request 9).
+      expect(await statuses('<ul id="orders" style="min-height: 20px"></ul><h2>Our opening hours</h2>', 'emptyStatesExplain')).toContain('fails');
+      expect(await statuses('<ul id="orders" style="min-height: 20px"></ul><p style="visibility: hidden">You have no orders yet. Place one.</p>', 'emptyStatesExplain')).toContain('fails');
+    });
+    it('F-26: five checks no longer blame a sound page, and still find the fault', async () => {
+      // A heading of one line with padding is one line.
+      expect(await statuses('<h1 style="padding: 40px 0; font-size: 32px; line-height: 1.2">Short</h1>', 'balancedHeadings')).not.toContain('fails');
+      // A picture that the style sheet sizes keeps its room.
+      const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+      expect(await statuses(`<img alt="A chair" src="${png}" style="width: 100px; height: 100px">`, 'pictures')).not.toContain('fails');
+      expect((await (async () => { const page = await pageOf(`<img alt="A chair" src="${png}">`); const out = await run(page, 'pictures'); await page.context().close(); return out; })()).filter((f) => f.ruleId === 'craft-picture-size').map((f) => f.status)).toContain('fails');
+      // A round portrait in a card is no fault of the radii.
+      expect(await statuses(`<div style="border-radius: 12px; padding: 16px; border: 1px solid #999"><img alt="Dana" src="${png}" style="width: 48px; height: 48px; border-radius: 50%"></div>`, 'nestedRadii')).not.toContain('fails');
+      // Digits of a font whose digits are of one width need no setting; digits of unequal width fail.
+      const cell = (font: string) => `<table><tr><td style="font-family: ${font}">1,111.00</td></tr><tr><td style="font-family: ${font}">8,888.00</td></tr></table>`;
+      expect(await statuses(cell('monospace'), 'tabularNumerals')).not.toContain('fails');
+      // Spaces in the source that the browser draws as one are no fault; a straight quotation mark is.
+      expect(await statuses('<p>One sentence.\n      The next  sentence of the paragraph.</p>', 'typographicMarks')).not.toContain('fails');
+      expect(await statuses('<p>She said "now" and left.</p>', 'typographicMarks')).toContain('fails');
+    });
+    it('F-27: a stock phrase counts as whole words; a field label and a sentence of ordinary words hold', async () => {
+      expect(await statuses('<p>Our dogs run unleashed, and we keep the books of your company in order.</p><label>Company name <input></label>', 'placeholderCopy')).not.toContain('fails');
+      expect(await statuses('<h1>Unleash your team</h1>', 'placeholderCopy')).toContain('fails');
+      expect(await statuses('<h2>Your Company</h2>', 'placeholderCopy')).toContain('fails');
+    });
+    it('F-28: the marks of a trademark and of copyright are no emoji; an emoji before a heading is found in any element', async () => {
+      expect(await statuses('<h2>Harbor™ pipes</h2><p>© 2026 Harbor Street Plumbing®</p>', 'emojiAsIcons')).not.toContain('fails');
+      expect(await statuses('<section><div>🚀</div><h3>Fast</h3></section><section><div>🔒</div><h3>Safe</h3></section><section><div>💡</div><h3>Smart</h3></section>', 'emojiAsIcons')).toContain('fails');
+    });
+    it('F-29: a purple fade written in oklch or hsl is found; a fade of greys is not', async () => {
+      const fade = (a: string, b: string) => `<div style="height: 200px; background: linear-gradient(90deg, ${a}, ${b})">Hello</div>`;
+      expect(await statuses(fade('oklch(0.5 0.2 255)', 'oklch(0.5 0.25 300)'), 'purpleGradient')).toContain('fails');
+      expect(await statuses(fade('hsl(225 80% 55%)', 'hsl(280 80% 60%)'), 'purpleGradient')).toContain('fails');
+      expect(await statuses(fade('#2563eb', '#7c3aed'), 'purpleGradient')).toContain('fails');
+      expect(await statuses(fade('oklch(0.9 0 0)', 'oklch(0.6 0 0)'), 'purpleGradient')).not.toContain('fails');
+    });
+    it('F-38: a page with a very long text does not hold the checks for long', async () => {
+      const page = await pageOf('<table><tr><td id="big"></td></tr></table><p id="long"></p>');
+      await page.evaluate(() => { document.getElementById('big')!.textContent = '1'.repeat(2_000_000); document.getElementById('long')!.textContent = 'word  "x" '.repeat(300_000); });
+      const started = Date.now();
+      for (const fn of ['tabularNumerals', 'typographicMarks', 'placeholderCopy', 'emojiAsIcons']) await run(page, fn);
+      expect(Date.now() - started).toBeLessThan(10_000);
+      await page.context().close();
     });
   });
 
