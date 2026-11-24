@@ -107,5 +107,5 @@ Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
 - F-4 D-003, C1 (BLOCKER, FIXED by E-48)
 - F-5 , C5; A-2 (BLOCKER, FIXED by E-49)
 - F-6 , C8 (BLOCKER, FIXED by E-50)
-- F-7 , C1 to C3 (BLOCKER, open)
+- F-7 , C1 to C3 (BLOCKER, FIXED by E-52)
 <!-- from the log: end -->

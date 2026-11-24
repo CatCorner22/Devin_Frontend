@@ -571,3 +571,101 @@ C16 The delivery message to the USER holds at most 250 words, asks the USER for 
 - Result: FIXED
 - Change: text of the CRITERIA, E-35 with E-41, carried into E-43 (commit d95e8b7)
 - Re-audit: `audits/E-42-reaudit-plan-findings.md` by AUDITOR, 816cf8bacd4848718d9df03d8a46027e
+
+### E-51 · 2026-11-24T20:50:17Z · CRITERIA · ORCHESTRATOR
+
+- Status: PROPOSED
+- Approval: approval: pending
+
+Replaces the text of E-43 after the second re-audit `audits/E-44-reaudit-round2.md` (F-7 FIXED; 9 faults named in the text of E-43, each answered here). E-43 stays as written. No SUB-AGENT has re-audited this text; the pre-delivery RED CELL and the final AUDITOR read it.
+Terms. "Base" is commit 9e50434, the base of pull request 9. "Audited commit" is the commit named in the scopes of the last audit round. "Delivered commit" is the head of branch `devin/1795542703-kit-minors` named in the delivery report. "RUN FOLDER" is `hinshitsu/kit-repairs/`. "Second review" is the review of 2026-11-24 by 3 reviewer sessions and 1 judge session, charter `redteam/reports/2026-11-24-kit2-charter.md`. "Judge report" is `evidence/second-review/judge-report.md` in the RUN FOLDER (SHA-256 in `evidence/second-review/SHA256SUMS`); it confirms 8 findings of the class major, 24 minor, 2 notes, 0 blocker, and lists items for a person in its section 7. "Test files" are `packages/*/test/**`, `apps/studio/e2e/**`, `vitest.config.ts` and `vitest.e2e.config.ts`. "Seeder" is the SUB-AGENT that plants 1 defect in a copy before an audit round. "Plugin folder" is the folder of the installed Hinshitsu plugin that holds `scripts/hinshitsu_check.py`. "Confirmed list" is: each finding of the judge report, with the class the judge gives it, or the higher class where the judge states one for commit 86287c2 (F-27 of the judge report is major by this rule, so the list holds 9 majors); and each entry that C14 adds. "Rule record" is the record of a rule in `packages/kit/src/data/`.
+C1 Each entry of the confirmed list with the class blocker or major has 1 row in `redteam/FINDINGS.md` that cites its ID, and the fault no longer appears at the audited commit. Test: the correctness AUDITOR runs each reproduction and saves the output, 0 reproduce; the adversarial AUDITOR runs a 2nd, different input of the same fault for each, 0 reproduce. Fail: 1 or more reproduce, or 1 row is missing.
+C2 Each entry of the confirmed list with the class minor or note, and each item of section 7 of the judge report, has 1 row in `redteam/FINDINGS.md` that cites its ID and states: repaired with its commit, or "open" with a reason, or "Needs the owner". Test: the framework-drift AUDITOR compares the lists row by row, 0 missing; the delivery report lists each "open" and each "Needs the owner" row by ID.
+C3 Each repair under C1 is 1 commit that holds the repair and a test that fails without it, and no test between the base and the audited commit is skipped, deleted or weakened. Test: (a) the adversarial AUDITOR reverts each repair commit in a scratch copy and names the test that then fails; a repair with no such test fails C3. (b) An AUDITOR reads every line that `git diff 9e50434..<audited commit> -- <test files> | grep -E "^-.*expect"` prints. A removed line is "weakened" unless the AUDITOR names the assertion at the audited commit that tests the same behavior with the same or a stricter condition, or names the rule record that made the old assertion wrong; 0 weakened. (c) `grep -rnE "\b(x?it|x?test|x?describe)(\.[a-zA-Z]+)*\.(skip|only|todo|fails|skipIf|runIf)\b|\bx(it|test|describe)\(" packages/*/test apps/studio/e2e` prints nothing. (d) The same AUDITOR reads the whole of `git diff 9e50434..<audited commit> -- <test files>` and lists each added retry and each time limit that is new or raised, written as a named setting or as a bare number; 0 retries, and 0 limits above the highest limit at the base, 120,000 ms (`apps/studio/e2e/studio.e2e.ts`). (e) `git diff 9e50434..<audited commit> -- vitest.config.ts vitest.e2e.config.ts | grep -E "^[-+].*(include|exclude)"` prints nothing.
+C4 `npm run check` exits with code 0 at the audited commit. Test: an AUDITOR runs it and saves the output.
+C5 `PW_CHROMIUM=$HOME/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome npm run e2e` exits with code 0 at the audited commit 3 times in a row. Test: an AUDITOR runs it and saves every output. Every run started is counted; a red run is a FINDING and no later run erases it. If a test outside `kit.e2e.ts` fails, C5 is reported FAIL with the names of the tests, and the USER decides. 3 green runs do not settle the unknown cause of KIT-41, and the delivery report says so.
+C6 Every CI check on pull request 9 at the delivered commit ends in success. Test: an AUDITOR reads the checks of the pull request and saves them.
+C7 Each number and status that describes the kit in `PROGRESS.md`, `packages/kit/README.md`, the rows KIT-* of `redteam/FINDINGS.md`, the rows this run adds, and the text of pull request 9 equals what a command prints at the audited commit; `PROGRESS.md` names M4 as the current milestone with its exit test open, and its part "Waiting on the owner" lists every question this run puts to the USER; the text of pull request 9 says in 1 line that the RUN FOLDER is a record and no code. Test: the framework-drift AUDITOR lists each number and status with the command that confirms it, 0 mismatches, and saves the text of the pull request whole.
+C8 No dependency and no configuration for Neon or Vercel exists. Test: `grep -n -i -E "\"(@neondatabase/|@neon|neon|@vercel/|vercel)[^\"]*\" *:|neon\.tech|vercel\.app" $(git ls-files | grep -E "(^|/)(package\.json|package-lock\.json)$|^\.github/workflows/|(^|/)\.env")` prints nothing; `git ls-files | grep -E "(^|/)(vercel\.json|\.vercel/)"` prints nothing. C8 tests these files only; a line of record that states D60, cites Vercel's published guidelines, or lists `vercel.com` as a host that research could read, is outside C8.
+C9 The run pushes nothing to CatCorner22/Frontend. Test: in the working copy, `git remote -v` and `git config --get-regexp "^(remote|url)\."` print no line that holds `CatCorner22/Frontend`; as a 2nd reading, `git ls-remote https://github.com/CatCorner22/Frontend` is compared with `evidence/frontend-refs-before.txt`, and each ref that differs is named. Fail: the first reading prints a line. A ref that differs in the 2nd reading is reported to the USER and is no failure by itself, because `git ls-remote` does not show who moved a ref.
+C10 Pull request 9 is open and not merged at delivery, unless the USER has written an instruction to merge during the run. Test: an AUDITOR reads the state of the pull request and saves it.
+C11 No line added between the base and the delivered commit, outside the RUN FOLDER, claims that output meets a standard. Test: `git diff 9e50434..<delivered commit> -- . ':!hinshitsu' | grep -n -E "^\+.*(WCAG|\bADA\b|[Aa]ccessib)"`; the language AUDITOR reads each line printed and rules it a claim or no claim, 0 claims.
+C12 The RUN FOLDER holds the full record of the run. Test: the final AUDITOR runs `python3 <plugin folder>/scripts/hinshitsu_check.py hinshitsu/kit-repairs` and, for each failure printed, names the `CORRECTION` entry that answers it; 0 failures without such an entry. A `CORRECTION` entry answers a failure only where the failure sits in the text of an entry, or in the path that an entry names, and only a rewrite of that entry could clear it; a missing file, a missing entry and an open FINDING cannot be answered this way. `grep -c -E "^### E-[0-9]+ · [^·]+ · LAUNCH · " hinshitsu/kit-repairs/AUDIT-LOG.md` prints at most the number in the last `TIER` or `ANSWER` entry that holds a line "Planned SUB-AGENT runs". The 4 sessions of the second review ran before E-1 and are outside this count; the delivery report states them.
+C13 The delivered commit differs from the audited commit only inside the RUN FOLDER, and no history is rewritten. Test: the final AUDITOR runs `git diff --stat <audited commit>..<delivered commit>`, every path starts with `hinshitsu/kit-repairs/`; `git merge-base --is-ancestor 6b0c2f8 <delivered commit>` exits 0; the final AUDITOR names both commits.
+C14 The lines of `packages/kit/src` that changed after the commit the second review saw are reviewed from zero, and the judge's classes are spot-checked. Test: before WU-1 starts, 1 AUDITOR reads `git diff 83eced7..86287c2 -- packages/kit/src` with no report of the BUILDER, and re-rates 10 findings that the judge rated minor (the judge report holds 24). The AUDITOR gives each fault an ID `C14-<n>` and a class by the class definitions of the charter of the second review. Pass: the report is saved; each fault it reports with a reproduction, and each finding it rates major or blocker, is on the confirmed list with that ID and class and passes C1 or C2; and the delivery report lists each `C14-<n>` with its class for the USER. Fail: 1 such entry is absent from `redteam/FINDINGS.md`.
+C15 Each RECIPIENT can use what is delivered. Test: the recipient-experience AUDITOR (a) runs the example of `packages/kit/README.md` word for word on `packages/kit/fixtures/good.html` and gets the grade the README states for it, and finds in the README the exported way to run the keyboard walks or the statement that none exists; (b) from the text of pull request 9 alone, lists what is repaired, what is open and what the owner decides, and the list equals `redteam/FINDINGS.md`.
+C16 The delivery message to the USER holds at most 250 words, asks the USER for no command, and links each claim to the pull request, a session or a file. In it, each word in code formatting, each abbreviation in capitals and each term of the Hinshitsu glossary has its meaning in the same sentence at first use. Test: the language AUDITOR counts the words and lists each such term with its meaning, 0 without.
+
+### E-52 · 2026-11-24T20:50:17Z · RESOLUTION · ORCHESTRATOR
+
+- Finding: F-7
+- Result: FIXED
+- Change: text of the CRITERIA, E-43 (commit d95e8b7)
+- Re-audit: `audits/E-44-reaudit-round2.md` by AUDITOR, c22a19a1d983409e8ca2152b7f710092
+
+### E-53 · 2026-11-24T20:50:36Z · STAGE · ORCHESTRATOR
+
+- Stage: S5
+- Event: end
+
+4 LENS memos, 1 RED CELL report, 1 ruling, 2 re-audits; RECONCILIATION E-37; F-1 to F-7 FIXED; CRITERIA  in E-51.
+
+### E-54 · 2026-11-24T20:50:36Z · STAGE · ORCHESTRATOR
+
+- Stage: S6
+- Event: start
+
+### E-55 · 2026-11-24T20:50:37Z · CARD · ORCHESTRATOR
+
+**Decision card: 3 answers needed before any repair starts**
+
+This is the Hinshitsu step where you set the tests the work must pass. Nothing has been repaired since you asked for Hinshitsu. This run covers only the kit repairs on https://github.com/CatCorner22/Devin_Frontend/pull/9. It starts no milestone and does not connect the kit to the Studio.
+
+**1. The tests the work must pass**
+- **Question:** Do you approve the 16 tests listed below as the definition of finished for this pull request?
+- **I recommend yes:** five independent reviewers attacked the first draft and found 7 faults in it, and two more re-checked the rewrite; the last wording changes after the second re-check have not been re-checked.
+- **If yes:** repairs start on the judge's list (9 major faults, 23 minor, no blocker), and I can't loosen a test later without asking you. **If no:** tell me which to change, and nothing is built meanwhile.
+- **Reply:** "1 yes", or "1 change" with what to change.
+
+**2. The cost**
+- **Question:** May this run use up to 40 separate Devin sessions as independent checkers?
+- **I recommend yes:** I first planned 30, and re-checking the plan itself took more than I counted; each repair is checked by sessions that didn't write it, which is the point of Hinshitsu.
+- **If yes:** 9 are used and up to 31 remain; the 4 review sessions that ran before Hinshitsu are extra and already spent. **If you keep 30 or name less:** I stop at that number and report whatever is left as not checked.
+- **Reply:** "2 yes", or "2" with a number.
+
+**3. The milestone order**
+- **Question:** After this pull request, do I wait for your trial of the Studio (M4) before starting the full Catalog (M5)?
+- **I recommend starting M5 to M7 now:** your trial needs your time, and the export and the builder are the largest step toward your goal.
+- **If start now:** work continues, and your trial answers may force rework of some screens. **If trial first:** no rework, and everything after this pull request waits for you.
+- **Reply:** "3 start now" or "3 trial first".
+
+If you don't reply, I do no repair.
+
+**The 16 tests, in plain words**
+1. Each of the 9 major faults (8 the judge rated major, and 1 it said became major on the current code), and any that test 14 adds, is logged and no longer reproduces, also on a second, different input.
+2. Every minor fault, and every item only you can settle, is logged as repaired, open with a reason, or waiting on you.
+3. Each repair is one commit with a test that fails without it. No test is skipped, deleted or weakened since the pull request began.
+4. The code checks (`npm run check`) pass.
+5. The browser tests pass 3 times in a row. A failed run is reported and not erased by a later pass.
+6. The automatic checks on the pull request (CI) pass.
+7. Every number and status in the records and the pull request text matches what the commands print.
+8. No Neon or Vercel dependency, configuration or address.
+9. Nothing is pushed to your original `Frontend` repository.
+10. The pull request stays unmerged unless you say merge.
+11. No added line claims the output meets an accessibility standard.
+12. The full Hinshitsu record is saved. The log can't be edited after the fact, so 14 form errors in early entries stay; each has a written correction, and so must any later one.
+13. Nothing but the record changes after the last independent check.
+14. Before repairs start, an independent session reviews from zero the kit lines changed after the earlier review saw the code, and re-rates 10 of the judge's minor rulings. Whatever it finds or rates higher joins the repair list.
+15. The README example runs as written, and the pull request text alone tells you what is repaired, open and yours to decide.
+16. My final message to you is at most 250 words, in plain words, with links.
+
+**Choices I made that you can reverse**
+- Faults the judge rates minor are logged and may stay open.
+- Only Chromium is tested; Firefox and Safari are reported as not checked.
+- The Hinshitsu record stays in the repository, about 60 text files and no code.
+- The cause of the four Studio tests that failed once (KIT-41) stays unknown; three passing runs don't settle it.
+- The judge's report is the list of what to repair; this run's own checkers verify the repairs.
+- Findings from the automated reviewer are handled with the repairs.
+- This run changes no milestone record: M4 stays open.
+
+Working assumption while the card is open: the recommended answers (1 yes, 2 yes with 40, 3 start now). No repair, no SUB-AGENT run and no change of a milestone record takes place before an `ANSWER` entry quotes the USER. Planned SUB-AGENT runs asked for: 40 (first plan, E-4: 30; used: 9). The full text of the 16 CRITERIA is E-51; the card states each in plain words.

@@ -63,5 +63,5 @@ Order: the judge report is saved in the RUN FOLDER → the USER answers the S6 c
 
 <!-- from the log: start -->
 Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
-- Newest CRITERIA entry: E-43 (PROPOSED)
+- Newest CRITERIA entry: E-51 (PROPOSED)
 <!-- from the log: end -->
