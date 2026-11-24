@@ -62,3 +62,14 @@ Corrects E-4. The measured number in E-4 is blank because the command that found
 - Event: start
 
 SKILL.md read whole: /opt/.devin/plugins_cache/cache/account-upload_user-hinshitsu-c1ff27d2/9d4cbe73a691fdaa8a8958dbfbf8d51742c2be63fd0679b5315429be49141784/skills/hinshitsu-record/SKILL.md, 11152 bytes, SHA-256 4177d39314f3f9c613de9312a2bcfb3026bf328188c254bb5e5dd803ad756f74. Conductor SKILL.md SHA-256 7df73e003a007bf200541911c42a518e8747708e793e387ed120df4c4ebcd260. GLOSSARY.md SHA-256 92b526977fb5d1fc507f934ddba2a5c43144cfbe477c75adba9b7219bb46d599.
+
+### E-8 · 2026-11-24T20:01:52Z · DECISION · ORCHESTRATOR
+
+D-001: the run starts on work that exists (E-2). D-002: no change to the DELIVERABLE between E-1 and the USER's answer to the S6 card, except work that no pending answer can change (rule 23.5). WORK UNITS declared: WU-1, the module packages/kit with its browser test; WU-2, the records. No earlier DECISION entry exists in this log, so nothing is reversed (rule 8.4).
+
+### E-9 · 2026-11-24T20:01:52Z · STAGE · ORCHESTRATOR
+
+- Stage: S2
+- Event: end
+
+Artifacts: FRAMEWORK.md, CONNECTIONS.md, COVERAGE-LEDGER.md, MINDMAP.md, SESSION-STATE.md.
