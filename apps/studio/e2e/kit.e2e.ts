@@ -405,6 +405,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await length(base + '.story{width:1200px}')).toEqual(['fails']);
     });
 
+    it('automated review of 2026-11-24, round 1: a corner radius written as a difference is read as a difference', async () => {
+      const radii = async (radius: string): Promise<string[]> => { const page = await pageOf(`<div style="width:100px;height:60px;border-radius:${radius};background:#ffffff">Box</div>`); const out = ((await page.evaluate(`(${String(CHECKS['tokenFit'])})(document, ${JSON.stringify({ ...TOKENS, 'radius-test': '15px' })})`)) as Finding[]).filter((f) => f.ruleId === 'fit-radii').map((f) => f.status); await page.context().close(); return out; };
+      expect(await radii('calc(20% - 5px)')).toEqual(['holds']);
+      expect(await radii('calc(10% + 5px)')).toEqual(['holds']);
+      expect(await radii('calc(20% + 5px)')).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

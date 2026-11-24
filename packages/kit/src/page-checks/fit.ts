@@ -147,7 +147,8 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
       const written = /^(calc\([^()]*(?:\([^()]*\)[^()]*)*\)|\S+)/.exec(style[`border${corner}Radius`])?.[0] ?? '';
       if (/^-?[\d.]+%$/.test(written)) continue;
       let radius = 0;
-      for (const term of written.match(/-?[\d.]+(?:px|%)/g) ?? []) radius += term.endsWith('%') ? (parseFloat(term) / 100) * box.width : parseFloat(term);
+      // A term behind a minus sign is taken away, as CSS does: calc(20% - 5px) on a box 100 px wide is 15 px.
+      for (const term of written.matchAll(/(?:([+-])\s+)?(-?[\d.]+)(px|%)/g)) radius += (term[1] === '-' ? -1 : 1) * (term[3] === '%' ? (parseFloat(term[2] ?? '0') / 100) * box.width : parseFloat(term[2] ?? '0'));
       const round = radius >= 999 || (Math.abs(box.width - box.height) <= side * 0.1 && radius >= side / 2);
       if (radius > 0 && !round && tokenLengths.size > 0 && ![...tokenLengths].some((length) => Math.abs(length - radius) <= 0.5)) once({ ruleId: 'fit-radii', status: 'fails', where: name(el), measured: `corner radius ${Math.round(radius * 10) / 10} px`, required: 'a radius of the design', fix: 'Set border-radius from the design token.' });
     }
