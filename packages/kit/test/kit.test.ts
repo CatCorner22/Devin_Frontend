@@ -287,6 +287,13 @@ describe('design ID', () => {
     expect(designId({ i: 'URL(hero.png)  no-repeat' })).not.toBe(designId({ i: 'url(Hero.png) no-repeat' }));
     expect(designId({ u: 'Underline' })).toBe(designId({ u: 'underline' }));
   });
+  it('answers within seconds for a value of 320,000 letters, whatever its letters are (review of 2026-11-24, F-27)', () => {
+    for (const piece of ['url(', 'url("', '"', "'", 'u', 'url( ', ') url("a', 'a  ']) {
+      const started = performance.now();
+      expect(designId({ '--bg': piece.repeat(Math.ceil(320_000 / piece.length)) })).toMatch(/^rx-[0-9a-f]{16}$/);
+      expect(performance.now() - started).toBeLessThan(5000);
+    }
+  });
 });
 
 describe('picture comparison', () => {
