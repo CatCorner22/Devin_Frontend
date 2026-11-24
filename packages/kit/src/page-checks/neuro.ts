@@ -97,11 +97,11 @@ export function noEndlessMotion(doc: Document): Finding[] {
     const repeatCount = el.getAttribute('repeatCount') === 'indefinite' ? Infinity : parseFloat(el.getAttribute('repeatCount') ?? '1');
     // Without a duration the animation does not run. `repeatDur` bounds the whole; otherwise the whole is duration times count.
     if (Number.isNaN(dur) || dur <= 0) continue;
-    // An `end` written as a time stops the animation then, whatever its count says.
+    // An `end` written as a time stops the animation then, whatever its count says. "indefinite" names no time.
     const end = clock(el.getAttribute('end'));
     const begin = clock(el.getAttribute('begin'));
     const lasts = !Number.isNaN(repeatDur) ? (el.getAttribute('repeatCount') === null ? repeatDur : Math.min(repeatDur, dur * repeatCount)) : dur * (Number.isNaN(repeatCount) ? 1 : repeatCount);
-    const total = !Number.isNaN(end) && end >= 0 ? Math.min(lasts, Math.max(0, end - (Number.isNaN(begin) ? 0 : begin))) : lasts;
+    const total = Number.isFinite(end) && end >= 0 ? Math.min(lasts, Math.max(0, end - (Number.isFinite(begin) ? begin : 0))) : lasts;
     if (total > 5 && !hasPause) out.push({ ruleId, status: 'fails', where: `${name(drawing)} ${el.tagName}`, measured: total === Infinity ? 'a drawing that moves without end' : `a drawing that moves for ${total.toFixed(1)} s`, required, fix });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];

@@ -463,6 +463,10 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<p>You haven\'t placed an order. Browse the shop to start.</p><ul id="orders"></ul>', 'emptyStatesExplain', 'ul{min-height:24px}')).toEqual(['holds']);
     });
 
+    it('automated review of 2026-11-24, round 2: an animation whose begin and end are both "indefinite" has no stated end', async () => {
+      expect(await statuses('<svg width="40" height="40"><rect width="20" height="20"><animate attributeName="x" from="0" to="20" dur="1s" repeatCount="indefinite" begin="indefinite" end="indefinite"/></rect></svg>', 'noEndlessMotion')).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
