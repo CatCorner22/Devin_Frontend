@@ -73,6 +73,13 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     const value = String(raw);
     const color = paint(value.trim());
     if (color && color !== 'clear') tokenColors.set(color, token);
+    // A token for a border or a shadow holds a color among other words ("1px solid #d0d5dd"). That color is a color of the
+    // design too (finding F-19 of the review of 2026-11-24). A token for a typeface is not read: "Tan" names a face there.
+    else if (!/font|family/i.test(token) && /[\s,]/.test(value.trim())) {
+      const text = withoutUrls(value.slice(0, 2000));
+      const parts = [...(text.match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []), ...(text.replace(/[a-z-]+\([^()]*\)/gi, ' ').match(/\b[a-z]{3,20}\b/gi) ?? []).filter((word) => !/^(inherit|initial|unset|revert|currentcolor)$/i.test(word))];
+      for (const part of parts) { const inner = paint(part); if (inner && inner !== 'clear' && !tokenColors.has(inner)) tokenColors.set(inner, token); }
+    }
     else if (/^-?[\d.]+(px|rem)$/.test(value.trim())) tokenLengths.add(parseFloat(value) * (value.trim().endsWith('rem') ? parseFloat(view.getComputedStyle(doc.documentElement).fontSize) : 1));
     else if (/font|family/i.test(token) && /[a-z]/i.test(value)) tokenFamilies.add(family(value));
   }

@@ -298,6 +298,18 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await colors(`background-image:url('${picture('"')}'), linear-gradient(#ffffff,#ff00aa)`)).toEqual(['background fade color rgb(255, 0, 170)']);
     });
 
+    it('second review, F-19: a color inside a token for a border or a shadow is a color of the design', async () => {
+      const page = await pageOf('<div class="card"><p>Bread</p></div>', 'body{color:#1a1a1a;background:#ffffff} .card{border:1px solid #d0d5dd;box-shadow:0 1px 3px rgba(0,0,0,0.12), 0 0 0 1px navy;padding:8px}');
+      const fit = async (tokens: Record<string, string>): Promise<string[]> => (await page.evaluate(`(${String(CHECKS.tokenFit)})(document, ${JSON.stringify(tokens)})`) as Finding[]).filter((f) => f.ruleId === 'fit-colors' && f.status === 'fails').map((f) => f.measured ?? '');
+      const base = { '--ink': '#1a1a1a', '--paper': '#ffffff' };
+      expect(await fit({ ...base, '--border': '1px solid #d0d5dd', '--shadow': '0 1px 3px rgba(0,0,0,0.12), 0 0 0 1px navy' })).toEqual([]);
+      // Without the two tokens the same page fails for the three colors, so the check still reads them.
+      expect((await fit(base)).sort()).toEqual(['border color rgb(208, 213, 221)', 'shadow color rgb(0, 0, 128)', 'shadow color rgba(0, 0, 0, 0.12)']);
+      // The name of a typeface that is also the name of a color adds no color to the design.
+      expect(await fit({ ...base, '--font-body': 'Tan, navy, serif', '--border': '1px solid #d0d5dd' })).toEqual(['shadow color rgba(0, 0, 0, 0.12)', 'shadow color rgb(0, 0, 128)']);
+      await page.context().close();
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
