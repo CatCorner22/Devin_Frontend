@@ -311,6 +311,14 @@ describe('design ID', () => {
     expect(designId({ i: 'URL(hero.png)  no-repeat' })).not.toBe(designId({ i: 'url(Hero.png) no-repeat' }));
     expect(designId({ u: 'Underline' })).toBe(designId({ u: 'underline' }));
   });
+  it('reads a value of many unclosed url( in little time, and tells two file names apart behind an escaped quotation mark (review of 2026-11-24, C14-6 and C14-7)', () => {
+    const started = Date.now();
+    designId({ '--bg': 'url('.repeat(4000) });
+    designId({ '--bg': 'url("'.repeat(4000) });
+    expect(Date.now() - started).toBeLessThan(2000);
+    expect(designId({ '--bg': 'url("a\\")B.png")' })).not.toBe(designId({ '--bg': 'url("a\\")b.png")' }));
+    expect(designId({ '--bg': "url('a\\')B.png')" })).not.toBe(designId({ '--bg': "url('a\\')b.png')" }));
+  });
   it('keeps its word on capitals: outside quotation marks, url() and custom names they do not count; inside they do (review of 2026-11-24, F-26)', () => {
     const same = (a: unknown, b: unknown): boolean => designId({ t: a }) === designId({ t: b });
     expect(same('URL(a.png)', 'url(a.png)')).toBe(true);
