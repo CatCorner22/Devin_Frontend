@@ -101,11 +101,11 @@ graph TD
 
 <!-- from the log: start -->
 Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
-- F-1 , test of C11 (BLOCKER, open)
-- F-2 , test of C12; , (BLOCKER, open)
-- F-3 , baseline 86287c2 of C3, C8, C11 (BLOCKER, open)
-- F-4 D-003, C1 (BLOCKER, open)
-- F-5 , C5; A-2 (BLOCKER, open)
-- F-6 , C8 (BLOCKER, open)
+- F-1 , test of C11 (BLOCKER, FIXED by E-45)
+- F-2 , test of C12; , (BLOCKER, FIXED by E-46)
+- F-3 , baseline 86287c2 of C3, C8, C11 (BLOCKER, FIXED by E-47)
+- F-4 D-003, C1 (BLOCKER, FIXED by E-48)
+- F-5 , C5; A-2 (BLOCKER, FIXED by E-49)
+- F-6 , C8 (BLOCKER, FIXED by E-50)
 - F-7 , C1 to C3 (BLOCKER, open)
 <!-- from the log: end -->

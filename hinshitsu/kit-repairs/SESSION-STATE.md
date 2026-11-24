@@ -4,9 +4,9 @@ Last rewritten: 2026-11-24 — log entry E-38
 
 <!-- from the log: start -->
 Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
-- Newest CRITERIA entry: E-35 (PROPOSED)
+- Newest CRITERIA entry: E-43 (PROPOSED)
 - STAGE now running: S5
-- Open FINDINGS: F-1 (BLOCKER), F-2 (BLOCKER), F-3 (BLOCKER), F-4 (BLOCKER), F-5 (BLOCKER), F-6 (BLOCKER), F-7 (BLOCKER)
+- Open FINDINGS: F-7 (BLOCKER)
 <!-- from the log: end -->
 
 1. **Objective:** "First, please use Hinshitsu." (2026-11-24 14:58 EST), on the work in progress: "Please complete all milestones." and "Please also edit and audit your code as you work." (2026-11-24)
