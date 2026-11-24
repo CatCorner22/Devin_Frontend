@@ -255,6 +255,14 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(Date.now() - started).toBeLessThan(40000);
     }, 60000);
 
+    it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
+      const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
+      expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
+      expect(await statuses(`<style>nav a{font-size:8px;line-height:8px}</style><nav aria-label="Pages">Page ${links.join('')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
+      expect(await statuses('<p>Tags: <a href="/a">a</a> | <a href="/b">b</a></p>', 'targetSize')).toEqual(['fails', 'fails']);
+      expect(await statuses('<p>Read the <a href="/t">terms</a> and the <a href="/p">privacy note</a> before you <a href="/o">order</a>.</p>', 'targetSize')).toEqual(['holds']);
+    });
+
     it('second review, F-24: a pause button that says so in its name counts without the mark; a name that merely holds the word does not', async () => {
       const turn = '<style>@keyframes t { to { transform: rotate(360deg); } } .b { display: inline-block; animation: t 1s linear infinite; }</style><p class="b">Round and round</p>';
       for (const control of ['<button type="button">Pause the moving text</button>', '<button>Pause</button>', '<button>Stop animation</button>', '<button aria-label="Pause slideshow"><svg width="16" height="16"></svg></button>', '<span role="button" tabindex="0">Turn off motion</span>']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['holds']);

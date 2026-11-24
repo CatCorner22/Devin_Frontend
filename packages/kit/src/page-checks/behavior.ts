@@ -138,7 +138,16 @@ export function targetSize(doc: Document): Finding[] {
     });
   };
   for (const el of targets) {
-    const inSentence = el.tagName === 'A' && view.getComputedStyle(el).display === 'inline' && [...(el.parentElement?.childNodes ?? [])].some((n) => n.nodeType === 3 && /[^\s|·•,;:/()\-–—]/.test(n.textContent ?? ''));
+    // A link among the words of a sentence is exempt, as the standard exempts it. A link whose neighbor is another link,
+    // with nothing but space or a divider between them, is no word of a sentence: "Page 1 2 3" is a row of targets
+    // (finding F-7 of the review of 2026-11-24).
+    const words = (n: Node | null): boolean => n !== null && n.nodeType === 3 && /[^\s|·•,;:/()\-–—]/.test(n.textContent ?? '');
+    const besideLink = (step: 'previousSibling' | 'nextSibling'): boolean => {
+      let n: Node | null = el[step];
+      while (n && n.nodeType === 3 && !words(n)) n = n[step];
+      return n !== null && n.nodeType === 1 && ((n as Element).tagName === 'A' || (n as Element).querySelector('a') !== null);
+    };
+    const inSentence = el.tagName === 'A' && view.getComputedStyle(el).display === 'inline' && [...(el.parentElement?.childNodes ?? [])].some(words) && !besideLink('previousSibling') && !besideLink('nextSibling');
     if (inSentence) continue;
     let box = boxOf(el);
     // A skip link is one pixel large until it has the focus; it is measured as the person meets it (F-13).
