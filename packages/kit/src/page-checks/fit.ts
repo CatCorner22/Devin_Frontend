@@ -66,7 +66,7 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     if (hasText) colors.push(['text', style.color]);
     for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) if (parseFloat(style[`border${side}Width`]) > 0 && style[`border${side}Style`] !== 'none') colors.push(['border', style[`border${side}Color`]]);
     // The colors inside a shadow and inside a fade, however the style sheet writes them (F-32). Only the first 2,000 letters are read.
-    for (const [part, text] of [['shadow', style.boxShadow], ['background fade', style.backgroundImage.includes('gradient') ? style.backgroundImage : '']] as const) {
+    for (const [part, text] of [['shadow', style.boxShadow], ['background fade', style.backgroundImage.includes('gradient') ? style.backgroundImage.replace(/url\((?:"[^"]*"|'[^']*'|[^)]*)\)/gi, ' ') : '']] as const) {
       for (const color of text.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push([part, color]);
     }
     for (const [part, value] of colors) {
