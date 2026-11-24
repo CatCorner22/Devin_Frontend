@@ -74,7 +74,7 @@ export function noEndlessMotion(doc: Document): Finding[] {
   for (const el of doc.querySelectorAll('svg animate, svg animateTransform, svg animateMotion')) {
     const drawing = el.closest('svg');
     const target = el.parentElement;
-    if (!drawing || drawing.getClientRects().length === 0 || view.getComputedStyle(drawing).visibility === 'hidden' || !target || (target !== drawing && target.getClientRects().length === 0)) continue;
+    if (!drawing || drawing.getClientRects().length === 0 || view.getComputedStyle(drawing).visibility === 'hidden' || !target || ((target as Element) !== drawing && target.getClientRects().length === 0)) continue;
     const dur = clock(el.getAttribute('dur'));
     const repeatDur = el.getAttribute('repeatDur') === null ? NaN : clock(el.getAttribute('repeatDur'));
     const repeatCount = el.getAttribute('repeatCount') === 'indefinite' ? Infinity : parseFloat(el.getAttribute('repeatCount') ?? '1');
@@ -203,11 +203,13 @@ export function survivesTextSpacing(doc: Document): Finding[] {
     for (; box && box !== doc.body && !cutAcross && !cutDown; box = cutAcross || cutDown ? box : box.parentElement) {
       const computed: CSSStyleDeclaration = view.getComputedStyle(box);
       if (!hides(computed.overflowX) && !hides(computed.overflowY)) continue;
-      const outer = box.getBoundingClientRect();
-      const left = outer.left + box.clientLeft;
-      const top = outer.top + box.clientTop;
-      cutAcross = hides(computed.overflowX) && letters.some((r) => r.width > 0 && (r.right > left + box!.clientWidth + 1 || r.left < left - 1));
-      cutDown = hides(computed.overflowY) && letters.some((r) => r.height > 0 && (r.bottom > top + box!.clientHeight + 1 || r.top < top - 1));
+      const outer: DOMRect = box.getBoundingClientRect();
+      const left: number = outer.left + box.clientLeft;
+      const top: number = outer.top + box.clientTop;
+      const right: number = left + box.clientWidth;
+      const bottom: number = top + box.clientHeight;
+      cutAcross = hides(computed.overflowX) && letters.some((r): boolean => r.width > 0 && (r.right > right + 1 || r.left < left - 1));
+      cutDown = hides(computed.overflowY) && letters.some((r): boolean => r.height > 0 && (r.bottom > bottom + 1 || r.top < top - 1));
     }
     if (box && box !== doc.body && (cutAcross || cutDown) && !tiny(box) && !tiny(el) && !seen.has(box) && seen.add(box)) out.push({ ruleId, status: 'fails', where: name(box), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
   }
