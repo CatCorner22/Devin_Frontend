@@ -156,7 +156,9 @@ export function controlsHaveNames(doc: Document): Finding[] {
   if (controls.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
   // Letters that draw nothing (zero-width spaces and joiners, the soft hyphen, the byte-order mark) are no name.
-  const unseen = new RegExp('[\\u200b-\\u200f\\u2060-\\u2064\\u00ad\\ufeff]', 'g');
+  // So are the blank letters that take up room and draw nothing: the braille blank and the Hangul fillers
+  // (finding F-8 of the review of 2026-11-24).
+  const unseen = new RegExp('[\\u200b-\\u200f\\u2060-\\u2064\\u00ad\\ufeff\\u2800\\u3164\\u115f\\u1160\\uffa0]', 'g');
   for (const el of controls) {
     const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join('');
     // Only what a screen reader is given counts: nothing inside a part marked aria-hidden, and nothing that is not drawn.
@@ -168,6 +170,8 @@ export function controlsHaveNames(doc: Document): Finding[] {
     const range = doc.createRange();
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       if (!node.parentElement || !open(node.parentElement)) continue;
+      // Text that is code or a store of parts, never a name: a style sheet or a script inside a drawing, and its `defs`.
+      if (node.parentElement.closest('style, script, defs, template, noscript')) continue;
       range.selectNodeContents(node);
       if (node.parentElement.closest('svg') !== null || range.getClientRects().length > 0) text += node.textContent ?? '';
     }

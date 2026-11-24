@@ -388,6 +388,24 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await spacing('<section class="hero" style="height: 40px; padding: 0"><div class="dot"></div><p>Baked on the spot since 1987, and sold in three shops in the old town every day.</p><p>Second paragraph.</p></section>', hero)).toEqual([['fails', 'section.hero']]);
     });
 
+    it('second review F-8: style text inside a drawing and blank letters are no name for a control; a title or text in the drawing is', async () => {
+      const names = async (body: string): Promise<[string, string | undefined][]> => {
+        const page = await pageOf(body, 'button, a { min-width: 44px; min-height: 44px; display: inline-block; }');
+        const out = (await run(page, 'controlsHaveNames')).map((f): [string, string | undefined] => [f.status, f.where]);
+        await page.context().close();
+        return out;
+      };
+      const path = '<path class="a" d="M4 4L20 20M20 4L4 20"/>';
+      expect(await names(`<button id="x"><svg width="24" height="24"><style>.a{fill:#1a1a1a}</style>${path}</svg></button>`)).toEqual([['fails', 'button#x']]);
+      expect(await names(`<button id="x"><svg width="24" height="24"><defs><symbol id="s"><title>Close</title></symbol><text>Close</text></defs><script>var a = 1;</script>${path}</svg></button>`)).toEqual([['fails', 'button#x']]);
+      for (const blank of ['\u2800', '\u3164', '\u115f', '\u1160', '\uffa0', '\u2800 \u3164']) expect(await names(`<button id="x">${blank}</button>`)).toEqual([['fails', 'button#x']]);
+      expect(await names(`<a id="x" href="#a" aria-label="\u3164"></a>`)).toEqual([['fails', 'a#x']]);
+      // A drawing that names itself, and a drawing with a style sheet beside a real name, hold.
+      expect(await names(`<button><svg width="24" height="24"><title>Close</title><style>.a{fill:#1a1a1a}</style>${path}</svg></button>`)).toEqual([['holds', undefined]]);
+      expect(await names(`<button><svg width="24" height="24"><text x="0" y="16">OK</text></svg></button>`)).toEqual([['holds', undefined]]);
+      expect(await names(`<button><svg width="24" height="24" aria-hidden="true"><style>.a{fill:#1a1a1a}</style>${path}</svg> Close</button>`)).toEqual([['holds', undefined]]);
+    });
+
     it('second review F-4: endless movement drawn by ::before or ::after, or written into an SVG drawing, fails; short movement holds', async () => {
       const spin = '@keyframes spin { to { transform: rotate(360deg); } }';
       const motion = async (body: string, style = ''): Promise<[string, string | undefined][]> => {
