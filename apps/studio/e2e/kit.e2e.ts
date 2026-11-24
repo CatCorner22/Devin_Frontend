@@ -374,6 +374,17 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<h2 style="padding:60px 0">Short</h2>', 'balancedHeadings')).toEqual(['not-applicable']);
     });
 
+    it('second review, F-18: a card picture with a fixed height and a width that comes from the card is not blamed', async () => {
+      const gif = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      const size = async (style: string): Promise<string[]> => { const page = await pageOf(`<div class="card" style="width:320px"><img src="${gif}" alt=""></div>`, style); const out = (await run(page, 'pictures')).filter((f) => f.ruleId === 'craft-picture-size').map((f) => f.status); await page.context().close(); return out; };
+      expect(await size('.card img{display:block;width:100%;height:200px;object-fit:cover}')).toEqual(['holds']);
+      expect(await size('.card img{display:block;width:50%;height:12rem}')).toEqual(['holds']);
+      // A height that is a share, or a width left to the file, keeps no room.
+      expect(await size('.card img{display:block;width:100%;height:auto}')).toEqual(['fails']);
+      expect(await size('.card img{display:block;height:200px}')).toEqual(['fails']);
+      expect(await size('.card img{display:block;width:100%;height:50%}')).toEqual(['fails']);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);

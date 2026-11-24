@@ -150,7 +150,10 @@ export function pictures(doc: Document): Finding[] {
   const fixedInCss = (el: Element): boolean => {
     const map = (el as Element & { computedStyleMap?: () => { get(name: string): unknown } }).computedStyleMap?.();
     const fixed = (value: unknown): boolean => typeof (value as { unit?: unknown } | undefined)?.unit === 'string' && (value as { unit: string }).unit !== 'percent';
-    return map !== undefined && fixed(map.get('width')) && fixed(map.get('height'));
+    // A fixed height with a width that is a share of the box around it (the usual card picture) keeps the room as well:
+    // the height is known before the file arrives, and the width comes from the card (finding F-18 of the review of 2026-11-24).
+    const stated = (value: unknown): boolean => typeof (value as { unit?: unknown } | undefined)?.unit === 'string';
+    return map !== undefined && stated(map.get('width')) && fixed(map.get('height'));
   };
   for (const el of images) {
     const style = view.getComputedStyle(el);
