@@ -16,8 +16,9 @@ export function keyboardReachable(doc: Document): Finding[] {
     // the arrow keys walk, because the group can then have no way in (all tabs built as buttons with tabindex -1).
     const isNative = native.includes(el.tagName) && !(el.tagName === 'A' && !el.hasAttribute('href'));
     if (isNative && !(el.tabIndex < 0 && el.closest(walked))) continue;
-    // A control that is switched off answers no click and needs no Tab stop.
-    if (isNative && (el.matches(':disabled') || el.getAttribute('aria-disabled') === 'true')) continue;
+    // A control that is switched off answers no click and needs no Tab stop. The mark aria-disabled switches nothing off:
+    // the control still answers a click, so it is judged like any other.
+    if (isNative && el.matches(':disabled')) continue;
     // Inside a group that the arrow keys walk, an item with tabindex -1 is the pattern of the ARIA guide (F-15).
     // The group must still have a way in: one of its items, or the group itself, takes the Tab key.
     // A menu is the exception: the button that opens it moves the focus into it.
