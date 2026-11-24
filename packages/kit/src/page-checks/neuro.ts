@@ -175,7 +175,11 @@ export function visibleLabels(doc: Document): Finding[] {
     }
     return false;
   };
-  const seen = (el: Element): boolean => el.getClientRects().length > 0 && !tiny(el) && view.getComputedStyle(el).visibility === 'visible' && parseFloat(view.getComputedStyle(el).opacity) > 0 && (el.textContent ?? '').trim().length > 0;
+  // A label written in a clear color is drawn and cannot be read (finding F-12 of the review of 2026-11-24). The computed
+  // color names its own share of ink last: "rgba(0, 0, 0, 0)", or "... / 0)" in the newer ways of writing a color.
+  // A label in the very color of the ground behind it is not caught here; the contrast rule answers for that.
+  const clear = (color: string): boolean => { const share = /^rgba\([^)]*,\s*([\d.]+)\)$/.exec(color)?.[1] ?? /\/\s*([\d.]+)(%?)\)$/.exec(color)?.[1]; return share !== undefined && parseFloat(share) < (/%\)$/.test(color) ? 10 : 0.1); };
+  const seen = (el: Element): boolean => { const computed = view.getComputedStyle(el); return el.getClientRects().length > 0 && !tiny(el) && computed.visibility === 'visible' && parseFloat(computed.opacity) > 0 && !clear(computed.color) && !clear(computed.getPropertyValue('-webkit-text-fill-color')) && (el.textContent ?? '').trim().length > 0; };
   const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0 && !unmet(el));
   if (fields.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];

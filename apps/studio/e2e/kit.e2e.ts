@@ -340,6 +340,14 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(controls, 'focusIsVisible')).toEqual(['holds']);
     });
 
+    it('second review, F-12: a label in a clear color is no visible label', async () => {
+      const wheres = async (body: string): Promise<(string | undefined)[]> => { const page = await pageOf(body); const out = (await run(page, 'visibleLabels')).filter((f) => f.status === 'fails').map((f) => f.where); await page.context().close(); return out; };
+      expect(await wheres('<label for="e" style="color:transparent">Email</label><input id="e" type="email">')).toEqual(['input#e']);
+      expect(await wheres('<label for="e" style="color:rgba(0,0,0,0)">Email</label><input id="e" type="email"><label for="f">Phone</label><input id="f" type="tel">')).toEqual(['input#e']);
+      expect(await wheres('<label for="e" style="-webkit-text-fill-color:transparent">Email</label><input id="e" type="email">')).toEqual(['input#e']);
+      expect(await wheres('<label for="e" style="color:rgba(0,0,0,0.6)">Email</label><input id="e" type="email">')).toEqual([]);
+    });
+
     it('second review, F-7: links in a row behind one word are targets; links among the words of a sentence stay exempt', async () => {
       const links = [1, 2, 3, 4, 5].map((n) => `<a href="/${n}">${n}</a>`);
       expect(await statuses(`<nav aria-label="Pages">Page ${links.join(' ')}</nav>`, 'targetSize')).toEqual(['fails', 'fails', 'fails', 'fails', 'fails']);
