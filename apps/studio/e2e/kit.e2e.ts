@@ -352,6 +352,30 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await where(`<input type="image" alt="Search" src="${gif}" style="width:30px;height:30px"><input type="button" value="Add"><input type="submit"><input type="reset">`)).toEqual([]);
     });
 
+    it('second review F-4: endless movement drawn by ::before or ::after, or written into an SVG drawing, fails; short movement holds', async () => {
+      const spin = '@keyframes spin { to { transform: rotate(360deg); } }';
+      const motion = async (body: string, style = ''): Promise<[string, string | undefined][]> => {
+        const page = await pageOf(`<h1>Shop</h1>${body}`, style);
+        const out = (await run(page, 'noEndlessMotion')).map((f): [string, string | undefined] => [f.status, f.where]);
+        await page.context().close();
+        return out;
+      };
+      const loader = '<div class="loader">Loading</div>';
+      expect(await motion(loader, `${spin} .loader::after { content: ""; display: inline-block; width: 16px; height: 16px; border: 2px solid; animation: spin 1s linear infinite; }`)).toEqual([['fails', 'div.loader::after']]);
+      expect(await motion(loader, `${spin} .loader::before { content: "*"; display: inline-block; animation: spin 2s linear 4; }`)).toEqual([['fails', 'div.loader::before']]);
+      const svg = (inner: string): string => `<svg id="art" width="40" height="40" viewBox="0 0 40 40"><circle cx="20" cy="20" r="10">${inner}</circle></svg>`;
+      expect(await motion(svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite"/>'))).toEqual([['fails', 'svg#art animate']]);
+      expect(await motion(svg('<animateTransform attributeName="transform" type="rotate" from="0 20 20" to="360 20 20" dur="2s" repeatDur="indefinite"/>'))).toEqual([['fails', 'svg#art animateTransform']]);
+      expect(await motion(svg('<animate attributeName="r" values="10;14;10" dur="2s" repeatCount="3"/>'))).toEqual([['fails', 'svg#art animate']]);
+      // Sound pages: movement that ends within five seconds, a pseudo-element that is not drawn, a hidden drawing, and a pause control.
+      expect(await motion(loader, `${spin} .loader::after { content: ""; display: inline-block; animation: spin 1s linear 3; }`)).toEqual([['holds', undefined]]);
+      expect(await motion(loader, `${spin} .loader::after { animation: spin 1s linear infinite; }`)).toEqual([['holds', undefined]]);
+      expect(await motion(svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="2"/>'))).toEqual([['holds', undefined]]);
+      expect(await motion(svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite" repeatDur="4s"/>'))).toEqual([['holds', undefined]]);
+      expect(await motion(`<div hidden>${svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite"/>')}</div>`)).toEqual([['holds', undefined]]);
+      expect(await motion(`${svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite"/>')}<button data-pause-motion>Pause</button>`)).toEqual([['holds', undefined]]);
+    }, 60_000);
+
     it('second review F-3: a carousel that a script scrolls, and one that a script animates, fail', async () => {
       const track = '<h1>Shop</h1><div id="track" style="width: 300px; overflow: hidden; white-space: nowrap"><span style="display: inline-block; width: 600px">One</span><span style="display: inline-block; width: 600px">Two</span><span style="display: inline-block; width: 600px">Three</span></div>';
       const scrolls = await pageOf(track);

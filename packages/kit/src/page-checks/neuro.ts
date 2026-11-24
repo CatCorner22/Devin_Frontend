@@ -31,22 +31,57 @@ export function noEndlessMotion(doc: Document): Finding[] {
   // A pause control counts only if a person can see it.
   // Only a visible button that the builder marked for this job counts. A label that merely holds the word "stop" does not (finding F-6).
   const hasPause = [...doc.querySelectorAll('button[data-pause-motion], [role="button"][data-pause-motion]')].some((el) => el.getClientRects().length > 0 && view.getComputedStyle(el).visibility === 'visible');
+  const required = 'at most 5 s, or a control that pauses it';
+  const fix = 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with the attribute data-pause-motion.';
   for (const el of doc.querySelectorAll('body *')) {
-    const style = view.getComputedStyle(el);
+    const own = view.getComputedStyle(el);
     // A part that is not drawn (itself or a part around it has `display: none`) moves nothing that a person sees.
-    if (style.animationName === 'none' || style.display === 'none' || style.visibility === 'hidden' || (el.getClientRects().length === 0 && style.display !== 'contents')) continue;
-    const names = style.animationName.split(',');
-    const durations = style.animationDuration.split(',').map((t) => seconds(t.trim()));
-    const counts = style.animationIterationCount.split(',').map((t) => t.trim());
-    for (let i = 0; i < names.length; i++) {
-      const duration = durations[i % durations.length] ?? 0;
-      const count = counts[i % counts.length] ?? '1';
-      const total = count === 'infinite' ? Infinity : duration * parseFloat(count);
-      if (duration > 0 && total > 5 && !hasPause) {
-        out.push({ ruleId, status: 'fails', where: name(el), measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it.' });
-        break;
-      }
+    if (own.display === 'none' || own.visibility === 'hidden' || (el.getClientRects().length === 0 && own.display !== 'contents')) continue;
+    // The usual loading spinner is drawn by `::before` or `::after`, which no selector reaches; each has a style of its own
+    // (finding F-4 of the review of 2026-11-24). A pseudo-element without content is not drawn.
+    const styles: [string, CSSStyleDeclaration][] = [['', own]];
+    for (const pseudo of ['::before', '::after']) {
+      const style = view.getComputedStyle(el, pseudo);
+      if (style.content !== 'none' && style.content !== 'normal' && style.display !== 'none' && style.visibility !== 'hidden') styles.push([pseudo, style]);
     }
+    for (const [pseudo, style] of styles) {
+      if (style.animationName === 'none') continue;
+      const names = style.animationName.split(',');
+      const durations = style.animationDuration.split(',').map((t) => seconds(t.trim()));
+      const counts = style.animationIterationCount.split(',').map((t) => t.trim());
+      let found = false;
+      for (let i = 0; i < names.length && !found; i++) {
+        if ((names[i] ?? '').trim() === 'none') continue;
+        const duration = durations[i % durations.length] ?? 0;
+        const count = counts[i % counts.length] ?? '1';
+        const total = count === 'infinite' ? Infinity : duration * parseFloat(count);
+        if (duration > 0 && total > 5 && !hasPause) {
+          out.push({ ruleId, status: 'fails', where: name(el) + pseudo, measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required, fix });
+          found = true;
+        }
+      }
+      if (found) break;
+    }
+  }
+  // Movement written into a drawing itself: the animation elements of SVG. No style sheet names them (finding F-4 as well).
+  const clock = (text: string | null): number => {
+    const t = (text ?? '').trim();
+    if (t === 'indefinite') return Infinity;
+    if (/^[\d.]+(ms|s|min|h)?$/.test(t)) return parseFloat(t) * (t.endsWith('ms') ? 0.001 : t.endsWith('min') ? 60 : t.endsWith('h') ? 3600 : 1);
+    const parts = t.split(':').map(Number);
+    return parts.length >= 2 && parts.every((n) => !Number.isNaN(n)) ? parts.reduce((sum, n) => sum * 60 + n, 0) : NaN;
+  };
+  for (const el of doc.querySelectorAll('svg animate, svg animateTransform, svg animateMotion')) {
+    const drawing = el.closest('svg');
+    const target = el.parentElement;
+    if (!drawing || drawing.getClientRects().length === 0 || view.getComputedStyle(drawing).visibility === 'hidden' || !target || (target !== drawing && target.getClientRects().length === 0)) continue;
+    const dur = clock(el.getAttribute('dur'));
+    const repeatDur = el.getAttribute('repeatDur') === null ? NaN : clock(el.getAttribute('repeatDur'));
+    const repeatCount = el.getAttribute('repeatCount') === 'indefinite' ? Infinity : parseFloat(el.getAttribute('repeatCount') ?? '1');
+    // Without a duration the animation does not run. `repeatDur` bounds the whole; otherwise the whole is duration times count.
+    if (Number.isNaN(dur) || dur <= 0) continue;
+    const total = !Number.isNaN(repeatDur) ? (el.getAttribute('repeatCount') === null ? repeatDur : Math.min(repeatDur, dur * repeatCount)) : dur * (Number.isNaN(repeatCount) ? 1 : repeatCount);
+    if (total > 5 && !hasPause) out.push({ ruleId, status: 'fails', where: `${name(drawing)} ${el.tagName}`, measured: total === Infinity ? 'a drawing that moves without end' : `a drawing that moves for ${total.toFixed(1)} s`, required, fix });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }
