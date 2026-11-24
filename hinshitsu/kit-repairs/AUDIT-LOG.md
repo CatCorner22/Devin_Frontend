@@ -380,3 +380,78 @@ C13 The delivered commit differs from the audited commit only inside the RUN FOL
 C14 The lines of `packages/kit/src` that changed after the commit the second review saw are reviewed from zero, and the judge's classes are spot-checked. Test: 1 AUDITOR reads `git diff 83eced7..<audited commit> -- packages/kit/src` with no report of the BUILDER and reports each fault with a reproduction; the same AUDITOR re-rates 10 findings that the judge rated minor or rejected and names each one it rates higher.
 C15 Each RECIPIENT can use what is delivered. Test: the recipient-experience AUDITOR (a) runs the example of `packages/kit/README.md` word for word on `packages/kit/fixtures/good.html` and gets the grade the README states for it, and finds in the README the exported way to run the keyboard walks or the statement that none exists; (b) from the text of pull request 9 alone, lists what is repaired, what is open and what the owner decides, and the list equals `redteam/FINDINGS.md`.
 C16 The delivery message to the USER holds at most 250 words, explains each technical term at first use, links each claim to the pull request, a session or a file, and asks the USER for no command. Test: the language AUDITOR reads the message and counts.
+
+### E-36 · 2026-11-24T20:27:31Z · ASSUMPTION · ORCHESTRATOR
+
+PREMISES the RED CELL attacked that are not FINDINGS (`audits/redcell-plan.md`, P6 to P10), logged as the challenge rules direct. The ruling `memos/lens-structural-integrity-redcell-counts.md` records "At least 1 counts: yes" (P1, P2, P3, P5, P7, P8 count).
+A-9 The ref `refs/pull/9/merge` shows that pull request 9 is open (P6). EVIDENCE: not verified for a closed, unmerged pull request. Answer: C10 of E-35 reads the state of the pull request; the ref is no longer the test. A-6 is corrected by this line: the RED CELL read "State: open" through the pull request view.
+A-10 Unchanged refs of CatCorner22/Frontend prove the run did not touch it (P7). False when another party moves a ref. Answer: C9 of E-35 tests what the run did.
+A-11 C7 can be met while the branch moves (P8). Answer: E-35 defines audited commit and delivered commit, and C13 binds them.
+A-12 The USER reads this run as the unit on pull request 9 only, not as progress on a milestone or on the North Star (P9). EVIDENCE: not verified. Answer: the S6 card says in plain words that this run starts no milestone and does not connect the kit to the Studio.
+A-13 30 runs is the whole cost (P10). False: 4 review sessions were started before E-1. Answer: the S6 card states both numbers.
+Sent to: the USER on the S6 card (A-12, A-13); the re-audit SUB-AGENT of the plan FINDINGS.
+
+### E-37 · 2026-11-24T20:27:32Z · RECONCILIATION · ORCHESTRATOR
+
+Memos: SI = `memos/lens-structural-integrity.md`, MVS = `memos/lens-minimal-viable-sequence.md`, TC = `memos/lens-trust-controls.md`, RX = `memos/lens-recipient-experience.md`, RC = `audits/redcell-plan.md`. "E-35" means the revised `PROPOSED` CRITERIA. "maps" means FRAMEWORK.md and CONNECTIONS.md, rewritten in the commit that follows this entry.
+
+| Point | LENS | Result | CRITERION or decision changed | Reason |
+|---|---|---|---|---|
+| SI breaks 1, status names | structural integrity | ACCEPTED | maps | `packages/kit/src/shapes.ts` line 10 holds 4 statuses |
+| SI breaks 2, 3 files that do not exist | structural integrity | ACCEPTED | maps | the 3 functions are in `logic/judge.ts` |
+| SI breaks 3, shapes.ts has no node | structural integrity | ACCEPTED | maps | both folders import `../shapes.js` |
+| SI breaks 4, edge LOGIC to browser test | structural integrity | ACCEPTED | maps | `kit.e2e.ts` line 7 imports grade, receipt, repairPlan |
+| SI breaks 5, judge report has no edge, path or join key | structural integrity | ACCEPTED | C1, C2, maps | E-35 names the path and the judge's finding ID |
+| SI breaks 6, baseline of C3 | structural integrity | ACCEPTED | C3 | base 9e50434 |
+| SI breaks 7, SESSION-STATE and ledger stale | structural integrity | ACCEPTED | none | files rewritten |
+| SI breaks 8, WORK UNITS exceed 1 component | structural integrity | REJECTED | none | Testable: every CRITERION of WU-1 tests the module through its 1 browser test file, and the 4 records of WU-2 state the same counts; splitting them gives 6 WORK UNITS and about 40 more runs against a budget of 30 |
+| SI cut 1, DECISIONS.md owned but in no unit | structural integrity | ACCEPTED | maps | removed from the ownership table; this run adds no decision record of the repository |
+| SI cut 2, grep of C3 | structural integrity | ACCEPTED | C3 | new pattern |
+| SI add 1 to 3, nodes, CI edge, path and ID rule | structural integrity | ACCEPTED | C1, C2, maps | as above |
+| SI insists, rewrite sections 3 and 4 and the map from the code | structural integrity | ACCEPTED | maps | as above |
+| MVS breaks 1, WU-1 has no content yet | minimal viable sequence | ACCEPTED | none | see MVS insists |
+| MVS breaks 2, C5 has no WORK UNIT behind it | minimal viable sequence | ACCEPTED | C5 | exit stated: FAIL with test names, the USER decides |
+| MVS breaks 3, C12's test is red | minimal viable sequence | ACCEPTED | C12 | 8 named failures |
+| MVS breaks 4, 1 commit per repair | minimal viable sequence | ACCEPTED | C3 | stated |
+| MVS breaks 5, bound of C7 | minimal viable sequence | ACCEPTED | C7 | rows KIT-* and rows this run adds |
+| MVS cut 1, WU-2 full swarm | minimal viable sequence | REJECTED | none | Testable: the audit rules of a FULL run name 8 roles per WORK UNIT and give the ORCHESTRATOR no leave to drop one; only the USER can waive it, and the card offers that choice |
+| MVS cut 2, WU-1 swarm if 0 blockers and majors | minimal viable sequence | REJECTED | C14 | F-4 and F-7: lines changed after the judge's pin need review even then |
+| MVS cut 3, run C4 and C5 once | minimal viable sequence | ACCEPTED | C4, C5 | both test the audited commit, 1 time at the end |
+| MVS cut 4, research clause | minimal viable sequence | ACCEPTED | C7 | clause removed; the file is outside both WORK UNITS |
+| MVS add 1, order line | minimal viable sequence | ACCEPTED | FRAMEWORK.md section 6 | order written |
+| MVS add 2 to 4 | minimal viable sequence | ACCEPTED | C5, C7, C12 | as above |
+| MVS insists, no S6 card before the judge report is saved | minimal viable sequence | REJECTED | none | Testable against O2 and O3 in E-12: the USER has 2 questions open and watches cost, and the judge has up to 3 more hours; the card states 30 as a ceiling and that C1 may be empty; WU-1 does not start before the report is saved (order line), which meets the second half of the demand |
+| TC breaks 1, audited commit is not delivered commit | trust and controls | ACCEPTED | C13 | new CRITERION |
+| TC breaks 2, baseline hides test and CI edits | trust and controls | ACCEPTED | C3 | base 9e50434; removed assertions read 1 by 1; the change of `ci.yml` is in that diff and the same AUDITOR reads it |
+| TC breaks 3, judge report has 1 custodian | trust and controls | ACCEPTED | C1, C14 | reviewer files and hashes saved in `evidence/second-review/`; judge session link in E-35; spot-check in C14 |
+| TC breaks 4, C6 and C10 EVIDENCE cannot be fetched | trust and controls | ACCEPTED | C6, C10 | an AUDITOR reads the pull request; the RED CELL showed the pull request view works |
+| TC breaks 5, pull request text unpinned | trust and controls | ACCEPTED | C7 | text saved whole by the AUDITOR |
+| TC breaks 6, history rewrite | trust and controls | ACCEPTED | C13 | ancestry test |
+| TC breaks 7, C8 narrower than C8 | trust and controls | ACCEPTED | C8 | wider pattern and files |
+| TC cut 1, merge-ref test | trust and controls | ACCEPTED | C10 | state of the pull request |
+| TC cut 2, "30 planned" as a control | trust and controls | ACCEPTED | C12 | a run above 30 needs a quoted message of the USER |
+| TC add 1 to 5 | trust and controls | ACCEPTED | C3, C8, C12, C13 | as above |
+| TC insists, diff audited to delivered only in the RUN FOLDER, run by the final AUDITOR | trust and controls | ACCEPTED | C13 | new CRITERION |
+| RX breaks 1, README example ends "Not graded" | recipient experience | ACCEPTED | C15 | new CRITERION |
+| RX breaks 2, pull request text contradicts the records | recipient experience | ACCEPTED | C7, C15 | the text is corrected in WU-2; correcting it before the S6 answer is work the answer can change, so not earlier |
+| RX breaks 3, no promise of a usable report | recipient experience | ACCEPTED | C16 | new CRITERION |
+| RX breaks 4, items only the owner can settle | recipient experience | ACCEPTED | C2 | "Needs the owner" rows |
+| RX breaks 5, first-read part of PROGRESS.md stale | recipient experience | ACCEPTED | C7 | "Waiting on the owner" lists each question |
+| RX breaks 6, 1 rule printed 2 times in the receipt | recipient experience | ACCEPTED | none | logged for WU-1 as an input beside the judge report; the correctness AUDITOR of WU-1 gets the reproduction |
+| RX cut 1, research presence test | recipient experience | ACCEPTED | C7 | removed |
+| RX cut 2, tell the reader to skip the RUN FOLDER | recipient experience | ACCEPTED | C7 | 1 line in the pull request text |
+| RX add 1 to 4 | recipient experience | ACCEPTED | C2, C7, C16 | the card gives 1 recommended answer per question; a silent USER still stops the work, because no reply is not an answer |
+| RX insists, CRITERION of use per RECIPIENT | recipient experience | ACCEPTED | C15 | new CRITERION |
+| RC change 1 (F-1) | structural integrity | ACCEPTED | C11 | RUN FOLDER left out, base 9e50434, wider pattern |
+| RC change 2 (F-2) | trust and controls | ACCEPTED | C12 | 8 named failures, each with a CORRECTION entry |
+| RC change 3 (F-3) | trust and controls | ACCEPTED | C3 | base, removed assertions, config files |
+| RC change 4 (F-6) | structural integrity | ACCEPTED | C8 | dependency, configuration, address; record lines allowed |
+| RC change 5 (F-5) | recipient experience | ACCEPTED | C5 | PW_CHROMIUM named; every run counted |
+| RC change 6 (F-4) | trust and controls | ACCEPTED | C14 | new CRITERION; files saved |
+| RC change 7 | trust and controls | ACCEPTED | C1 | 2nd input per fault |
+| RC change 8 (F-7) | minimal viable sequence | ACCEPTED | C1, C2 | stated; open rows listed for the USER |
+| RC change 9 | trust and controls | ACCEPTED | C10 | state of the pull request |
+| RC change 10 | trust and controls | ACCEPTED | C9 | what the run did |
+| RC change 11 | structural integrity | ACCEPTED | C13 | audited and delivered commit |
+| RC change 12 | recipient experience | ACCEPTED | S6 card | 4 earlier sessions and "no milestone" stated |
+| RC "The cheating agent" | trust and controls | ACCEPTED | C1, C3 | 2nd input; retry and timeout in the config files tested |
