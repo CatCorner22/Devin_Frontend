@@ -352,6 +352,40 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await where(`<input type="image" alt="Search" src="${gif}" style="width:30px;height:30px"><input type="button" value="Add"><input type="submit"><input type="reset">`)).toEqual([]);
     });
 
+    it('second review F-3: a carousel that a script scrolls, and one that a script animates, fail', async () => {
+      const track = '<h1>Shop</h1><div id="track" style="width: 300px; overflow: hidden; white-space: nowrap"><span style="display: inline-block; width: 600px">One</span><span style="display: inline-block; width: 600px">Two</span><span style="display: inline-block; width: 600px">Three</span></div>';
+      const scrolls = await pageOf(track);
+      await scrolls.evaluate(() => { let i = 0; setInterval(() => { const el = document.getElementById('track'); if (el) el.scrollLeft = (++i % 3) * 600; }, 3000); });
+      expect((await run(scrolls, 'noScriptedMotion')).map((f) => [f.status, f.where])).toEqual([['fails', 'div#track']]);
+      await scrolls.context().close();
+      const animates = await pageOf('<h1>Shop</h1><div style="overflow: hidden; width: 300px"><div id="belt" style="width: 900px">One Two Three</div></div>');
+      await animates.evaluate(() => { document.getElementById('belt')?.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-600px)' }], { duration: 4000, iterations: Infinity }); });
+      expect((await run(animates, 'noScriptedMotion')).map((f) => [f.status, f.where])).toEqual([['fails', 'div#belt']]);
+      await animates.context().close();
+      // Again and again, each time for less than a second: still a show.
+      const again = await pageOf('<h1>Shop</h1><p id="pulse">New</p>');
+      await again.evaluate(() => { setInterval(() => { document.getElementById('pulse')?.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 600 }); }, 2000); });
+      expect((await run(again, 'noScriptedMotion')).map((f) => f.status)).toEqual(['fails']);
+      await again.context().close();
+    }, 60_000);
+
+    it('second review F-3: one scroll to a place and one short animation hold, and so does a scrolling carousel with a pause control', async () => {
+      const track = '<h1>Shop</h1><div id="track" style="width: 300px; overflow: hidden; white-space: nowrap"><span style="display: inline-block; width: 600px">One</span><span style="display: inline-block; width: 600px">Two</span><span style="display: inline-block; width: 600px">Three</span></div>';
+      const once = await pageOf(track);
+      await once.evaluate(() => { setTimeout(() => { const el = document.getElementById('track'); if (el) el.scrollLeft = 600; }, 6000); });
+      expect((await run(once, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
+      await once.context().close();
+      const fade = await pageOf('<h1>Shop</h1><p id="in">Welcome</p>');
+      await fade.evaluate(() => { setTimeout(() => { document.getElementById('in')?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 3000 }); }, 4000); });
+      expect((await run(fade, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
+      await fade.context().close();
+      // With a pause control in view the floor holds, as for every other movement.
+      const paused = await pageOf(`${track}<button data-pause-motion>Pause</button>`);
+      await paused.evaluate(() => { let i = 0; setInterval(() => { const el = document.getElementById('track'); if (el) el.scrollLeft = (++i % 3) * 600; }, 3000); });
+      expect((await run(paused, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
+      await paused.context().close();
+    }, 60_000);
+
     it('F-9: a banner that a script turns every two seconds fails; a still page and a page with a pause button hold', async () => {
       const turn = () => { let n = 0; setInterval(() => { const el = document.getElementById('slide'); if (el) el.textContent = `Offer ${++n}`; }, 2000); };
       const page = await pageOf('<h1>Shop</h1><p id="slide">Offer 0</p>');

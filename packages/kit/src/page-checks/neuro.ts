@@ -238,10 +238,47 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
       momentsOf.set(el, moments);
     }
   });
+  // Two kinds of movement leave no mark in the page's tree, so the observer above never hears of them: a script that moves
+  // the scroll position of a box (the usual sliding carousel), and a script that starts an animation through `element.animate()`
+  // (finding F-3 of the review of 2026-11-24). No person uses the page during the check, so every such change is the page's own.
+  // The check looks four times a second. Movement that the style sheet declares belongs to `noEndlessMotion` and is left to it.
+  const scrolled = new Map<Element, number[]>();
+  const animated = new Map<Element, number[]>();
+  const scrollers = [...doc.querySelectorAll('body *'), doc.scrollingElement ?? doc.documentElement].filter((el) => isDrawn(el) && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1));
+  const lastScroll = new Map<Element, string>(scrollers.map((el) => [el, `${el.scrollLeft}|${el.scrollTop}`]));
+  const note = (into: Map<Element, number[]>, el: Element, now: number): void => {
+    const moments = into.get(el) ?? [];
+    if (moments.length === 0 || now - (moments[moments.length - 1] ?? 0) >= 0.9) moments.push(now);
+    into.set(el, moments);
+  };
+  const sample = (): void => {
+    const now = (view.performance.now() - start) / 1000;
+    for (const el of scrollers) {
+      const at = `${el.scrollLeft}|${el.scrollTop}`;
+      if (at !== lastScroll.get(el)) { lastScroll.set(el, at); if (isDrawn(el)) note(scrolled, el, now); }
+    }
+    for (const animation of typeof doc.getAnimations === 'function' ? doc.getAnimations() : []) {
+      const target = (animation.effect as KeyframeEffect | null)?.target ?? null;
+      // `CSSAnimation` and `CSSTransition` come from the style sheet; a plain `Animation` comes from a script.
+      if (target && animation.playState === 'running' && animation.constructor.name === 'Animation' && isDrawn(target)) note(animated, target, now);
+    }
+  };
+  const sampler = view.setInterval(sample, 250);
   observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style', 'class', 'src', 'hidden'] });
   return new Promise((resolve) => {
     view.setTimeout(() => {
       observer.disconnect();
+      view.clearInterval(sampler);
+      sample();
+      const required = 'at most 5 s, or a control that pauses it';
+      const fix = 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with the attribute data-pause-motion.';
+      const last = (moments: number[]): number => moments[moments.length - 1] ?? 0;
+      // One smooth scroll to a place takes well under two seconds; a box that scrolls again two seconds later and after the 5-second mark is a show.
+      const slid = [...scrolled].find(([, moments]) => moments.length >= 2 && last(moments) > 5 && last(moments) - (moments[0] ?? 0) >= 2);
+      // An animation that a script runs, or starts again and again, over more than five seconds.
+      const ran = [...animated].find(([, moments]) => last(moments) - (moments[0] ?? 0) > 5);
+      if (slid) { resolve([{ ruleId, status: 'fails', where: name(slid[0]), measured: `a script moved the scroll position of this part at ${slid[1].length} moments in 11 s, the last after ${last(slid[1]).toFixed(1)} s`, required, fix }]); return; }
+      if (ran) { resolve([{ ruleId, status: 'fails', where: name(ran[0]), measured: `a script kept an animation running on this part for more than 5 s`, required, fix }]); return; }
       const moving = [...momentsOf].find(([, moments]) => moments.length >= 2 && (moments[moments.length - 1] ?? 0) > 5);
       if (moving) resolve([{ ruleId, status: 'fails', where: name(moving[0]), measured: `a script changed this part at ${moving[1].length} moments in 11 s, the last after ${(moving[1][moving[1].length - 1] ?? 0).toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with data-pause-motion.' }]);
       else resolve([{ ruleId, status: 'holds', measured: 'no repeated change in 11 s' }]);
