@@ -5,15 +5,17 @@ import type { Finding } from '../shapes.js';
 /** Placeholder words and stock marketing phrases. The three lists must equal those in data/placeholders.ts; a test compares them. */
 export function placeholderCopy(doc: Document): Finding[] {
   const ruleId = 'tell-placeholder-copy';
-  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'insert text', 'john doe', 'jane doe', '555-0', 'welcome to our website', 'service 1', 'service one', 'description goes here', 'goes here', 'sample text', 'will appear in this space', 'address line 1', 'yourdomain', '000-000-0000', 'name@email.com', 'anytown, usa', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced', 'your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com', 'acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation'];
-  // A phrase counts as whole words: "unleash" is not in "unleashed". Some phrases are also plain words of ordinary sentences
+  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'insert text', 'john doe', 'jane doe', '555-0', 'welcome to our website', 'service 1', 'service one', 'description goes here', 'headline goes here', 'title goes here', 'text goes here', 'content goes here', 'copy goes here', 'image goes here', 'logo goes here', 'name goes here', 'sample text', 'will appear in this space', 'address line 1', 'yourdomain', '000-000-0000', 'name@email.com', 'anytown, usa', 'empower your', 'unlock the power', 'unleash the power', 'unleash your potential', 'unleash your team', 'unleash your business', 'unleash the full', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced', 'your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com', 'acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation'];
+  // A phrase counts as whole words: "sample text" is not in "sample textile". Some phrases are also plain words of ordinary sentences
   // and of forms, so they count only in a short text (4 words or fewer) that is not the label or the hint of a form field.
   const slots = ['your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com'];
   // Others are also real names and real words ("Acme Plumbing"): they count only as the whole text. "TODO" counts only in capitals,
   // as the whole text or as "TODO:"; "todo" is the Spanish word for "all".
   const whole = ['acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation', 'service 1', 'address line 1'];
   const edge = '[^a-z0-9]';
-  const found = (text: string, phrase: string): boolean => new RegExp(`(^|${edge})${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : `($|${edge})`}`).test(text);
+  // "555-0" is the made-up number of North America, which follows an area code of three digits or none: "0113 555-0142" is a
+  // number of another country (Hinshitsu audit of WU-1, correctness finding 9).
+  const found = (text: string, phrase: string): boolean => new RegExp(`(^|${edge})${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : `($|${edge})`}`).test(text) && !(phrase === '555-0' && /\d{4}[ .-]555-0/.test(text));
   const described = new Set([...doc.querySelectorAll('[aria-describedby]')].flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/)));
   const view = doc.defaultView;
   // The text is read block by block, not text node by text node: "Lorem <b>ipsum</b>" and a line break inside a paragraph

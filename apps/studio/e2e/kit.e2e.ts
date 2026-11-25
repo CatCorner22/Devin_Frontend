@@ -1021,6 +1021,9 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     });
     it('F-27: a stock phrase counts as whole words; a field label and a sentence of ordinary words hold', async () => {
       expect(await statuses('<p>Our dogs run unleashed, and we keep the books of your company in order.</p><label>Company name <input></label>', 'placeholderCopy')).not.toContain('fails');
+      // Hinshitsu audit of WU-1, correctness finding 9: plain sentences that held a listed word, and a number of another country.
+      for (const sound of ['<h2>Unleash your dog in our fenced field</h2>', '<p>The parcel goes here, by the side door.</p>', '<p>Call 0113 555-0142</p>']) expect(await statuses(sound, 'placeholderCopy'), sound).not.toContain('fails');
+      for (const filler of ['<h2>Unleash the power of AI</h2>', '<p>Title goes here</p>', '<p>Call (212) 555-0142</p>', '<p>555-0100</p>']) expect(await statuses(filler, 'placeholderCopy'), filler).toContain('fails');
       expect(await statuses('<h1>Unleash your team</h1>', 'placeholderCopy')).toContain('fails');
       expect(await statuses('<h2>Your Company</h2>', 'placeholderCopy')).toContain('fails');
     });

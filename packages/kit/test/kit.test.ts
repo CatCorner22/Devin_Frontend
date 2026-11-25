@@ -532,7 +532,7 @@ describe('the Brief', () => {
     expect(placeholderIn('Bus service 1 runs to the centre every ten minutes.')).toBeNull();
     expect(placeholderIn('Our address line 1 is 4 Mill Lane.')).toBeNull();
     expect(placeholderIn('Service 1')).toBe('service 1');
-    expect(placeholderIn('Unleash your team')).toBe('unleash');
+    expect(placeholderIn('Unleash your team')).toBe('unleash your team');
     expect(placeholderIn('We keep the books of your company in order every month.')).toBeNull();
     expect(placeholderIn('Your Company')).toBe('your company');
     expect(placeholderIn('Visit us at 123 Main Street, Franklin, Tennessee 37064.')).toBeNull();
@@ -550,7 +550,11 @@ describe('the Brief', () => {
     expect(checkBrief({ ...good, businessName: 'Todo Para Mascotas' })).toEqual([]);
     for (const filler of ['Lorem\nipsum', 'Lorem  ipsum', 'Lorem\u00a0ipsum', 'Lorem\t\n ipsum dolor']) expect(placeholderIn(filler), JSON.stringify(filler)).toBe('lorem ipsum');
     expect(checkBrief({ ...good, headline: 'Lorem\nipsum' })).toMatchObject([{ field: 'headline' }]);
-    const hits: [string, string][] = [['Business Name', 'business name'], ['Headline goes here', 'goes here'], ['Service One', 'service one'], ['you@yourdomain.com', 'yourdomain'], ['Address line 1', 'address line 1'], ['Testimonial text will appear in this space.', 'will appear in this space'], ['Customer Name', 'customer name'], ['Sample text', 'sample text'], ['Acme', 'acme'], ['ACME Inc.', 'acme inc'], ['TODO', 'todo'], ['TODO: write the headline', 'todo']];
+    // Hinshitsu audit of WU-1, correctness finding 9.
+    for (const real of ['Unleash your dog in our fenced field', 'The parcel goes here, by the side door.', 'Call 0113 555-0142']) expect(placeholderIn(real), real).toBeNull();
+    expect(placeholderIn('Unleash the power of AI')).toBe('unleash the power');
+    expect(placeholderIn('Call (212) 555-0142')).toBe('555-0');
+    const hits: [string, string][] = [['Business Name', 'business name'], ['Headline goes here', 'headline goes here'], ['Service One', 'service one'], ['you@yourdomain.com', 'yourdomain'], ['Address line 1', 'address line 1'], ['Testimonial text will appear in this space.', 'will appear in this space'], ['Customer Name', 'customer name'], ['Sample text', 'sample text'], ['Acme', 'acme'], ['ACME Inc.', 'acme inc'], ['TODO', 'todo'], ['TODO: write the headline', 'todo']];
     for (const [filler, phrase] of hits) expect(placeholderIn(filler), filler).toBe(phrase);
   });
   it('names missing and malformed fields, and a word the owner banned', () => {
