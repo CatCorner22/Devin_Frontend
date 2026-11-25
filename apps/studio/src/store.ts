@@ -1,6 +1,6 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
-  DIRECTIONS, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
+  DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
   nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, startPlain, tune,
   type A11yProfile, type BriefNotes, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
@@ -935,7 +935,7 @@ export const useStudio = create<StudioState>((set, get) => {
 
     setBrief(brief, field) {
       const project = get().project;
-      const changedVoice = JSON.stringify(brief.voice) !== JSON.stringify(project.brief?.voice) && project.decisions['voice'] !== undefined;
+      const changedVoice = JSON.stringify(brief.voice) !== JSON.stringify(project.brief?.voice ?? EMPTY_BRIEF.voice) && project.decisions['voice'] !== undefined;
       const decisions = { ...project.decisions };
       if (changedVoice) delete decisions['voice'];
       commit({ ...project, brief, decisions }, `brief:${field}`);

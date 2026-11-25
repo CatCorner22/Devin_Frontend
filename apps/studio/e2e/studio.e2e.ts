@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { BEHAVIOR_DEFAULTS, CITED_NAMES, DIRECTIONS, EMPTY_BRIEF, FLOORS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, craftFor, createProject, deriveTokens, findSkin, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
+import { BEHAVIOR_DEFAULTS, CITED_NAMES, DIRECTIONS, EMPTY_BRIEF, FLOORS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, craftFor, createProject, deriveTokens, findSkin, keep, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
 import { focusIsVisible } from '../../../packages/kit/src/page-checks/index.js';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -2714,6 +2714,17 @@ describe('Studio: Brief', () => {
 });
 
 describe('Studio: behavior Steps', () => {
+  it('review: editing audience preserves a kept default voice and its reason', async () => {
+    const initial = keep(createProject(), 'voice');
+    initial.decisions['voice']!.reason = 'Short help suits these visitors.';
+    expect(initial.brief).toBeUndefined();
+    const { context, page } = await open({ hash: '#brief', storage: { [LOCAL_KEY]: JSON.stringify(initial) } });
+    await page.getByLabel('Who the page is for', { exact: true }).fill('Local families');
+    await settle(page);
+    expect((await stored(page))?.decisions['voice']).toEqual(initial.decisions['voice']);
+    expect(await page.locator('.brief-editor').innerText()).not.toContain('earlier Step Decision');
+    await context.close();
+  });
   const picture = (el: Element): string => JSON.stringify({ text: (el as HTMLElement).innerText, outline: el.querySelector('.focus-example') ? getComputedStyle(el.querySelector('.focus-example')!).outline : '', duration: getComputedStyle(el).getPropertyValue('--dur') });
   for (const step of STEPS.filter((s) => s.stage === 'behavior')) {
     it(`behavior: picks every ${step.name} Option, including its card picture and saved Summary`, async () => {
