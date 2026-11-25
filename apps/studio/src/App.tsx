@@ -838,7 +838,7 @@ function OverlaysView(): React.JSX.Element {
   const s = useStudio();
   const heading = useHeadingFocus();
   const on = useMemo(() => overlaysOf(s.project), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { page: s.previewPage, wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on, s.previewPage]);
+  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on]);
   return (
     <div className="work">
       <Rail />
@@ -853,7 +853,6 @@ function OverlaysView(): React.JSX.Element {
             {DEVICES.map((d) => <button key={d.id} type="button" aria-pressed={s.device === d.id} onClick={() => s.setDevice(d.id)}>{d.label}</button>)}
           </div>
           <span className="showing" aria-live="polite">{on.length === 0 ? 'No Overlay is switched on.' : on.length === 1 ? '1 Overlay is switched on. The preview shows it open.' : `${on.length} Overlays are switched on. The preview shows each one open.`}</span>
-          <PreviewPageControl />
         </div>
         <div className="preview-wrap">
           <button type="button" className="skip-preview" onClick={() => document.querySelector<HTMLElement>('.overlay-list input')?.focus()}>
@@ -861,7 +860,7 @@ function OverlaysView(): React.JSX.Element {
           </button>
           <LargePreview html={html.html} width={DEVICE_WIDTH[s.device]} title="Large preview: each switched-on Overlay, shown open, in your design" />
         </div>
-        <p className="hint">The preview is a picture. Nothing in it opens, closes, or moves; the built website does that.</p>
+        <p className="hint">This preview shows the helpers, not a page. Choose Home or Contact on the other screens. The preview is a picture. Nothing in it opens, closes, or moves; the built website does that.</p>
       </main>
       <aside className="options" aria-label="The Overlays">
         <fieldset className="overlay-list">

@@ -2714,6 +2714,13 @@ describe('Studio: Brief', () => {
 });
 
 describe('Studio: behavior Steps', () => {
+  it('PR13: Overlays isolates helpers rather than offering an ineffective page selector', async () => {
+    const { context, page } = await open({ hash: '#overlays' });
+    expect(await page.getByRole('combobox', { name: 'Preview page', exact: true }).count()).toBe(0);
+    expect(await page.locator('.stage').innerText()).toContain('shows the helpers, not a page');
+    await context.close();
+  });
+
   it('inner page: switch pages without changing the project', async () => {
     const initial = createProject();
     const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(initial) } });
@@ -2723,7 +2730,8 @@ describe('Studio: behavior Steps', () => {
     expect(await frame.locator('.hero').isVisible()).toBe(false);
     expect(await frame.locator('form').isVisible()).toBe(true);
     await page.locator('.top-nav a[href="#overlays"]').click();
-    expect(await page.getByRole('combobox', { name: 'Preview page', exact: true }).inputValue()).toBe('contact');
+    await page.locator('#overlays-title').waitFor();
+    expect(await page.getByRole('combobox', { name: 'Preview page', exact: true }).count()).toBe(0);
     await page.evaluate(() => { location.hash = '#radius'; });
     await page.locator('.preview-wrap iframe').waitFor();
     await expect.poll(() => page.frameLocator('.preview-wrap iframe').locator('body').getAttribute('data-page')).toBe('contact');
