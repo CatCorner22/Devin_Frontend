@@ -1947,3 +1947,47 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 8
 - Lens: framework drift and contract language
 - Forward work stopped: no
+
+### E-175 · 2026-11-25T03:34:21Z · FINDING · auditor: RE-AUDIT CODE
+
+- ID: F-108
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/behavior.ts`, function `lent` (entered with `5fd8c60`)
+- Trigger: A hidden target of `aria-labelledby` that holds only a style sheet or a script names the button: `controlsHaveNames` holds. The complete trigger is in the report.
+- Violates: the rule of the check; C1 in spirit
+- Raised by: AUDITOR, LAUNCH E-165, `audits/WU1-reaudit-code-E-165.md`, new finding 1
+- Lens: correctness and adversarial
+- Forward work stopped: no
+
+### E-176 · 2026-11-25T03:34:21Z · FINDING · auditor: RE-AUDIT CODE
+
+- ID: F-109
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts`, `noEndlessMotion`, the part on `::placeholder`
+- Trigger: A placeholder animation that names no keyframes, or whose keyframes all say the same, fails as endless movement. The complete trigger is in the report.
+- Violates: the result that F-31 asked for
+- Raised by: AUDITOR, LAUNCH E-165, `audits/WU1-reaudit-code-E-165.md`, new finding 2
+- Lens: correctness and adversarial
+- Forward work stopped: no
+
+### E-177 · 2026-11-25T03:34:21Z · FINDING · auditor: RE-AUDIT CODE
+
+- ID: F-110
+- Class: DEFECT
+- Where: `packages/kit/src/logic/designId.ts`, `asText` and its comment
+- Trigger: Different values that hold a big integer or hold themselves get one ID. The complete trigger is in the report.
+- Violates: the function's own statement
+- Raised by: AUDITOR, LAUNCH E-165, `audits/WU1-reaudit-code-E-165.md`, new finding 3
+- Lens: correctness and adversarial
+- Forward work stopped: no
+
+### E-178 · 2026-11-25T03:34:21Z · FINDING · auditor: RE-AUDIT CODE
+
+- ID: F-111
+- Class: DEFECT
+- Where: `packages/kit/src/data/placeholders.ts`, `placeholderIn`
+- Trigger: One telephone number of another country switches off the check of the made-up number for the whole text. The complete trigger is in the report.
+- Violates: the rule of the check
+- Raised by: AUDITOR, LAUNCH E-165, `audits/WU1-reaudit-code-E-165.md`, new finding 4
+- Lens: correctness and adversarial
+- Forward work stopped: no

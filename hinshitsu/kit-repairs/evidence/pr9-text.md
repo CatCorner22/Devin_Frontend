@@ -14,12 +14,14 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 | The automated review of this pull request, five rounds (`R2-AR-*`) | 23 | 19 | 19 | 4 | 0 |
 | Items the judge left for a person (`R2-P-*`) | 12 | 4 | 3 | 8 | 0 |
 | The seven auditors of the Hinshitsu run (`H-*`) | 92 | 85 | 45 | 4 | 3 |
+| The two re-auditors of the Hinshitsu run (`H-reaudit-*`) | 12 | 7 | 4 | 5 | 0 |
 
 - A row without a test is a correction of a record, a comment or the README, where no test can fail.
 - **Open, with the reason in each row:**
   - R2-AR-15 to R2-AR-18 and R2-P-1, R2-P-2, R2-P-4, R2-P-5, R2-P-6, R2-P-8, R2-P-10, R2-P-11: limits of what a page check can read from a page. The kit's README states each.
   - H-correctness-10: the check of fit does not read some places a color can sit (for example a list's bullet); the README lists them.
   - H-adversarial-15, H-forensic-5s-14, H-forensic-5s-19: matters of form that change nothing a test proves.
+  - H-reaudit-records-4 to H-reaudit-records-8: five faults of form in the records that the re-auditor found; none is a blocker, and they wait for the owner's decision.
   - From the first review of the kit: KIT-01, KIT-05 (in part), KIT-42, KIT-44, KIT-45, KIT-46.
 - **For the owner to decide:**
   - H-adversarial-11 (also H-best-practices-1 and H-framework-drift-4): the test settings gained one line, which adds the tests of the dependency-audit script and removes none. Acceptance test C3(e) as worded forbids any change to that line. Accept the line, or reword the test.
@@ -29,7 +31,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 - Decisions D59 to D63 in `DECISIONS.md`. The repository uses neither Neon nor Vercel (D60).
 - `hinshitsu/kit-repairs/` is a record of the owner's Hinshitsu run (log, scopes, reports, saved outputs) and no code.
 
-**What the tests show** (the builder's machine, commit `5fd8c60`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
+**What the tests show** (the builder's machine, commit `c0cbb62`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
 
 - `npm run check`: 8 test files, 264 tests passed.
 - The kit's browser tests (`apps/studio/e2e/kit.e2e.ts`): 124 passed.
