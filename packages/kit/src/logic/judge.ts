@@ -16,8 +16,15 @@ const UNKNOWN_STATUS = 'the finding carries a status that the kit does not know'
  * `FINDING_STATUSES` ("failed", "broken", a slip of the keyboard) says nothing the kit can rely on, so the finding counts as
  * "could not measure" and never as an answer (finding F-1 of the review of 2026-11-24).
  */
+const NO_FINDING = 'this entry of the list is no finding';
+// An entry that is no finding at all (nothing, a number, a text, a finding whose rule id is no text) is read the same way,
+// under a rule id that no set of rules holds, so the grade cannot rest on the list (Hinshitsu audit of WU-1, adversarial finding 14).
 const sound = (findings: readonly Finding[]): Finding[] =>
-  findings.map((f) => ((FINDING_STATUSES as readonly string[]).includes(f.status) ? f : { ...f, status: 'could-not-measure' as const, measured: UNKNOWN_STATUS }));
+  findings.map((f: unknown): Finding => {
+    if (typeof f !== 'object' || f === null || typeof (f as Finding).ruleId !== 'string') return { ruleId: '(no rule id)', status: 'could-not-measure', measured: NO_FINDING };
+    const finding = f as Finding;
+    return (FINDING_STATUSES as readonly string[]).includes(finding.status) ? finding : { ...finding, status: 'could-not-measure', measured: UNKNOWN_STATUS };
+  });
 const byId = (rules: readonly RuleRecord[]): Map<string, RuleRecord> => new Map(rules.map((rule) => [rule.id, rule]));
 
 /**

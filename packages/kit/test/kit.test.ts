@@ -60,6 +60,29 @@ describe('rule records', () => {
 });
 
 describe('the kit stands alone', () => {
+  it('Hinshitsu audit of WU-1, adversarial finding 14: an entry that is no finding counts as "could not measure" and throws nothing', () => {
+    const odd = [null, 7, 'fails', undefined, [], { status: 'holds' }, { ruleId: 7, status: 'holds' }] as unknown as Finding[];
+    expect(grade(odd, KIT_RULES).grade).toBe('Not graded');
+    expect(receipt(odd, KIT_RULES).grade.grade).toBe('Not graded');
+    expect(repairPlan([odd, odd], KIT_RULES).stop).toBe(true);
+    const floors = KIT_RULES.filter((rule) => rule.level === 'floor' && rule.check.kind !== 'person').map((rule): Finding => ({ ruleId: rule.id, status: 'holds' }));
+    expect(grade([...floors, null as unknown as Finding], KIT_RULES).grade).toBe('Not graded');
+  });
+  it('Hinshitsu audit of WU-1, adversarial finding 5: a token value nested 200,000 deep gets an ID and throws nothing', () => {
+    let deep: unknown = 1;
+    for (let i = 0; i < 200_000; i++) deep = [deep];
+    expect(designId({ '--a': deep })).toMatch(/^rx-[0-9a-f]{16}$/);
+    let keyed: unknown = 1;
+    for (let i = 0; i < 200_000; i++) keyed = { a: keyed };
+    expect(designId({ '--a': keyed })).toMatch(/^rx-[0-9a-f]{16}$/);
+  });
+  it('Hinshitsu audit of WU-1, adversarial findings 1 and 10: a status that the kit does not know, in an older round, answers for nothing', () => {
+    const plan = repairPlan([[{ ruleId: 'neuro-no-autoplay', status: 'fails', where: 'p' }], [{ ruleId: 'neuro-no-autoplay', status: 'fixed', where: 'p' } as unknown as Finding], []], KIT_RULES);
+    expect([plan.stop, plan.items.length, plan.stillOpen.length]).toEqual([false, 1, 1]);
+    const second = repairPlan([[{ ruleId: 'craft-tabular-numerals', status: 'fails', where: 'td' }], [{ ruleId: 'craft-tabular-numerals', status: 'HOLDS', where: 'td' } as unknown as Finding], [{ ruleId: 'neuro-no-autoplay', status: 'holds' }]], KIT_RULES);
+    expect(second.stillOpen).toHaveLength(1);
+    expect(second.fixedSinceLastRound).toEqual([]);
+  });
   it('Hinshitsu audit of WU-1: the two checks of movement find a pause control by the same lines, marked buttons first', () => {
     const neuro = sources.find(({ path }) => path === join('page-checks', 'neuro.ts'))?.text ?? '';
     const copies = neuro.split('  const hasPause = ').slice(1).map((rest) => rest.slice(0, rest.indexOf('\n  });')));
@@ -338,6 +361,12 @@ describe('design ID', () => {
     expect(designId({ u: 'Underline' })).toBe(designId({ u: 'underline' }));
   });
   it('reads a value of many unclosed url( in little time, and tells two file names apart behind an escaped quotation mark (review of 2026-11-24, C14-6 and C14-7)', () => {
+    // First a small value, so that code which backs up fails here in seconds and by name, and does not hold the run for hours
+    // (Hinshitsu audit of WU-1, adversarial finding 9: the pattern before the repair needs about 6 seconds for this value).
+    const small = Date.now();
+    designId({ '--bg': 'url('.repeat(1200) });
+    designId({ '--bg': 'url("'.repeat(1200) });
+    expect(Date.now() - small).toBeLessThan(2000);
     const started = Date.now();
     designId({ '--bg': 'url('.repeat(4000) });
     designId({ '--bg': 'url("'.repeat(4000) });
@@ -370,7 +399,12 @@ describe('design ID', () => {
     expect(designId({ t: { a: 1 } })).toMatch(/^rx-[0-9a-f]{16}$/);
   });
   it('answers within seconds for a value of 320,000 letters, whatever its letters are (review of 2026-11-24, F-27)', () => {
-    for (const piece of ['url(', 'url("', '"', "'", 'u', 'url( ', ') url("a', 'a  ', '\\\\"', '"\\\\', '--', 'url("\\\\"']) {
+    const pieces = ['url(', 'url("', '"', "'", 'u', 'url( ', ') url("a', 'a  ', '\\\\"', '"\\\\', '--', 'url("\\\\"'];
+    // The small values come first, for the reason given in the test of the unclosed url( above.
+    const small = performance.now();
+    for (const piece of pieces) designId({ '--bg': piece.repeat(1200) });
+    expect(performance.now() - small).toBeLessThan(2000);
+    for (const piece of pieces) {
       const started = performance.now();
       expect(designId({ '--bg': piece.repeat(Math.ceil(320_000 / piece.length)) })).toMatch(/^rx-[0-9a-f]{16}$/);
       // The clock guards against minutes only: the limit is many times what the work takes, and it is no claim of speed.
