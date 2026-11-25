@@ -26,7 +26,7 @@ No source here was read end to end. No claim here was tested by the builder. Not
 The kit warns on five signs: placeholder copy, emoji icons, purple gradients, universal centering, identical cards.
 
 - Adrian Krebs scored 1,590 Show HN pages against 16 signs with fixed page checks in a headless browser: 22% showed four or more, 46% showed one or none. He estimates 5 to 10% false alarms and says one sign alone proves nothing. [S; two independent summaries agree on the numbers. Record 04 notes that his README and his post disagree on the tier boundary.]
-- Impeccable (Paul Bakaus, Apache-2.0) ships 59 detector rules that run with no model. [R: README. The rule list itself was not read.]
+- Impeccable (Paul Bakaus, Apache-2.0) ships detector rules that run with no model. [R: README. The rule list itself was not read, so this record gives no count: an earlier version said 59, and one reviewer read 62.]
 
 Signs that those lists name and the kit does not check:
 

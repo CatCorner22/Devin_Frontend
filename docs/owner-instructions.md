@@ -41,5 +41,8 @@
 | 2026-11-24, 12:51 EST | "Please also do research to get use closer to the North Star (indistinguishable vibe-coding for frontend UI and UX that is indistinguishable from the best human coders)." | D60 |
 | 2026-11-24, 13:42 EST | "Please complete all milestones." | D62 |
 | 2026-11-24, 13:43 EST | "Please also edit and audit your code as you work." | D62 |
+| 2026-11-24, 14:58 EST | "First, please use Hinshitsu." | D63 |
+| 2026-11-24, 16:04 EST | "Please fix all issues that Hinshitsu found and continue to complete all milestones" | D63 |
+| 2026-11-24, 16:06 EST | "1. Yes; 2. Yes; 3 start now" | D63 |
 
 **Entries with no owner statement behind them.** D8, D9, D10, D11, D15, D20, D21, D24, D25, D27, D28 (replaced by D53), D29, D30, D31, D32, D35, D36, D37. `DECISIONS.md` marks each as "Recorded" or "Pending the owner".
