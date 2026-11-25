@@ -1,8 +1,9 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, findOverlay, findSkin, findStep, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinParams, skinsOf, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinParams, skinsOf, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { BriefView } from './Brief';
 import { LICENSE_TEXTS, MIT_COPYRIGHT_PLACEHOLDER, NOTICES } from './notices.generated';
 import { copyText, fileNameFor, probePreviews, readBackups, removeBackup, saveFile, storedProjectText, type KeptCopy } from './platform';
 import { LargePreview, Thumbnail, mockupHtml, tokensFor } from './preview';
@@ -172,6 +173,7 @@ function TopBar(): React.JSX.Element {
         <input id="project-name" className="name" value={s.project.name} placeholder="Name this project" disabled={!s.ready} onChange={(e) => s.rename(e.target.value)} spellCheck={false} autoComplete="off" maxLength={120} />
       </label>
       <nav className="top-nav" aria-label="Parts of the Studio">
+        <a href="#brief" aria-current={s.view === 'brief' ? 'page' : undefined}>Brief</a>
         <a href="#directions" aria-current={s.view === 'directions' ? 'page' : undefined}>1. Directions</a>
         <a href={`#${s.stepId}`} aria-current={s.view === 'steps' ? 'page' : undefined}>2. Steps</a>
         <a href="#overlays" aria-current={s.view === 'overlays' ? 'page' : undefined}>3. Overlays</a>
@@ -386,7 +388,7 @@ function DirectionsView(): React.JSX.Element {
         <p className="teach">
           First pick a Direction below. Then {STEPS.length} short Steps let you change one thing at a time, like an eye exam: “which is better, 1 or 2?” You can stop at any point; the line under the top bar says whether your work is saved.
         </p>
-        <p className="teach">Every picture shows the same made-up dental practice, so that only the design differs. It is a sample; it is not your content.</p>
+        <p className="teach">{isSampleContent(s.project.content) ? 'Every picture shows the same made-up dental practice, so that only the design differs. It is a sample; it is not your content.' : 'Every picture shows your words, so that only the design differs.'} <a href="#brief">Edit your Brief</a></p>
         {started && <p className="note">You already have a project, started from {directionName(s.project, s.generated)}. If you start from another Direction, the Studio asks first, and you can undo it.</p>}
       </div>
       {/* The Directions stand in groups, each under a plain heading. On a wide window every group is open; on a narrow one
@@ -452,11 +454,12 @@ function Rail(): React.JSX.Element {
   return (
     <nav className="rail" aria-label="All Steps (use the arrow keys to move through this list)" onKeyDown={onKeyDown}>
       {/* One link of the list takes the Tab key: the current Step, the Overlays link on the Overlays screen, or else this one. */}
-      <a className="rail-direction" href="#directions" tabIndex={tab(s.view !== 'steps' && s.view !== 'overlays')}>
+      <a className="rail-direction" href="#directions" tabIndex={tab(s.view !== 'steps' && s.view !== 'overlays' && s.view !== 'brief')}>
         <span>Started from</span>
         <strong>{directionName(s.project, s.generated)}</strong>
       </a>
       <p className="rail-count">{decided} of {STEPS.length} Steps decided</p>
+      <section><h2>Brief</h2><a href="#brief" aria-current={s.view === 'brief' ? 'page' : undefined} tabIndex={tab(s.view === 'brief')}>Your words</a></section>
       {(['structure', 'feel'] as const).map((stage) => (
         <section key={stage}>
           <h2>{STAGE_NAME[stage]}</h2>
@@ -661,7 +664,7 @@ function StepsView(): React.JSX.Element {
           <button type="button" className="skip-preview" onClick={() => document.querySelector<HTMLElement>('.cards input[type="radio"]:checked')?.focus()}>
             Jump past the preview to the cards
           </button>
-          <LargePreview html={shownLarge} width={width} replay={replay} title={`Large preview of the sample website: ${shown.label}`} />
+          <LargePreview html={shownLarge} width={width} replay={replay} title={`Large preview of ${isSampleContent(s.project.content) ? 'the sample website' : 'your website'}: ${shown.label}`} />
         </div>
         {step.id === 'contrast' && readingPair && (
           <p className="measure" role="status">Reading text on the page background, on the card you are looking at: {readingPair.ratio} to 1. The guideline asks for at least {readingPair.required} to 1.</p>
@@ -1113,7 +1116,7 @@ function SummaryView(): React.JSX.Element {
             {DEVICES.map((d) => <button key={d.id} type="button" aria-pressed={s.device === d.id} onClick={() => s.setDevice(d.id)}>{d.label}</button>)}
           </div>
         </div>
-        <LargePreview html={html.html} width={DEVICE_WIDTH[s.device]} title="Large preview of the sample website in your design" />
+        <LargePreview html={html.html} width={DEVICE_WIDTH[s.device]} title={`Large preview of ${isSampleContent(s.project.content) ? 'the sample website' : 'your website'} in your design`} />
       </aside>
     </main>
   );
@@ -1208,7 +1211,7 @@ export function App(): React.JSX.Element {
         <div className="banner" role="alert"><p>This page is not allowed to show the embedded pictures of the sample website, so they will be blank. Tell Claude: “the previews are blocked.”</p></div>
       )}
       <ScreenBoundary key={view}>
-        {!ready ? <main className="loading" id="main" tabIndex={-1}><p>Opening your project…</p></main> : view === 'directions' ? <DirectionsView /> : view === 'overlays' ? <OverlaysView /> : view === 'summary' ? <SummaryView /> : view === 'licences' ? <LicencesView /> : <StepsView />}
+        {!ready ? <main className="loading" id="main" tabIndex={-1}><p>Opening your project…</p></main> : view === 'brief' ? <BriefView><Rail /></BriefView> : view === 'directions' ? <DirectionsView /> : view === 'overlays' ? <OverlaysView /> : view === 'summary' ? <SummaryView /> : view === 'licences' ? <LicencesView /> : <StepsView />}
       </ScreenBoundary>
       <ConfirmDialog />
     </div>

@@ -1,8 +1,8 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
-  DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, keep, matchingOptionId,
+  DIRECTIONS, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
   nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, startPlain, tune,
-  type A11yProfile, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type Skin, type Step,
+  type A11yProfile, type BriefNotes, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
 import {
@@ -12,8 +12,8 @@ import {
 
 export type Device = 'phone' | 'tablet' | 'desktop';
 export const DEVICE_WIDTH: Record<Device, number> = { phone: 375, tablet: 768, desktop: 1280 };
-export type View = 'directions' | 'steps' | 'overlays' | 'summary' | 'licences';
-const VIEWS: readonly View[] = ['directions', 'steps', 'overlays', 'summary', 'licences'];
+export type View = 'brief' | 'directions' | 'steps' | 'overlays' | 'summary' | 'licences';
+const VIEWS: readonly View[] = ['brief', 'directions', 'steps', 'overlays', 'summary', 'licences'];
 
 /** The card that stands for the design as it is, when no Catalog Option matches it. */
 export const CURRENT = 'current';
@@ -102,6 +102,9 @@ export interface StudioState {
   /** Switch one Overlay on or off for this project. */
   toggleOverlay(overlayId: string, on: boolean): void;
   rename(name: string): void;
+  setContent(content: SiteContent, field: string): void;
+  setBrief(brief: BriefNotes, field: string): void;
+  requestSample(): void;
   /** Try once more to save, after a save failed (for example when the owner has made room in storage). */
   saveAgain(): void;
   setDevice(device: Device): void;
@@ -192,7 +195,7 @@ function readHash(): { view: View; stepId?: string } | null {
 
 const hashFor = (view: View, stepId: string): string => (view === 'steps' ? `#${stepId}` : `#${view}`);
 /** Switched-on Overlays are work too: a project that holds nothing else is still asked about, and kept, before it is replaced (code review of 2026-11-14). */
-const hasWork = (project: Project): boolean => project.direction !== null || Object.keys(project.decisions).length > 0 || overlaysOf(project).length > 0;
+const hasWork = (project: Project): boolean => project.direction !== null || Object.keys(project.decisions).length > 0 || overlaysOf(project).length > 0 || project.brief !== undefined || !isSampleContent(project.content) || project.content.footerNote !== SAMPLE_CONTENT.footerNote;
 /** The names that the Studio itself gives a project. A project under another name holds something the owner typed. */
 const OWN_NAMES = ['My first project', 'My project'];
 /**
@@ -923,6 +926,29 @@ export const useStudio = create<StudioState>((set, get) => {
 
     rename(name) {
       commit({ ...get().project, name: name.slice(0, 120) }, 'name');
+    },
+
+    setContent(content, field) {
+      const note = content.footerNote === SAMPLE_CONTENT.footerNote && !isSampleContent(content) ? '' : content.footerNote;
+      commit({ ...get().project, content: { ...content, footerNote: note } }, `content:${field}`);
+    },
+
+    setBrief(brief, field) {
+      commit({ ...get().project, brief }, `brief:${field}`);
+    },
+
+    requestSample() {
+      set({ confirmation: {
+        title: 'Replace your words with the sample?',
+        body: `This replaces all page text and clears the Brief notes for the builder. It leaves your design choices unchanged. ${UNDO_PROMISE}.`,
+        confirmLabel: 'Use the sample', cancelLabel: 'Keep my words',
+        run: () => {
+          const project = { ...get().project, content: createProject().content };
+          delete project.brief;
+          commit(project);
+          set({ notice: { text: 'The sample content is back. Your design choices are unchanged.', actions: [{ label: 'Undo', run: () => get().undo() }] } });
+        },
+      } });
     },
 
     saveAgain() {

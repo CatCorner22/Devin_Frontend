@@ -75,6 +75,21 @@
 | The owner presses "Go on" or "Start a new project" | What another tab saved meanwhile is kept first; saving resumes at once | "saves at once after "Go on: let the Studio save over it", also when nothing changed on screen (finding F-15)"; "keeps what another tab saved before "Start a new project" in a stopped tab replaces it (finding "saving 4")" |
 | The owner starts again from another Direction | The replaced project is kept for good, also when the tab's running copy held the same text | "keeps the replaced project for good when a stopped tab starts again, although the tab’s running copy held the same text" |
 
+## Brief content and builder notes (M5, unit 1: design before code)
+
+The Brief changes the same project as a design choice. Content and the optional builder notes travel together through the saving rules above. No warning stops a save. These cases name the additional tests in `apps/studio/e2e/studio.e2e.ts`.
+
+| Situation and event | What must happen | Test |
+|---|---|---|
+| Opening: the owner tries to type | No Brief editor appears until the saved project opens; nothing is written | "Brief: opening writes nothing" |
+| Saved: the owner types, then reloads | Content and builder notes save together and reappear | "Brief: words reach every preview and survive reload and a file" |
+| Change pending: the tab goes to the background | The current content and builder notes save at once | "Brief: pending words flush on background" |
+| Saved: the private page accepts a change | Both stores receive content and builder notes | "Brief: words save to both stores" |
+| Save failed: the owner types again | Words stay on screen; the failure stays visible; retry saves both fields | "Brief: failed saves keep words and retry" |
+| Not saving: the owner types, then reloads | The stored project stays untouched; a kept copy holds content and builder notes | "Brief: held words stay in a kept copy" |
+| Saved: another tab saves | This tab stops saving, keeps its words on screen, and offers the existing two choices | "Brief: another tab stops saving" |
+| Replacing content: restore the sample | Ask first; say what changed and offer Undo; Undo restores content and builder notes | "Brief: warnings never block and the sample has a way back" |
+
 ## What no test covers (stated plainly)
 
 - The browser's own "leave this page?" question. The Studio can only ask the browser to put it; the test browser answers it by itself.
