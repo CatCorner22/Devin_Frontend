@@ -1,4 +1,4 @@
-import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, contactPageContent, isSampleContent, type BriefNotes, type MockupFocus, type SiteContent } from '@refraction/core';
+import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, contactPageContent, effectiveParams, isSampleContent, type BriefNotes, type MockupFocus, type SiteContent } from '@refraction/core';
 import { placeholderIn } from '@refraction/kit';
 import { useEffect, useId, useRef, useState } from 'react';
 import { LargePreview, PreviewPageControl, mockupHtml } from './preview';
@@ -46,7 +46,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
   const notes = s.project.brief ?? EMPTY_BRIEF;
   const words = notes.wordsToAvoid;
   const [previewFocus, setPreviewFocus] = useState<MockupFocus>('top');
-  const html = mockupHtml(s.project, s.project.params, { page: s.previewPage, wireframe: false, focus: previewFocus, still: true });
+  const html = mockupHtml(s.project, effectiveParams(s.project), { page: s.previewPage, wireframe: false, focus: previewFocus, still: true });
   const homeFocus = (focus: MockupFocus): void => { s.setPreviewPage('home'); setPreviewFocus(focus); };
   const field = (key: (typeof PAGE_FIELDS)[number][0], label: string): React.JSX.Element => <TextField
     key={key} label={label} value={c[key]} sample={SAMPLE_CONTENT[key]} words={words}

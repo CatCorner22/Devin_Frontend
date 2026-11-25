@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { EMPTY_BRIEF, type BriefNotes } from './catalog/brief.js';
 import { DIRECTIONS, findDirection, type Direction } from './catalog/directions.js';
 import { OVERLAYS, findOverlay } from './catalog/overlays.js';
-import { skinsOf } from './catalog/skins.js';
+import { findSkin, skinParams, skinsOf } from './catalog/skins.js';
 import { CONFLICT_RULES, HARMONY_RULES } from './catalog/rules.js';
 import { STEPS, findStep } from './catalog/steps.js';
 import type { Option, Step, Tunable } from './catalog/types.js';
@@ -57,11 +57,57 @@ export interface Project {
    */
   overlays?: string[];
   /**
-   * The Skin in which the project started, by identifier. Absent when the project started in the Direction's own colors.
-   * It is a name for the owner to read; the colors themselves are in the design values (review of 2026-11-14, finding U5-04:
-   * after the start, nothing on screen named the Skin).
+   * The current Skin's identifier. Older projects record their starting Skin here, with its colors already in `params`.
    */
   skin?: string;
+  skinLayer?: {
+    colors: Pick<DesignParams, typeof SKIN_COLOR_KEYS[number]>;
+    overrides: string[];
+  };
+}
+
+export const SKIN_COLOR_KEYS = ['accentHue', 'accent2Hue', 'accentChroma', 'neutralHue', 'colorStrategy', 'displayTreatment'] as const;
+
+/** Saved design values remain underneath the Skin; later choices take precedence for their own Step. */
+export function effectiveParams(project: Project): DesignParams {
+  const layer = project.skinLayer;
+  if (!layer) return project.params;
+  let params = { ...project.params, ...layer.colors };
+  const steps = STEPS.filter((step) => layer.overrides.includes(step.id));
+  for (const step of steps) {
+    for (const key of step.owns) if ((SKIN_COLOR_KEYS as readonly string[]).includes(key)) Object.assign(params, { [key]: project.params[key] });
+  }
+  for (const step of steps) {
+    const decision = project.decisions[step.id];
+    const optionId = decision?.optionId ?? matchingOptionId(project.params, step);
+    const option = step.options.find((o) => o.id === optionId);
+    if (decision?.kind !== 'tuned' && option?.derive) params = { ...params, ...resolvePatch(option, params) };
+  }
+  return params;
+}
+
+export function setSkin(project: Project, skinId: string | null): Project {
+  if (skinId === null) {
+    if (!project.skin && !project.skinLayer) return project;
+    const next = { ...project };
+    delete next.skin;
+    delete next.skinLayer;
+    return next;
+  }
+  const direction = project.direction === null ? undefined : findDirection(project.direction);
+  const skin = findSkin(skinId);
+  if (!direction || !skin || !offersSkin(direction.id, skinId)) throw new Error('This Direction does not offer that Skin.');
+  const colored = skinParams({ ...direction, params: project.params }, skin);
+  const colors = Object.fromEntries(SKIN_COLOR_KEYS.map((key) => [key, colored[key]])) as Pick<DesignParams, typeof SKIN_COLOR_KEYS[number]>;
+  const skinLayer = { colors, overrides: [] };
+  if (project.skin === skinId && JSON.stringify(project.skinLayer) === JSON.stringify(skinLayer)) return project;
+  return { ...project, skin: skinId, skinLayer };
+}
+
+function skinChoice(project: Project, step: Step): Project {
+  if (!project.skinLayer || !step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))) return project;
+  const overrides = [...project.skinLayer.overrides.filter((id) => id !== step.id), step.id];
+  return { ...project, skinLayer: { ...project.skinLayer, overrides } };
 }
 
 const hueTurn = (h: number, by: number): number => (((h + by) % 360) + 360) % 360;
@@ -89,7 +135,7 @@ export function resolvePatch(option: Option, current: DesignParams): Partial<Des
  * while the pick moved a second color that follows the main color (code review of 2026-11-13, finding "gaps 1").
  */
 export function previewParams(project: Project, stepId: string, optionId: string): DesignParams {
-  return pick(project, stepId, optionId, UNKNOWN_TIME).params;
+  return effectiveParams(pick(project, stepId, optionId, UNKNOWN_TIME));
 }
 
 /** The current values of the parameters that a Step owns. */
@@ -153,6 +199,7 @@ export function applyDirection(project: Project, direction: Direction | string, 
   // The name of the Skin is recorded only for a Skin that this Direction offers; the caller passes the Skin's colors in `direction.params`.
   if (skinId !== undefined && offersSkin(found.id, skinId)) next.skin = skinId;
   else delete next.skin;
+  delete next.skinLayer;
   return next;
 }
 
@@ -166,6 +213,7 @@ function offersSkin(directionId: string | null, skinId: string): boolean {
 export function startPlain(project: Project): Project {
   const next: Project = { ...project, direction: null, base: { ...DEFAULT_PARAMS }, params: { ...DEFAULT_PARAMS }, decisions: {} };
   delete next.skin;
+  delete next.skinLayer;
   return next;
 }
 
@@ -226,7 +274,12 @@ function rederive(before: Project, after: Project, actedStepId: string): Project
 
 function withDecision(project: Project, step: Step, params: DesignParams, decision: Omit<Decision, 'stepId' | 'values' | 'optionId'>): Project {
   const full: Decision = { ...decision, stepId: step.id, optionId: matchingOptionId(params, step, project.brief?.voice), values: ownedValues(step, params) };
-  return rederive(project, { ...project, params, decisions: { ...project.decisions, [step.id]: full } }, step.id);
+  return rederive(project, skinChoice({ ...project, params, decisions: { ...project.decisions, [step.id]: full } }, step), step.id);
+}
+
+function sourceForStep(project: Project, step: Step): DesignParams {
+  return project.skinLayer && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))
+    ? { ...project.params, ...ownedValues(step, effectiveParams(project)) } : project.params;
 }
 
 /** Pick one of the Catalog's Options for a Step. */
@@ -235,7 +288,7 @@ export function pick(project: Project, stepId: string, optionId: string, now = i
   const option = step.options.find((o) => o.id === optionId);
   if (!option) throw new Error('This Step has no such Option.');
   if (option.voice) project = { ...project, brief: { ...(project.brief ?? EMPTY_BRIEF), voice: { ...option.voice } } };
-  const params = { ...project.params, ...resolvePatch(option, project.params) };
+  const params = { ...sourceForStep(project, step), ...resolvePatch(option, project.params) };
   // A written reason belongs to the choice it was written for. It stays when the owner picks the same Option again, and it
   // goes when the owner picks another Option: "friendly" is no reason for square corners. The Studio says so when it removes
   // a reason this way, and offers to put it back (campaign 4, round 3: it used to go without a word).
@@ -248,8 +301,12 @@ export function pick(project: Project, stepId: string, optionId: string, now = i
 export function keep(project: Project, stepId: string, now = isoNow()): Project {
   const step = mustStep(stepId);
   const previous = project.decisions[stepId];
-  if (previous) return project;
-  return withDecision(project, step, { ...project.params, ...ownedValues(step, project.params) }, { kind: 'kept', rejected: [], at: now });
+  const covered = project.skinLayer && !project.skinLayer.overrides.includes(stepId) && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key));
+  if (previous && !covered) return project;
+  const visible = effectiveParams(project);
+  const option = step.options.find((o) => o.id === matchingOptionId(visible, step));
+  if (covered && option?.derive) return pick(project, stepId, option.id, now);
+  return withDecision(project, step, { ...project.params, ...ownedValues(step, visible) }, { kind: 'kept', rejected: [], at: now });
 }
 
 function checkOwnedValues(step: Step, values: Partial<DesignParams>): void {
@@ -268,7 +325,7 @@ export function pickValues(project: Project, stepId: string, values: Partial<Des
   const step = mustStep(stepId);
   checkOwnedValues(step, values);
   const previous = project.decisions[stepId];
-  return withDecision(project, step, { ...project.params, ...values }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) });
+  return withDecision(project, step, { ...sourceForStep(project, step), ...values }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) });
 }
 
 /** Fine-tune one value by hand. Only that value changes. The Step's Decision becomes "tuned". */
@@ -279,7 +336,7 @@ export function tune(project: Project, stepId: string, key: keyof DesignParams, 
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('That value is not a number.');
   const clamped = Math.min(tunable.max, Math.max(tunable.min, value));
   const previous = project.decisions[stepId];
-  return withDecision(project, step, { ...project.params, [key]: clamped }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) });
+  return withDecision(project, step, { ...sourceForStep(project, step), [key]: clamped }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) });
 }
 
 /** A value on a slider's grid: a whole number of steps, counted from zero, inside the slider's range. */
@@ -324,7 +381,7 @@ export function revert(project: Project, stepId: string): Project {
   const follows = step.options.find((o) => o.id === matchingOptionId(project.base, step))?.derive;
   if (follows) params = { ...params, [follows.key]: hueTurn(params[follows.from], follows.turn) };
   const decisions = Object.fromEntries(Object.entries(project.decisions).filter(([id]) => id !== stepId));
-  return rederive(project, { ...project, params, decisions }, stepId);
+  return rederive(project, skinChoice({ ...project, params, decisions }, step), stepId);
 }
 
 /** The Overlays that are switched on, in the Catalog's order. */
@@ -652,7 +709,7 @@ export function generateDirections(seed: number, count: number, avoid: DesignPar
 
 /** Tokens for the project's current state. */
 export function projectTokens(project: Project): DerivedTokens {
-  return deriveTokens(project.params, project.a11y);
+  return deriveTokens(effectiveParams(project), project.a11y);
 }
 
 export function nextStepId(stepId: string): string | null {
@@ -726,6 +783,17 @@ const projectSchema = z.object({
   }).optional(),
   overlays: z.array(z.string().max(40)).max(40).optional(),
   skin: z.string().max(40).optional(),
+  skinLayer: z.object({
+    colors: z.object({
+      accentHue: paramShape['accentHue'] as z.ZodNumber,
+      accent2Hue: paramShape['accent2Hue'] as z.ZodNumber,
+      accentChroma: paramShape['accentChroma'] as z.ZodNumber,
+      neutralHue: paramShape['neutralHue'] as z.ZodNumber,
+      colorStrategy: z.enum(PARAM_VALUES.colorStrategy),
+      displayTreatment: z.enum(PARAM_VALUES.displayTreatment),
+    }).strict(),
+    overrides: z.array(z.string().max(40)).max(40),
+  }).optional(),
 });
 
 export type ParseResult =
@@ -735,7 +803,7 @@ export type ParseResult =
 // Every message is fixed text. A message never repeats content from the file.
 const NOT_A_PROJECT = 'This is not a Refraction project file.';
 const NEWER_VERSION = 'A newer version of the Studio made this file, and this version cannot read it.';
-const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content', 'brief', 'overlays', 'skin'] as const;
+const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content', 'brief', 'overlays', 'skin', 'skinLayer'] as const;
 /** What each part of a project file holds, in plain words, for the message that refuses a damaged file (finding U2-21). The words are fixed; nothing from the file is repeated. */
 const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   name: 'the project name',
@@ -749,6 +817,7 @@ const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   brief: 'the Brief notes',
   overlays: 'the Overlays',
   skin: 'the Skin',
+  skinLayer: 'the Skin colors and later choices',
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -880,6 +949,11 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   const skin = data.skin !== undefined && offersSkin(direction, data.skin) ? data.skin : undefined;
   if (data.skin !== undefined && skin === undefined) notes.push('The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
   const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
+  if (data.skinLayer) {
+    const overrides = [...new Set(data.skinLayer.overrides)].filter((id) => findStep(id)?.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
+    if (overrides.length !== data.skinLayer.overrides.length) notes.push('The file repeats a Skin exception or names a Step that cannot change a Skin color. Those entries were left out.');
+    project.skinLayer = { colors: { ...data.skinLayer.colors }, overrides };
+  }
   if (data.brief !== undefined) project.brief = data.brief;
   return { project, notes };
 }

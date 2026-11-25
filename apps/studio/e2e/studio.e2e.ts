@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { BEHAVIOR_DEFAULTS, CITED_NAMES, DIRECTIONS, EMPTY_BRIEF, FLOORS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, craftFor, createProject, deriveTokens, findSkin, keep, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
+import { BEHAVIOR_DEFAULTS, CITED_NAMES, DIRECTIONS, EMPTY_BRIEF, FLOORS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, closerOptions, craftFor, createProject, deriveTokens, effectiveParams, findSkin, keep, pick, pickValues, researchReport, setSkin, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
 import { focusIsVisible } from '../../../packages/kit/src/page-checks/index.js';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -3129,4 +3129,180 @@ describe('Studio: plain words on every screen (decision D38, finding U2-03)', ()
     expect(requests).toEqual([]);
     await context.close();
   }, 120000);
+});
+
+describe('in-project Skins', () => {
+  const initial = (): Project => pick(applyDirection(createProject('Color owner'), 'soft-daylight'), 'accent', 'ink-blue');
+  const background = (page: Page): Promise<void> => page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const color = (el: Element): string => getComputedStyle(el).getPropertyValue('--action').trim();
+
+  it('Skin: colors reach both pages and every preview, persist through reload and a file, and leave Decisions alone', async () => {
+    const before = initial();
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(before) } });
+    const control = page.getByLabel('Project Skin', { exact: true });
+    expect(await control.locator('option').evaluateAll((items) => items.map((item) => (item as HTMLOptionElement).value))).toEqual(['', ...skinsOf(DIRECTIONS.find((d) => d.id === before.direction)!).map((skin) => skin.id)]);
+    await control.selectOption('ember');
+    const expected = deriveTokens(effectiveParams(setSkin(before, 'ember')), before.a11y).css['--action']!;
+    await expect.poll(() => page.frameLocator('.summary-side iframe').locator('body').evaluate(color)).toBe(expected);
+    await page.getByRole('combobox', { name: 'Preview page', exact: true }).selectOption('contact');
+    await expect.poll(() => page.frameLocator('.summary-side iframe').locator('body').evaluate(color)).toBe(expected);
+    await settle(page);
+    expect((await stored(page))?.decisions).toEqual(before.decisions);
+    expect((await stored(page))?.params).toEqual(before.params);
+    await page.reload();
+    await expect.poll(() => page.getByLabel('Project Skin', { exact: true }).inputValue()).toBe('ember');
+    await page.evaluate(() => { location.hash = '#radius'; });
+    await page.getByRole('combobox', { name: 'Preview page', exact: true }).selectOption('contact');
+    await expect.poll(() => page.frameLocator('.preview-wrap iframe').locator('body').evaluate(color)).toBe(expected);
+    await expect.poll(() => page.frameLocator('.cards iframe').first().locator('body').evaluate(color)).toBe(expected);
+    await page.evaluate(() => { location.hash = '#overlays'; });
+    await expect.poll(() => page.frameLocator('.preview-wrap iframe').locator('body').evaluate(color)).toBe(expected);
+    await page.evaluate(() => { location.hash = '#brief'; });
+    await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('body').evaluate(color)).toBe(expected);
+    await page.evaluate(() => { location.hash = '#summary'; });
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download the project file', exact: true }).click()]);
+    const text = readFileSync((await download.path())!, 'utf8');
+    const second = await open({ hash: '#summary' });
+    await second.page.locator('#project-file').setInputFiles({ name: 'skin.json', mimeType: 'application/json', buffer: Buffer.from(text) });
+    await expect.poll(() => second.page.getByLabel('Project Skin', { exact: true }).inputValue()).toBe('ember');
+    await expect.poll(() => second.page.frameLocator('.summary-side iframe').locator('body').evaluate(color)).toBe(expected);
+    await second.page.getByLabel('Project Skin', { exact: true }).selectOption('');
+    await settle(second.page);
+    expect((await stored(second.page))?.params).toEqual(before.params);
+    expect((await stored(second.page))?.decisions).toEqual(before.decisions);
+    expect((await stored(second.page))?.skinLayer).toBeUndefined();
+    await second.context.close();
+    await context.close();
+  });
+
+  it('Skin: each change is one Undo step and later color choices win for their Step', async () => {
+    const before = initial();
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(before) } });
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('berry');
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('ember');
+    await page.locator('.top').getByRole('button', { name: 'Undo', exact: true }).click();
+    expect(await page.getByLabel('Project Skin', { exact: true }).inputValue()).toBe('berry');
+    await page.locator('.top').getByRole('button', { name: 'Undo', exact: true }).click();
+    await settle(page);
+    expect(await stored(page)).toEqual(before);
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('ember');
+    await page.evaluate(() => { location.hash = '#accent'; });
+    await page.locator('#option-ink-blue').check();
+    await page.locator('.actions.sticky .primary').click();
+    await settle(page);
+    expect((await stored(page))?.skinLayer?.overrides).toContain('accent');
+    expect(effectiveParams((await stored(page))!).accentHue).toBe(before.params.accentHue);
+    await page.evaluate(() => { location.hash = '#summary'; });
+    await page.getByRole('button', { name: 'Apply this Skin again', exact: true }).click();
+    await settle(page);
+    expect((await stored(page))?.skinLayer?.overrides).toEqual([]);
+    await context.close();
+  });
+
+  it('Skin: opening records nothing and pending changes flush on background', async () => {
+    const before = initial();
+    const raw = envelope(before);
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: raw }, pageDb: { doc: null, getDelay: 2500 }, dontWaitUntilOpen: true });
+    expect(await page.getByLabel('Project Skin', { exact: true }).count()).toBe(0);
+    await background(page);
+    expect(await rawStored(page, LOCAL_KEY)).toBe(raw);
+    await page.getByLabel('Project Skin', { exact: true }).waitFor();
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('ember');
+    await background(page);
+    await expect.poll(async () => (await stored(page))?.skin).toBe('ember');
+    await context.close();
+  });
+
+  it('Skin: changes save to both stores', async () => {
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(initial()) }, pageDb: { doc: null } });
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('ember');
+    await settle(page);
+    const doc = await page.evaluate(() => (window as unknown as { __pageDb: { doc: { project: string } } }).__pageDb.doc);
+    expect(JSON.parse(doc.project)).toEqual(await stored(page));
+    expect((await stored(page))?.skin).toBe('ember');
+    await context.close();
+  });
+
+  it('Skin: a variation can choose a covered underlying color', async () => {
+    const probe = setSkin(initial(), 'ember');
+    const visible = effectiveParams(probe);
+    const option = closerOptions({ ...probe, params: visible }, 'accent', 0).find((o) => o.values.accentHue !== undefined && o.values.accentHue !== visible.accentHue)!;
+    const project = setSkin(pickValues(initial(), 'accent', option.values), 'ember');
+    const { context, page } = await open({ hash: '#accent', storage: { [LOCAL_KEY]: envelope(project) } });
+    await waitForStep(page, 'Main color');
+    await page.getByRole('button', { name: /^Show small variations/ }).click();
+    await page.locator(`[id="option-${option.id}"]`).check();
+    await page.getByRole('button', { name: /^Pick .* and continue$/ }).click();
+    await settle(page);
+    expect(effectiveParams((await stored(page))!).accentHue).toBe(option.values.accentHue);
+    await context.close();
+  });
+
+  it('Skin: variation controls use the visible second color, not the covered one-color recipe', async () => {
+    const direction = DIRECTIONS.find((d) => d.id === 'midnight-aurora')!;
+    const project = setSkin(pick(applyDirection(initial(), direction), 'color-strategy', 'single-accent'), 'sunset');
+    expect(project.params.colorStrategy).toBe('single-accent');
+    expect(effectiveParams(project).colorStrategy).toBe('duo');
+    const { context, page } = await open({ hash: '#color-strategy', storage: { [LOCAL_KEY]: envelope(project) } });
+    await waitForStep(page, 'Amount of color');
+    await page.getByRole('button', { name: /^Show small variations/ }).click();
+    expect(await page.locator('.option .option-title').first().innerText()).toContain('Starting point');
+    await context.close();
+  });
+
+  it('Skin: failed saves keep the choice and retry', async () => {
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(initial()) } });
+    expect(await fillStorage(page, 0)).toBe(true);
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('ember');
+    await settle(page);
+    expect(await page.locator('.save-state').innerText()).toContain('Cannot save here');
+    expect(await page.getByLabel('Project Skin', { exact: true }).inputValue()).toBe('ember');
+    await page.evaluate(() => window.localStorage.removeItem('test.capacity'));
+    await page.getByRole('button', { name: 'Try to save again' }).click();
+    await expect.poll(async () => (await stored(page))?.skin).toBe('ember');
+    await context.close();
+  });
+
+  it('Skin: another tab stops saving and preserves the unsaved choice in a kept copy', async () => {
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(initial()) } });
+    const other = await context.newPage();
+    await other.goto(`${pageUrl}#summary`);
+    await other.getByLabel('Project Skin', { exact: true }).waitFor();
+    await other.locator('#project-name').fill('Other tab');
+    await settle(other);
+    await page.locator('.banner.hold').waitFor();
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('ember');
+    expect(await page.locator('.save-state').innerText()).toContain('Not saving');
+    await background(page);
+    expect((await stored(page))?.skin).toBeUndefined();
+    expect((await keptCopies(page)).some((copy) => { try { return (JSON.parse(copy.text) as Project).skin === 'ember'; } catch { return false; } })).toBe(true);
+    await context.close();
+  });
+
+  it('Skin: a Direction that does not offer the current Skin says so and unsets it', async () => {
+    const { context, page } = await open({ hash: '#directions', storage: { [LOCAL_KEY]: envelope(setSkin(initial(), 'ember')) } });
+    await page.getByRole('button', { name: 'Start from Ink and Seal', exact: true }).click();
+    await page.getByRole('button', { name: 'Start again', exact: true }).click();
+    await settle(page);
+    expect((await stored(page))?.skin).toBeUndefined();
+    expect((await stored(page))?.skinLayer).toBeUndefined();
+    expect(await page.locator('.banner').innerText()).toContain('does not offer the previous Skin');
+    await context.close();
+  });
+
+  for (const studioLook of ['light', 'dark'] as const) it(`Skin: the active native control has no serious axe finding in ${studioLook}`, async () => {
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(setSkin(initial(), 'ember')) } });
+    await page.emulateMedia({ colorScheme: studioLook });
+    await page.getByLabel('Project Skin', { exact: true }).waitFor();
+    await page.evaluate(axeSource);
+    const violations = await page.evaluate(async () => {
+      const engine = (window as unknown as { axe: { run: (context: unknown) => Promise<{ violations: { impact: string | null }[] }> } }).axe;
+      return (await engine.run({ exclude: ['iframe'] })).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
+    });
+    expect(violations).toEqual([]);
+    await context.close();
+  });
 });

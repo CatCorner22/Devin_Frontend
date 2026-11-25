@@ -1,9 +1,10 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinParams, skinsOf, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinParams, skinsOf, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { BriefView } from './Brief';
+import { SkinControl } from './SkinControl';
 import { CraftFloors } from './CraftFloors';
 import { LICENSE_TEXTS, MIT_COPYRIGHT_PLACEHOLDER, NOTICES } from './notices.generated';
 import { copyText, fileNameFor, probePreviews, readBackups, removeBackup, saveFile, storedProjectText, type KeptCopy } from './platform';
@@ -118,6 +119,7 @@ function movedFrom(t: Tunable, value: number, optionValue: unknown): string | nu
 
 /** The current value of a Step, in words: the matching Option's name, or the hand-set values. */
 function valueLabel(project: Project, step: Step): string {
+  project = { ...project, params: effectiveParams(project) };
   const match = matchingOptionId(project.params, step, project.brief?.voice);
   if (match) return step.options.find((o) => o.id === match)!.label;
   if (step.briefVoice) return Object.values(project.brief!.voice).join(', ');
@@ -359,7 +361,7 @@ function DirectionCard({ direction }: { direction: Direction }): React.JSX.Eleme
               })}
             </div>
             <p className="hint">{skin ? skin.what : 'The colors this Direction was composed with.'}</p>
-            <p className="hint">A Skin sets which color. How light and how vivid the color is stays as this Direction has it, and the color shows most in buttons, links, and bands.{twoColors ? ' A chip with two colors: this Direction has a second color, and it moves around the color wheel together with the first.' : ''} You choose a Skin here, at the start; later you change colors on the color Steps.</p>
+            <p className="hint">A Skin sets which color. How light and how vivid the color is stays as this Direction has it, and the color shows most in buttons, links, and bands.{twoColors ? ' A chip with two colors: this Direction has a second color, and it moves around the color wheel together with the first.' : ''} You can also change the Skin on Summary. Later color choices take priority for their own Step.</p>
           </fieldset>
         )}
         <dl>
@@ -568,9 +570,9 @@ function StepsView(): React.JSX.Element {
   const thumbWidth = step.thumb?.width ?? DEVICE_WIDTH[cardsDevice];
   const thumbRatio = step.thumb?.focus ? 0.7 : step.thumb?.width ? (step.thumb.width < 600 ? 0.9 : 0.6) : THUMB_RATIO[cardsDevice];
   const lookingAtApplied = !s.variations && shown.id === applied;
-  const sliders = activeTunables(step, s.project.params);
+  const sliders = activeTunables(step, effectiveParams(s.project));
 
-  const stateKey = JSON.stringify([s.project.params, s.project.content, s.project.brief?.voice, s.project.a11y, step.id, s.variations?.round ?? -1, s.variations?.origin ?? null, wire, s.region]);
+  const stateKey = JSON.stringify([effectiveParams(s.project), s.project.content, s.project.brief?.voice, s.project.a11y, step.id, s.variations?.round ?? -1, s.variations?.origin ?? null, wire, s.region]);
   const thumbs = useMemo(() => {
     const out: Record<string, string> = {};
     // A Step may give its small pictures a close-up of their own (the buttons, one box), so that the change can be seen at card size.
@@ -628,7 +630,7 @@ function StepsView(): React.JSX.Element {
     : lookingAtApplied
       ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
-  const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => s.project.params[key] !== s.project.base[key]);
+  const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => effectiveParams(s.project)[key] !== s.project.base[key]);
 
   return (
     <div className="work">
@@ -783,7 +785,7 @@ function StepsView(): React.JSX.Element {
             <summary>Adjust with sliders</summary>
             <p className="hint">Each slider changes your design as it stands, one value at a time. The large preview follows. To go back, press Undo in the top bar.</p>
             {sliders.map((t) => {
-              const value = s.project.params[t.key] as number;
+              const value = effectiveParams(s.project)[t.key] as number;
               const aroundTheWheel = String(t.key).toLowerCase().includes('hue');
               const ends = t.directions ?? ['less', 'more'];
               return (
@@ -839,7 +841,7 @@ function OverlaysView(): React.JSX.Element {
   const s = useStudio();
   const heading = useHeadingFocus();
   const on = useMemo(() => overlaysOf(s.project), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on]);
+  const html = useMemo(() => mockupHtml(s.project, effectiveParams(s.project), { wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on]);
   return (
     <div className="work">
       <Rail />
@@ -927,9 +929,9 @@ function SummaryView(): React.JSX.Element {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const text = useMemo(() => JSON.stringify(s.project, null, 2), [s.project]);
   const overlaysOn = useMemo(() => overlaysOf(s.project), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { page: s.previewPage, wireframe: false, focus: 'top', still: true, overlays: overlaysOn }), [s.project, overlaysOn, s.previewPage]);
+  const html = useMemo(() => mockupHtml(s.project, effectiveParams(s.project), { page: s.previewPage, wireframe: false, focus: 'top', still: true, overlays: overlaysOn }), [s.project, overlaysOn, s.previewPage]);
   const clashes = useMemo(() => conflicts(s.project), [s.project]);
-  const research = useMemo(() => researchReport(s.project.params, tokensFor(s.project.params, s.project.a11y).css), [s.project.params, s.project.a11y]);
+  const research = useMemo(() => researchReport(effectiveParams(s.project), tokensFor(effectiveParams(s.project), s.project.a11y).css), [s.project]);
   const decided = STEPS.filter((st) => s.project.decisions[st.id]).length;
   const [keptTick, setKeptTick] = useState(0);
   // The kept copy that the owner is about to remove, by a name that stays the same when the list is read again. Holding the
@@ -997,6 +999,7 @@ function SummaryView(): React.JSX.Element {
         <p className="teach">
           <strong>What works today:</strong> you can download the project file and open it here later. <strong>What does not exist yet:</strong> the instructions for an AI coding tool, the files of exact design values, and the reference page. They arrive in a later version of the Studio.
         </p>
+        <SkinControl />
         <section aria-labelledby="file-heading">
           <h2 id="file-heading">Project file</h2>
           <div className="actions">
@@ -1192,7 +1195,8 @@ export function App(): React.JSX.Element {
   const ready = useStudio((s) => s.ready);
   const view = useStudio((s) => s.view);
   const look = useStudio((s) => s.studioLook);
-  const params = useStudio((s) => s.project.params);
+  const project = useStudio((s) => s.project);
+  const params = effectiveParams(project);
   const [previewsWork, setPreviewsWork] = useState<boolean | null>(null);
 
   useEffect(() => {

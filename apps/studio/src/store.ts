@@ -1,7 +1,7 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
-  DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
-  nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, startPlain, tune,
+  DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
+  nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
   type A11yProfile, type BriefNotes, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type MockupPage, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
@@ -100,6 +100,7 @@ export interface StudioState {
   requestPlainStart(): void;
   moreDirections(): void;
   setProfile(profile: A11yProfile): void;
+  changeSkin(skinId: string | null): void;
   /** Switch one Overlay on or off for this project. */
   toggleOverlay(overlayId: string, on: boolean): void;
   rename(name: string): void;
@@ -135,7 +136,7 @@ export function directionName(project: Project, generated: Direction[] = []): st
 
 /** The card that shows the design as it stands: the matching Catalog Option, or the "current" card. */
 export function appliedCardId(project: Project, step: Step): string {
-  return matchingOptionId(project.params, step, project.brief?.voice) ?? CURRENT;
+  return matchingOptionId(effectiveParams(project), step, project.brief?.voice) ?? CURRENT;
 }
 
 /** The parameters that a card of the current Step shows. */
@@ -147,14 +148,14 @@ export function paramsForCard(state: Pick<StudioState, 'project' | 'stepId' | 'v
     const generated = variations.options.find((o) => o.id === cardId);
     const values = { ...variations.origin, ...(generated?.values ?? {}) };
     try {
-      return pickValues(project, state.stepId, values).params;
+      return effectiveParams(pickValues(project, state.stepId, values));
     } catch {
-      return { ...project.params, ...values };
+      return { ...effectiveParams(project), ...values };
     }
   }
-  if (cardId === CURRENT) return project.params;
+  if (cardId === CURRENT) return effectiveParams(project);
   const option = stepOf(state.stepId).options.find((o) => o.id === cardId);
-  return option ? previewParams(project, state.stepId, option.id) : project.params;
+  return option ? previewParams(project, state.stepId, option.id) : effectiveParams(project);
 }
 
 /**
@@ -788,8 +789,9 @@ export const useStudio = create<StudioState>((set, get) => {
       if (variations) {
         // The values on show: "as it was" (the values the variations started from), or one small step away from them.
         const values = { ...variations.origin, ...(variations.options.find((o) => o.id === shownId)?.values ?? {}) };
-        const target = { ...project.params, ...values };
-        const unchanged = step.owns.every((key) => target[key] === project.params[key]);
+        const current = effectiveParams(project);
+        const target = { ...current, ...values };
+        const unchanged = step.owns.every((key) => target[key] === current[key]);
         const option = matchingOptionId(target, step);
         if (unchanged) commit(keep(project, stepId));
         else if (option) commit(pick(project, stepId, option));
@@ -850,7 +852,7 @@ export const useStudio = create<StudioState>((set, get) => {
     startVariations() {
       const state = get();
       const step = stepOf(state.stepId);
-      if (activeTunables(step, get().project.params).length === 0) return;
+      if (activeTunables(step, effectiveParams(state.project)).length === 0) return;
       // Variations start from what is on show: a card the owner is looking at, or the design as it stands.
       const origin = ownedValues(step, paramsForCard(state, state.shownId));
       const round = state.variations ? state.variations.round + 1 : 0;
@@ -871,7 +873,7 @@ export const useStudio = create<StudioState>((set, get) => {
       // A slider always moves the design as it stands, and only the value that moved (findings FTU-05, FTU-06).
       const { project, stepId } = get();
       // A move that changes nothing records nothing: no hand-set Decision and no Undo step (code review, "screen 1").
-      if (project.params[key] === value) return;
+      if (effectiveParams(project)[key] === value) return;
       commit(tune(project, stepId, key, value), `slider:${stepId}:${String(key)}`);
       set({ variations: null, shownId: appliedCardId(get().project, stepOf(stepId)) });
     },
@@ -886,11 +888,13 @@ export const useStudio = create<StudioState>((set, get) => {
       const skinName = skin?.name;
       const { project } = get();
       const inSkin = skinName ? `, in the Skin “${skinName}”` : '';
+      const lostSkin = !skin && project.skin && !skinsOf(direction).some((offered) => offered.id === project.skin)
+        ? ` This Direction does not offer the previous Skin, “${findSkin(project.skin)?.name ?? project.skin}”. The Skin is now unset.` : '';
       const replace = (): void => {
         const hadWork = hasWork(project);
         commit(applyDirection(get().project, direction, skin?.id));
         enter('steps', STEPS[0]!.id);
-        if (hadWork) set({ notice: { text: `Started again from “${direction.name}”${inSkin}.`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
+        if (hadWork) set({ notice: { text: `Started again from “${direction.name}”${inSkin}.${lostSkin}`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
         else if (skinName) set({ notice: { text: `Started from “${direction.name}”${inSkin}. The Skin changed colors only; every Step still starts from this Direction’s layout, letters, and shapes.` } });
       };
       const start = (): void => replaceKeepingCopy(replace, `you started again from “${direction.name}”`);
@@ -921,6 +925,11 @@ export const useStudio = create<StudioState>((set, get) => {
 
     setProfile(profile) {
       commit({ ...get().project, a11y: profile });
+    },
+
+    changeSkin(skinId) {
+      commit(setSkin(get().project, skinId));
+      set({ variations: null, shownId: appliedCardId(get().project, stepOf(get().stepId)), notice: { text: skinId === null ? 'The Skin is off. The saved colors beneath it are showing again.' : `The Skin “${findSkin(skinId)!.name}” covers earlier color choices. Those choices and your words are still saved. A later color choice takes priority for its own Step.`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
     },
 
     toggleOverlay(overlayId, on) {
