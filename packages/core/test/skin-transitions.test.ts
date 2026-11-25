@@ -13,7 +13,9 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
     };
     let direction = start;
     let baseline = firstSkin ? skinParams(direction, firstSkin) : direction.params;
+    let startedWithSkin = firstSkin !== undefined;
     let project = applyDirection(createProject(), direction, firstSkin?.id);
+    let withoutSkin = applyDirection(createProject(), direction);
     const seen = new Set<string>();
     for (let index = 0; index < 49; index++) {
       const action = actions[index < actions.length ? index : next(actions.length)]!;
@@ -21,7 +23,7 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
       const before = project;
       const step = colorSteps[next(colorSteps.length)]!;
       const label = `${start.id}/${firstSkin?.id ?? 'bare'}/${index}/${action}/${step.id}`;
-      expect(project.base, label).toEqual(baseline);
+      expect(project.base, label).toEqual(direction.params);
       if (action === 'set') {
         const offers = skinsOf(direction);
         if (offers.length) {
@@ -38,18 +40,22 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
         expect(effectiveParams(project), label).toEqual(before.params);
       } else if (action === 'keep') {
         project = keep(project, step.id);
-        if (before.skinLayer && !before.skinLayer.overrides.includes(step.id)) expect(project, label).toBe(before);
+        withoutSkin = keep(withoutSkin, step.id);
+        const layer = before.skinLayer;
+        if (layer && (layer.resets?.includes(step.id) || (!layer.off && !layer.overrides.includes(step.id)))) expect(project, label).toBe(before);
         expect(project.params, label).toEqual(before.params);
       } else if (action === 'pick') {
         const option = step.options[next(step.options.length)]!;
         project = pick(project, step.id, option.id);
+        withoutSkin = pick(withoutSkin, step.id, option.id);
         if (project.skinLayer) expect(project.skinLayer.overrides, label).toContain(step.id);
         expect(matchingOptionId(effectiveParams(project), step), label).toBe(option.id);
       } else if (action === 'reset') {
         project = revert(project, step.id);
+        withoutSkin = revert(withoutSkin, step.id);
         const expected = ownedValues(step, baseline);
         const follows = step.options.find((option) => option.id === matchingOptionId(baseline, step))?.derive;
-        if (follows) Object.assign(expected, { [follows.key]: ((effectiveParams(project)[follows.from] + follows.turn) % 360 + 360) % 360 });
+        if (follows && !startedWithSkin) Object.assign(expected, { [follows.key]: ((effectiveParams(project)[follows.from] + follows.turn) % 360 + 360) % 360 });
         expect(ownedValues(step, effectiveParams(project)), label).toEqual(expected);
         expect(project.decisions[step.id], label).toBeUndefined();
       } else if (action === 'direction') {
@@ -57,11 +63,16 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
         const skins = skinsOf(direction);
         const skin = next(2) === 0 || skins.length === 0 ? undefined : skins[next(skins.length)];
         baseline = skin ? skinParams(direction, skin) : direction.params;
+        startedWithSkin = skin !== undefined;
         project = applyDirection(project, direction, skin?.id);
+        withoutSkin = applyDirection(withoutSkin, direction);
         expect(effectiveParams(project), label).toEqual(baseline);
         expect(project.decisions, label).toEqual({});
       } else {
         const loaded = parseProject(JSON.parse(JSON.stringify(project)));
+        const bareLoaded = parseProject(JSON.parse(JSON.stringify(withoutSkin)));
+        expect(bareLoaded.ok, label).toBe(true);
+        if (bareLoaded.ok) withoutSkin = bareLoaded.project;
         expect(loaded.ok, label).toBe(true);
         if (loaded.ok) {
           project = loaded.project;
@@ -69,7 +80,8 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
           expect(effectiveParams(project), label).toEqual(effectiveParams(before));
         }
       }
-      expect(project.base, label).toEqual(baseline);
+      expect(project.base, label).toEqual(direction.params);
+      expect(project.params, `${label}: no-Skin replay`).toEqual(withoutSkin.params);
     }
     expect(seen.size).toBe(actions.length);
   }

@@ -45,7 +45,7 @@ export interface Project {
   a11y: A11yProfile;
   /** Where the project started: a curated Direction's identifier, a generated Direction's identifier, or `null` for the plain start. */
   direction: string | null;
-  /** The design as it stood when the project started. "Put this Step back" restores from it. */
+  /** The starting underlying recipe. Starting Skin colors stay in the color layer. */
   base: DesignParams;
   params: DesignParams;
   decisions: Record<string, Decision>;
@@ -63,19 +63,29 @@ export interface Project {
   skinLayer?: {
     colors: Pick<DesignParams, typeof SKIN_COLOR_KEYS[number]>;
     overrides: string[];
+    startColors?: Pick<DesignParams, typeof SKIN_COLOR_KEYS[number]>;
+    resets?: string[];
+    off?: boolean;
   };
 }
 
 export const SKIN_COLOR_KEYS = ['accentHue', 'accent2Hue', 'accentChroma', 'neutralHue', 'colorStrategy', 'displayTreatment'] as const;
 
+export function startingParams(project: Project): DesignParams {
+  return project.skinLayer?.startColors ? { ...project.base, ...project.skinLayer.startColors } : project.base;
+}
+
 /** Saved design values remain underneath the Skin; later choices take precedence for their own Step. */
 export function effectiveParams(project: Project): DesignParams {
   const layer = project.skinLayer;
   if (!layer) return project.params;
-  let params = { ...project.params, ...layer.colors };
+  let params = layer.off ? { ...project.params } : { ...project.params, ...layer.colors };
   const steps = STEPS.filter((step) => layer.overrides.includes(step.id));
   for (const step of steps) {
     for (const key of step.owns) if ((SKIN_COLOR_KEYS as readonly string[]).includes(key)) Object.assign(params, { [key]: project.params[key] });
+  }
+  for (const step of STEPS.filter((step) => layer.resets?.includes(step.id))) {
+    for (const key of step.owns) if (layer.startColors && (SKIN_COLOR_KEYS as readonly string[]).includes(key)) Object.assign(params, { [key]: layer.startColors[key as typeof SKIN_COLOR_KEYS[number]] });
   }
   for (const step of steps) {
     const decision = project.decisions[step.id];
@@ -91,7 +101,9 @@ export function setSkin(project: Project, skinId: string | null): Project {
     if (!project.skin && !project.skinLayer) return project;
     const next = { ...project };
     delete next.skin;
-    delete next.skinLayer;
+    if (project.skinLayer?.startColors) next.skinLayer = { colors: project.skinLayer.colors, overrides: [], startColors: project.skinLayer.startColors, off: true };
+    else delete next.skinLayer;
+    if (JSON.stringify(next) === JSON.stringify(project)) return project;
     return next;
   }
   const direction = project.direction === null ? undefined : findDirection(project.direction);
@@ -99,7 +111,7 @@ export function setSkin(project: Project, skinId: string | null): Project {
   if (!direction || !skin || !offersSkin(direction.id, skinId)) throw new Error('This Direction does not offer that Skin.');
   const colored = skinParams({ ...direction, params: project.params }, skin);
   const colors = Object.fromEntries(SKIN_COLOR_KEYS.map((key) => [key, colored[key]])) as Pick<DesignParams, typeof SKIN_COLOR_KEYS[number]>;
-  const skinLayer = { colors, overrides: [] };
+  const skinLayer = { colors, overrides: [], ...(project.skinLayer?.startColors ? { startColors: project.skinLayer.startColors } : {}) };
   if (project.skin === skinId && JSON.stringify(project.skinLayer) === JSON.stringify(skinLayer)) return project;
   return { ...project, skin: skinId, skinLayer };
 }
@@ -107,12 +119,20 @@ export function setSkin(project: Project, skinId: string | null): Project {
 function skinChoice(project: Project, step: Step): Project {
   if (!project.skinLayer || !step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))) return project;
   const overrides = [...project.skinLayer.overrides.filter((id) => id !== step.id), step.id];
-  return { ...project, skinLayer: { ...project.skinLayer, overrides } };
+  const resets = project.skinLayer.resets?.filter((id) => id !== step.id);
+  return { ...project, skinLayer: { ...project.skinLayer, overrides, ...(resets ? { resets } : {}) } };
+}
+
+function skinReset(project: Project, step: Step): Project {
+  const layer = project.skinLayer;
+  if (!layer?.startColors || !step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))) return skinChoice(project, step);
+  return { ...project, skinLayer: { ...layer, overrides: layer.overrides.filter((id) => id !== step.id), resets: [...new Set([...(layer.resets ?? []), step.id])] } };
 }
 
 export function skinCoversStep(project: Project, stepId: string): boolean {
   const step = mustStep(stepId);
-  return Boolean(project.skinLayer && !project.skinLayer.overrides.includes(stepId) && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
+  const layer = project.skinLayer;
+  return Boolean(layer && (layer.resets?.includes(stepId) || (!layer.off && !layer.overrides.includes(stepId))) && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
 }
 
 const hueTurn = (h: number, by: number): number => (((h + by) % 360) + 360) % 360;
@@ -205,7 +225,7 @@ export function applyDirection(project: Project, direction: Direction | string, 
   delete next.skinLayer;
   if (skinId === undefined || !offersSkin(found.id, skinId)) return next;
   const colored = setSkin(next, skinId);
-  return { ...colored, base: { ...effectiveParams(colored) } };
+  return { ...colored, skinLayer: { ...colored.skinLayer!, startColors: { ...colored.skinLayer!.colors } } };
 }
 
 /** True when the curated Direction with this identifier offers the Skin. */
@@ -293,7 +313,7 @@ export function pick(project: Project, stepId: string, optionId: string, now = i
   const option = step.options.find((o) => o.id === optionId);
   if (!option) throw new Error('This Step has no such Option.');
   if (option.voice) project = { ...project, brief: { ...(project.brief ?? EMPTY_BRIEF), voice: { ...option.voice } } };
-  const params = { ...sourceForStep(project, step), ...resolvePatch(option, project.params) };
+  const params = { ...project.params, ...resolvePatch(option, project.params) };
   // A written reason belongs to the choice it was written for. It stays when the owner picks the same Option again, and it
   // goes when the owner picks another Option: "friendly" is no reason for square corners. The Studio says so when it removes
   // a reason this way, and offers to put it back (campaign 4, round 3: it used to go without a word).
@@ -382,7 +402,7 @@ export function revert(project: Project, stepId: string): Project {
   const follows = step.options.find((o) => o.id === matchingOptionId(project.base, step))?.derive;
   if (follows) params = { ...params, [follows.key]: hueTurn(params[follows.from], follows.turn) };
   const decisions = Object.fromEntries(Object.entries(project.decisions).filter(([id]) => id !== stepId));
-  return rederive(project, skinChoice({ ...project, params, decisions }, step), stepId);
+  return rederive(project, skinReset({ ...project, params, decisions }, step), stepId);
 }
 
 /** The Overlays that are switched on, in the Catalog's order. */
@@ -765,6 +785,15 @@ const decisionSchema = z.object({
   at: z.string().max(40),
 });
 
+const skinColorsSchema = z.object({
+  accentHue: paramShape['accentHue'] as z.ZodNumber,
+  accent2Hue: paramShape['accent2Hue'] as z.ZodNumber,
+  accentChroma: paramShape['accentChroma'] as z.ZodNumber,
+  neutralHue: paramShape['neutralHue'] as z.ZodNumber,
+  colorStrategy: z.enum(PARAM_VALUES.colorStrategy),
+  displayTreatment: z.enum(PARAM_VALUES.displayTreatment),
+}).strict();
+
 const projectSchema = z.object({
   schemaVersion: z.literal(SCHEMA_VERSION),
   name: z.string().max(120),
@@ -785,15 +814,11 @@ const projectSchema = z.object({
   overlays: z.array(z.string().max(40)).max(40).optional(),
   skin: z.string().max(40).optional(),
   skinLayer: z.object({
-    colors: z.object({
-      accentHue: paramShape['accentHue'] as z.ZodNumber,
-      accent2Hue: paramShape['accent2Hue'] as z.ZodNumber,
-      accentChroma: paramShape['accentChroma'] as z.ZodNumber,
-      neutralHue: paramShape['neutralHue'] as z.ZodNumber,
-      colorStrategy: z.enum(PARAM_VALUES.colorStrategy),
-      displayTreatment: z.enum(PARAM_VALUES.displayTreatment),
-    }).strict(),
+    colors: skinColorsSchema,
     overrides: z.array(z.string().max(40)).max(40),
+    startColors: skinColorsSchema.optional(),
+    resets: z.array(z.string().max(40)).max(40).optional(),
+    off: z.boolean().optional(),
   }).optional(),
 });
 
@@ -947,13 +972,20 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   const unknown = new Set(listed.filter((id) => !findOverlay(id))).size;
   if (unknown > 0) notes.push(unknown === 1 ? 'One Overlay in the file is unknown to this version of the Studio. It was left out.' : `${unknown} Overlays in the file are unknown to this version of the Studio. They were left out.`);
   // The Skin's name stays only when this Direction offers that Skin; the colors are in the design values either way.
-  const skin = data.skin !== undefined && offersSkin(direction, data.skin) ? data.skin : undefined;
-  if (data.skin !== undefined && skin === undefined) notes.push('The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
+  const skin = !data.skinLayer?.off && data.skin !== undefined && offersSkin(direction, data.skin) ? data.skin : undefined;
+  if (data.skin !== undefined && skin === undefined) notes.push(data.skinLayer?.off ? 'The file marks its Skin as off. The Skin name was left out; the saved colors are unchanged.' : 'The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
   const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
   if (data.skinLayer) {
     const overrides = [...new Set(data.skinLayer.overrides)].filter((id) => findStep(id)?.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
     if (overrides.length !== data.skinLayer.overrides.length) notes.push('The file repeats a Skin exception or names a Step that cannot change a Skin color. Those entries were left out.');
     project.skinLayer = { colors: { ...data.skinLayer.colors }, overrides };
+    if (data.skinLayer.startColors) project.skinLayer.startColors = { ...data.skinLayer.startColors };
+    if (data.skinLayer.resets) {
+      const resets = data.skinLayer.startColors ? [...new Set(data.skinLayer.resets)].filter((id) => findStep(id)?.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))) : [];
+      if (resets.length !== data.skinLayer.resets.length) notes.push('The file repeats a starting-Skin reset, lacks its starting colors, or names a Step that cannot change a Skin color. Those entries were left out.');
+      project.skinLayer.resets = resets;
+    }
+    if (data.skinLayer.off !== undefined) project.skinLayer.off = data.skinLayer.off;
   }
   if (data.brief !== undefined) project.brief = data.brief;
   return { project, notes };

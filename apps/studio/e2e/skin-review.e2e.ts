@@ -135,10 +135,28 @@ it('Skin review: Put this Step back restores the colors shown by the starting Sk
     await page.locator('.actions.sticky .primary').click();
     await page.locator('.rail a[href="#accent"]').click();
     await page.getByRole('button', { name: 'Put this Step back to how the project started', exact: true }).click();
-    await expect.poll(async () => (await stored(page))?.params.accentHue).toBe(findSkin('berry')!.accentHue);
+    await expect.poll(async () => (await stored(page))?.skinLayer?.resets).toContain('accent');
+    expect((await stored(page))?.params.accentHue).toBe(findDirection('soft-daylight')!.params.accentHue);
     const expected = deriveTokens(skinParams(findDirection('soft-daylight')!, findSkin('berry')!), 'advise').css['--action'];
     await expect.poll(() => page.frameLocator('.large-preview iframe').locator('body').evaluate((body) => getComputedStyle(body).getPropertyValue('--action').trim())).toBe(expected);
     expect((await stored(page))?.decisions.accent).toBeUndefined();
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: reset after No Skin keeps starting colors removable without changing the underlying recipe', async () => {
+  const started = applyDirection(createProject(), 'soft-daylight', 'berry');
+  const { context, page, faults } = await open(started);
+  try {
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('');
+    await page.locator('a[href="#accent"]').click();
+    await page.getByRole('button', { name: 'Put this Step back to how the project started', exact: true }).click();
+    await page.locator('.rail a[href="#summary"]').click();
+    expect(await page.getByLabel('Project Skin', { exact: true }).inputValue()).toBe('starting-colors');
+    expect(await page.locator('#project-skin-meaning').innerText()).toContain('starting Skin colors');
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('');
+    await expect.poll(async () => (await stored(page))?.skinLayer?.resets).toBeUndefined();
+    expect((await stored(page))?.params).toEqual(started.params);
     expect(faults).toEqual([]);
   } finally { await context.close(); }
 });

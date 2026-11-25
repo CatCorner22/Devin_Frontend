@@ -1,5 +1,5 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -630,7 +630,7 @@ function StepsView(): React.JSX.Element {
     : lookingAtApplied && !(s.cardTouched && skinCoversStep(s.project, step.id) && step.options.some((option) => option.id === shown.id))
       ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
-  const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => effectiveParams(s.project)[key] !== s.project.base[key]);
+  const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => effectiveParams(s.project)[key] !== startingParams(s.project)[key]);
 
   return (
     <div className="work">
