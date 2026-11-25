@@ -6,7 +6,7 @@
  * variables). The function name `url` itself may be written in capitals. A backslash inside quotation marks keeps the next
  * letter from ending them. Quotation marks that are never closed keep every letter to the end of the value.
  * A value that is not text (a number in a token file) is read as its text; a missing value is read as the empty text.
- * A value that cannot be written as text at all (one nested many thousands deep) is read as one fixed word, and a value that holds itself as the text "[object Object]", so two such values share an ID. A big integer inside a list or an object shares an ID with the text of its digits and the letter n; a big integer that is a token's own value shares one with the text of its digits alone (and so with the number of the same digits, below 10^21).
+ * A value that cannot be written as text at all (one nested many thousands deep) is read as one fixed word, and a value that holds itself as the text "[object Object]", so two such values share an ID. A big integer inside a list or an object shares an ID with the text of its digits and the letter n; a big integer that is a token's own value shares one with the text of its digits alone (and so with a number that JavaScript writes with the same digits; it does so only for a whole number below 10^21 that it can hold exactly).
  * The ID is not secret and proves nothing about who built a page: anyone can copy it. It only links a build to a design.
  * Two different designs can share an ID by chance; with 64 bits that takes about four billion designs to become likely.
  */

@@ -558,6 +558,8 @@ describe('the Brief', () => {
     expect(designId({ t: 1n } as never)).toBe(designId({ t: '1' }));
     expect(designId({ t: 10n ** 21n } as never)).toBe(designId({ t: '1000000000000000000000' }));
     expect(designId({ t: 10n ** 21n } as never)).not.toBe(designId({ t: 1e21 } as never));
+    expect(designId({ t: 9007199254740993n } as never)).not.toBe(designId({ t: 9007199254740993 } as never));
+    expect(designId({ t: 9007199254740992n } as never)).toBe(designId({ t: 9007199254740992 } as never));
     expect(designId({ t: { a: 1n } } as never)).toBe(designId({ t: { a: '1n' } } as never));
     // Re-audit of WU-1, finding 4: a number of another country, or digits before a hyphen, do not excuse a made-up number beside them.
     for (const filler of ['Leeds office 0113 555-0142. New York office (212) 555-0199.', 'Invoice 2024-555-0142 is paid. Call us on 555-0100.']) expect(placeholderIn(filler), filler).toBe('555-0');
