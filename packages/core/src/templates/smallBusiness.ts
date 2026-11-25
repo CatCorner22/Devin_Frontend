@@ -174,6 +174,7 @@ p { margin: 0; text-wrap: pretty; }
 a { color: var(--accent-text); text-underline-offset: 0.22em; text-decoration-thickness: 0.07em; text-decoration-color: color-mix(in oklch, currentColor 45%, transparent); transition: text-decoration-color var(--dur-fast) var(--ease-out); }
 @media (hover: hover) { a:hover { text-decoration-color: currentColor; } }
 .wrap { width: 100%; max-width: var(--page-max); margin-inline: auto; padding-inline: var(--space-6); }
+.preview-fallback { padding-block: var(--space-4); }
 .skip { position: absolute; left: var(--space-4); top: -100px; background: var(--surface); color: var(--text); padding: var(--space-2) var(--space-4); border-radius: var(--radius-small); z-index: 60; }
 .skip:focus { top: var(--space-4); }
 :focus-visible { outline: var(--focus-w) var(--focus-style, solid) var(--focus); outline-offset: 2px; }
@@ -429,6 +430,7 @@ body[data-focus]:not([data-focus="top"]) { display: block; min-height: 0; }
 body[data-focus]:not([data-focus="top"]) .site-header, body[data-focus]:not([data-focus="top"]):not([data-focus="buttons"]) .hero { display: none; }
 body[data-focus="services"] .facts, body[data-focus="fees"] .facts, body[data-focus="about"] .facts, body[data-focus="contact"] .facts { display: none; }
 body[data-focus="about"] .services, body[data-focus="contact"] .services, body[data-focus="contact"] .about { display: none; }
+body[data-page="contact"][data-focus="contact"] .inner-intro { display: none; }
 body:is([data-focus="timing"], [data-focus="empty"]) main > :not(.behavior-demo),
 body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) main > :not(.contact) { display: none; }
 body:is([data-focus="timing"], [data-focus="empty"], [data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .site-footer { display: none; }
@@ -561,7 +563,8 @@ export function renderSmallBusiness(input: MockupInput): string {
   /** The attributes of a link. An inert link keeps the look and the keyboard focus of a link and leads nowhere. */
   const link = (target: string): string => (inert ? 'role="link" tabindex="0"' : `href="${e(target)}"`);
   // The facts band moves into the first screen when facts are the emphasis, so that region opens at the top instead.
-  const focus: MockupFocus = input.focus === 'facts' && p.emphasis === 'proof' ? 'top' : (input.focus ?? 'top');
+  const contactFallback = input.page === 'contact' && input.focus !== undefined && (['facts', 'services', 'fees', 'about', 'buttons', 'box'] as MockupFocus[]).includes(input.focus);
+  const focus: MockupFocus = contactFallback || (input.focus === 'facts' && p.emphasis === 'proof') ? 'top' : (input.focus ?? 'top');
   const attrs = [
     `data-nav="${e(p.nav)}"`,
     `data-hero="${e(p.hero)}"`,
@@ -632,6 +635,7 @@ ${SMALL_BUSINESS_CSS}
   </div>
 </header>
 <main id="main">
+${contactFallback ? '<p class="wrap preview-fallback">That section appears only on the home page. Showing the top of the contact page instead.</p>' : ''}
 ${behavior}
 ${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1>${e(contactPageContent(c).title)}</h1><p>${e(contactPageContent(c).intro)}</p><h2>Plan your visit</h2><p>${e(contactPageContent(c).directions)}</p></div></section>` : `
   <section class="hero">

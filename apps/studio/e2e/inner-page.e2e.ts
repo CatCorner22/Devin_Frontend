@@ -17,6 +17,25 @@ beforeAll(async () => { browser = await chromium.launch(process.env.PW_CHROMIUM 
 afterAll(async () => { await browser?.close(); });
 
 describe('inner page: generated pages', () => {
+  it('PR13: Contact sections show the form or explain the home-only fallback', async () => {
+    const context = await browser.newContext({ viewport: { width: 375, height: 800 } });
+    try {
+      const page = await context.newPage();
+      const project = createProject();
+      const input = { page: 'contact' as const, params: project.params, content: project.content, tokens: deriveTokens(project.params, project.a11y).css, links: 'inert' as const, still: true };
+      await page.setContent(renderSmallBusiness({ ...input, focus: 'contact' }));
+      expect(await page.locator('.inner-intro').isVisible()).toBe(false);
+      expect(await page.locator('.contact').evaluate((el) => el.getBoundingClientRect().top)).toBeLessThan(10);
+      expect(await page.locator('form').isVisible()).toBe(true);
+      for (const focus of ['facts', 'services', 'fees', 'about', 'buttons', 'box'] as const) {
+        await page.setContent(renderSmallBusiness({ ...input, focus }));
+        expect(await page.locator('.preview-fallback').innerText()).toContain('only on the home page');
+        expect(await page.locator('.inner-intro').isVisible()).toBe(true);
+        expect(await page.locator('body').getAttribute('data-focus')).toBe('top');
+      }
+    } finally { await context.close(); }
+  });
+
   for (const pageName of ['home', 'contact'] as const) for (const width of [375, 1280]) for (const theme of ['light', 'dark'] as const) {
     it(`${pageName}, ${width}px, ${theme}: kit checks have no failing machine floor and axe has no serious finding`, async () => {
       const context = await browser.newContext({ viewport: { width, height: 800 }, colorScheme: theme });
