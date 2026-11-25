@@ -6,6 +6,16 @@ const steps = STEPS.filter((step) => step.stage === 'behavior');
 const render = (params: DesignParams, focus: typeof steps[number]['focus'], voice = EMPTY_BRIEF.voice) => renderSmallBusiness({ params, focus, voice, content: createProject().content, tokens: deriveTokens(params, 'off').css, links: 'inert' });
 
 describe('behavior choices', () => {
+  it('review: reverting an old focus choice restores exact parameters and colors', () => {
+    const old = createProject();
+    old.params = { ...DIRECTIONS.find((d) => d.id === 'sticker-pop')!.params };
+    old.base = { ...old.params };
+    delete old.params.focusStyle;
+    delete old.base.focusStyle;
+    const restored = revert(pick(old, 'focus-style', 'double'), 'focus-style');
+    expect(restored).toEqual(old);
+    expect(deriveTokens(restored.params, 'off')).toEqual(deriveTokens(old.params, 'off'));
+  });
   it('adds only the five missing Steps, with distinct Options and explicit provenance', () => {
     expect(steps.map((s) => s.id)).toEqual(['motion-timing', 'focus-style', 'empty-state', 'error-state', 'voice']);
     expect(STEPS.filter((s) => s.id === 'motion')).toHaveLength(1);

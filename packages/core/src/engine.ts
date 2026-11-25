@@ -317,6 +317,7 @@ export function revert(project: Project, stepId: string): Project {
   const step = mustStep(stepId);
   if (step.briefVoice) project = { ...project, brief: { ...(project.brief ?? EMPTY_BRIEF), voice: { ...EMPTY_BRIEF.voice } } };
   let params = { ...project.params, ...ownedValues(step, project.base) };
+  for (const key of step.owns) if (project.base[key] === undefined) delete params[key];
   // If the starting design matched an Option whose value follows another value ("Two colors: a third of the wheel apart"),
   // the Step goes back to that Option, not to the starting number: the second color is worked out again from the main
   // color as it is now. Otherwise it would match no Option and would stop following (finding T3-03).
