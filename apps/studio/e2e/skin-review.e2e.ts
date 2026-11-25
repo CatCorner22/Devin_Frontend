@@ -1,4 +1,4 @@
-import { applyDirection, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, pick, setReason, setSkin, skinParams, type Project } from '@refraction/core';
+import { DIRECTIONS, STEPS, activeTunables, applyDirection, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, matchingOptionId, pick, setReason, setSkin, skinCoversStep, skinParams, skinsOf, type Project } from '@refraction/core';
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
@@ -97,6 +97,48 @@ it('Skin review: Lagoon replaces a painted first screen with its promised fade o
       expect(await frame.locator('body').evaluate((body) => getComputedStyle(body).getPropertyValue('--display-fill').trim())).toBe(expected);
       expect(await frame.locator('h1').evaluate((title) => getComputedStyle(title).backgroundImage)).not.toBe('none');
     }
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: returning from unpicked variations restores the untouched standard-card selection', async () => {
+  const examples = DIRECTIONS.flatMap((direction) => skinsOf(direction).flatMap((skin) => {
+    const project = setSkin(applyDirection(createProject(), direction), skin.id);
+    return STEPS.filter((step) => skinCoversStep(project, step.id) && matchingOptionId(effectiveParams(project), step) !== null && activeTunables(step, effectiveParams(project)).length > 0).map((step) => ({ project, step }));
+  }));
+  expect(examples.length).toBeGreaterThan(0);
+  const { project, step } = examples[0]!;
+  const { context, page, faults } = await open(project, `#${step.id}`);
+  try {
+    await page.getByRole('button', { name: /^Show small variations of/ }).click();
+    await page.locator('.cards input').nth(1).click();
+    await page.getByRole('button', { name: 'Back to the standard Options', exact: true }).click();
+    expect(await page.locator('.actions.sticky .primary').innerText()).not.toMatch(/^Pick /);
+    await page.locator('.actions.sticky .primary').click();
+    await page.locator('.rail a[href="#summary"]').click();
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('');
+    await expect.poll(async () => (await stored(page))?.skin).toBeUndefined();
+    expect((await stored(page))?.params).toEqual(project.params);
+    expect((await stored(page))?.decisions).toEqual(project.decisions);
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: Put this Step back restores the colors shown by the starting Skin', async () => {
+  const { context, page, faults } = await open(undefined, '#directions');
+  try {
+    const card = page.locator('.direction', { has: page.getByRole('heading', { name: 'Soft Daylight', exact: true }) });
+    await card.locator('.skin', { hasText: 'Berry' }).click();
+    await card.getByRole('button', { name: 'Start from Soft Daylight', exact: true }).click();
+    await page.locator('.rail a[href="#accent"]').click();
+    await page.locator('#option-ink-blue').click();
+    await page.locator('.actions.sticky .primary').click();
+    await page.locator('.rail a[href="#accent"]').click();
+    await page.getByRole('button', { name: 'Put this Step back to how the project started', exact: true }).click();
+    await expect.poll(async () => (await stored(page))?.params.accentHue).toBe(findSkin('berry')!.accentHue);
+    const expected = deriveTokens(skinParams(findDirection('soft-daylight')!, findSkin('berry')!), 'advise').css['--action'];
+    await expect.poll(() => page.frameLocator('.large-preview iframe').locator('body').evaluate((body) => getComputedStyle(body).getPropertyValue('--action').trim())).toBe(expected);
+    expect((await stored(page))?.decisions.accent).toBeUndefined();
     expect(faults).toEqual([]);
   } finally { await context.close(); }
 });

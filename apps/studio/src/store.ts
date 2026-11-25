@@ -62,6 +62,7 @@ export interface StudioState {
   stepId: string;
   /** The card on show in the large preview. Looking is not deciding. */
   shownId: string;
+  /** A standard card was explicitly selected; browsing variations leaves this intent unchanged. */
   cardTouched: boolean;
   variations: Variations | null;
   /** Rises each time keyboard focus should move to the main thing on screen (the cards, or the page heading). */
@@ -781,7 +782,8 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     show(cardId) {
-      if (get().shownId !== cardId || !get().cardTouched) set({ shownId: cardId, cardTouched: true });
+      const cardTouched = get().variations ? get().cardTouched : true;
+      if (get().shownId !== cardId || get().cardTouched !== cardTouched) set({ shownId: cardId, cardTouched });
     },
 
     decideAndContinue() {
