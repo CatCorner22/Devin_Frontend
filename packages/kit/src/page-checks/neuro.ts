@@ -30,20 +30,20 @@ export function noEndlessMotion(doc: Document): Finding[] {
   // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
   // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
   // (finding F-10 of the review of 2026-11-24). Its size as a target is the business of the target-size rule.
-  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll<HTMLElement>('button, [role="button"]')].slice(0, 2000).some((el) => {
-    if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible') return false;
+  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], input[type="button"][data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll<HTMLElement>('button, input[type="button"], [role="button"]')].slice(0, 2000).some((el) => {
+    if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible' || (typeof el.checkVisibility === 'function' && !el.checkVisibility())) return false;
     for (let up: Element | null = el; up; up = up.parentElement) if (parseFloat(view.getComputedStyle(up).opacity) < 0.1) return false;
     const box = el.getBoundingClientRect();
     const wide = Math.max(doc.documentElement.scrollWidth, view.innerWidth);
     if (box.width < 8 || box.height < 8 || box.right + view.scrollX <= 0 || box.bottom + view.scrollY <= 0 || box.left + view.scrollX >= wide) return false;
     if (el.closest('[aria-hidden="true"], [inert]') || el.matches(':disabled, [aria-disabled="true"]') || el.tabIndex < 0) return false;
-    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}${(el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join(' ')}`;
+    const named = `${el.getAttribute('aria-label') ?? ''}${el.tagName === 'INPUT' ? (el as HTMLInputElement).value : ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}${(el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join(' ')}`;
     // The mark data-pause-motion says it, and so does a name that says it in words: "Pause", or "Pause the moving text",
     // "Stop animation", "Turn off motion". A name that merely holds the word ("Bus stop finder", "Stop smoking") does not
     // (finding F-24 of the review of 2026-11-24; finding F-6 of the first review).
     const says = named.replace(/\s+/g, ' ').trim().toLowerCase();
     if (says === '') return false;
-    return el.hasAttribute('data-pause-motion') || /^(pause|play ?\/ ?pause|pause ?\/ ?play)$/.test(says) || /^(pause|stop|turn off|switch off|disable|reduce)\b.{0,40}\b(motion|movement|moving|animations?|slideshow|slides?|carousel|ticker|video|autoplay|auto-play|scrolling|rotation)\b/.test(says);
+    return el.hasAttribute('data-pause-motion') || /^(pause|play ?\/ ?pause|pause ?\/ ?play)$/.test(says) || /^(pause|stop|freeze|halt|turn off|switch off|disable|reduce)\b.{0,40}\b(motion|movement|moving|animations?|slideshow|slides?|carousel|banner|ticker|video|autoplay|auto-play|scrolling|rotation)\b/.test(says);
   });
   const required = 'at most 5 s, or a control that pauses it';
   const fix = 'End the movement within 5 seconds, or add a visible button that pauses it, and name it for what it does ("Pause the movement") or mark it with the attribute data-pause-motion.';
@@ -362,20 +362,20 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
   // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
   // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
   // (finding F-10 of the review of 2026-11-24). Its size as a target is the business of the target-size rule.
-  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll<HTMLElement>('button, [role="button"]')].slice(0, 2000).some((el) => {
-    if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible') return false;
+  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], input[type="button"][data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll<HTMLElement>('button, input[type="button"], [role="button"]')].slice(0, 2000).some((el) => {
+    if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible' || (typeof el.checkVisibility === 'function' && !el.checkVisibility())) return false;
     for (let up: Element | null = el; up; up = up.parentElement) if (parseFloat(view.getComputedStyle(up).opacity) < 0.1) return false;
     const box = el.getBoundingClientRect();
     const wide = Math.max(doc.documentElement.scrollWidth, view.innerWidth);
     if (box.width < 8 || box.height < 8 || box.right + view.scrollX <= 0 || box.bottom + view.scrollY <= 0 || box.left + view.scrollX >= wide) return false;
     if (el.closest('[aria-hidden="true"], [inert]') || el.matches(':disabled, [aria-disabled="true"]') || el.tabIndex < 0) return false;
-    const named = `${el.getAttribute('aria-label') ?? ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}${(el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join(' ')}`;
+    const named = `${el.getAttribute('aria-label') ?? ''}${el.tagName === 'INPUT' ? (el as HTMLInputElement).value : ''}${el.getAttribute('title') ?? ''}${el.textContent ?? ''}${[...el.querySelectorAll('img[alt]')].map((img) => img.getAttribute('alt') ?? '').join('')}${(el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join(' ')}`;
     // The mark data-pause-motion says it, and so does a name that says it in words: "Pause", or "Pause the moving text",
     // "Stop animation", "Turn off motion". A name that merely holds the word ("Bus stop finder", "Stop smoking") does not
     // (finding F-24 of the review of 2026-11-24; finding F-6 of the first review).
     const says = named.replace(/\s+/g, ' ').trim().toLowerCase();
     if (says === '') return false;
-    return el.hasAttribute('data-pause-motion') || /^(pause|play ?\/ ?pause|pause ?\/ ?play)$/.test(says) || /^(pause|stop|turn off|switch off|disable|reduce)\b.{0,40}\b(motion|movement|moving|animations?|slideshow|slides?|carousel|ticker|video|autoplay|auto-play|scrolling|rotation)\b/.test(says);
+    return el.hasAttribute('data-pause-motion') || /^(pause|play ?\/ ?pause|pause ?\/ ?play)$/.test(says) || /^(pause|stop|freeze|halt|turn off|switch off|disable|reduce)\b.{0,40}\b(motion|movement|moving|animations?|slideshow|slides?|carousel|banner|ticker|video|autoplay|auto-play|scrolling|rotation)\b/.test(says);
   });
   if (hasPause) return Promise.resolve([{ ruleId, status: 'holds', measured: 'a pause control is in view' }]);
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
@@ -395,6 +395,10 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
     const now = (view.performance.now() - start) / 1000;
     const seenNow = new Set<Element>();
     for (const r of records) {
+      // A carousel is turned by whatever its style sheet reads: a class, a style, a picture's address, and as often a data
+      // attribute, an ARIA state, or a custom property on the root (Hinshitsu audit of WU-1, adversarial finding 8). Another
+      // attribute (an id, a title, a value) changes nothing that the style sheet of an ordinary page draws by.
+      if (r.type === 'attributes' && !/^(style|class|src|srcset|hidden|open|data-.+|aria-.+)$/.test(r.attributeName ?? '')) continue;
       const el = r.target.nodeType === 1 ? (r.target as Element) : r.target.parentElement;
       // A part that a script has just hidden counts too: a slide that is shown at one moment and hidden at the next has changed
       // twice, and so a show of slides is found even when no slide is shown twice. A part that was hidden before the change
@@ -441,7 +445,7 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
     }
   };
   const sampler = view.setInterval(sample, 250);
-  observer.observe(doc.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ['style', 'class', 'src', 'hidden'] });
+  observer.observe(doc.documentElement, { subtree: true, childList: true, characterData: true, attributes: true });
   return new Promise((resolve) => {
     view.setTimeout(() => {
       observer.disconnect();

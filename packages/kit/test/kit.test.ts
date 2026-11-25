@@ -88,7 +88,7 @@ describe('the kit stands alone', () => {
     const copies = neuro.split('  const hasPause = ').slice(1).map((rest) => rest.slice(0, rest.indexOf('\n  });')));
     expect(copies).toHaveLength(2);
     expect(copies[0]).toBe(copies[1]);
-    expect(copies[0]).toContain(`'button[data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll`);
+    expect(copies[0]).toContain(`'button[data-pause-motion], input[type="button"][data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll`);
   });
 
   it('imports nothing but zod and its own files', () => {

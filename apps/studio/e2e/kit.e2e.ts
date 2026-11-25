@@ -550,6 +550,12 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       for (const control of ['<button>Bus stop finder</button>', '<button>Stop smoking today</button>', '<button>Stop</button>', '<a href="#">Pause the moving text</a>', '<button style="opacity:0">Pause the moving text</button>', '<button>Play video</button>']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['fails']);
     });
 
+    it('Hinshitsu audit of WU-1, correctness finding 8: a pause control built as an input, or named "Pause banner" or "Freeze the banner", counts; one inside a closed details does not', async () => {
+      const turn = '<style>@keyframes t { to { transform: rotate(360deg); } } .b { display: inline-block; animation: t 1s linear infinite; }</style><p class="b">Round and round</p>';
+      for (const control of ['<input type="button" value="Pause the animation">', '<button>Pause banner</button>', '<button>Freeze the banner</button>']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['holds']);
+      for (const control of ['<details><summary>More</summary><button>Pause the animation</button></details>', '<input type="button" value="Stop smoking today">']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['fails']);
+    });
+
     it('second review, F-10: a pause control that nobody can see or reach does not switch the motion floor off', async () => {
       const turn = '<style>@keyframes t { to { transform: rotate(360deg); } } .b { display: inline-block; animation: t 1s linear infinite; }</style><p class="b">Round and round</p>';
       const hidden = [
@@ -856,6 +862,27 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await paused.evaluate(() => { let i = 0; setInterval(() => { const el = document.getElementById('track'); if (el) el.scrollLeft = (++i % 3) * 600; }, 3000); });
       expect((await run(paused, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
       await paused.context().close();
+    });
+
+    it('Hinshitsu audit of WU-1, adversarial finding 8: a carousel that a script turns through a data attribute, an ARIA state, or a custom property on the root fails; a title that a script rewrites holds', async () => {
+      const slides = '<h1>Shop</h1><div id="deck" data-slide="0"><p id="a">Bread</p><p id="b" aria-hidden="true">Cakes</p></div>';
+      const scripted = async (turn: () => void): Promise<string[]> => {
+        const page = await pageOf(slides);
+        await page.evaluate(turn);
+        const out = (await run(page, 'noScriptedMotion')).map((f) => f.status);
+        await page.context().close();
+        return out;
+      };
+      const [byData, byAria, byProperty, byTitle] = await Promise.all([
+        scripted(() => { let n = 0; setInterval(() => { document.getElementById('deck')?.setAttribute('data-slide', String(++n % 2)); }, 2000); }),
+        scripted(() => { let n = 0; setInterval(() => { n++; document.getElementById('a')?.setAttribute('aria-hidden', String(n % 2 === 1)); document.getElementById('b')?.setAttribute('aria-hidden', String(n % 2 === 0)); }, 2000); }),
+        scripted(() => { let n = 0; setInterval(() => { document.documentElement.style.setProperty('--slide', String(++n % 2)); }, 2000); }),
+        scripted(() => { let n = 0; setInterval(() => { document.getElementById('deck')?.setAttribute('title', `seen ${++n} times`); }, 2000); }),
+      ]);
+      expect(byData).toEqual(['fails']);
+      expect(byAria).toEqual(['fails']);
+      expect(byProperty).toEqual(['fails']);
+      expect(byTitle).toEqual(['holds']);
     });
 
     it('F-9: a banner that a script turns every two seconds fails; a still page and a page with a pause button hold', async () => {
