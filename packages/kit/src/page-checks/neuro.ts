@@ -81,9 +81,17 @@ export function noEndlessMotion(doc: Document): Finding[] {
   // while the field is empty.
   for (const el of doc.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[placeholder], textarea[placeholder]')) {
     const style = view.getComputedStyle(el, '::placeholder');
-    if (el.value !== '' || el.getClientRects().length === 0 || style.animationName === 'none' || style.animationPlayState.split(',').every((state) => state.trim() === 'paused')) continue;
-    const counts = style.animationIterationCount.split(',').map((t) => t.trim());
-    const total = Math.max(...style.animationDuration.split(',').map((t, i) => { const d = t.trim().endsWith('ms') ? parseFloat(t) / 1000 : parseFloat(t); const count = counts[i % counts.length] ?? '1'; return d > 0 && count === 'infinite' ? Infinity : d * parseFloat(count); }));
+    if (el.value !== '' || el.getClientRects().length === 0) continue;
+    // One entry per animation name; a shorter list of durations, counts or states is read again from its start, as CSS does.
+    const list = (text: string): string[] => text.split(',').map((t) => t.trim());
+    const [durations, counts, states] = [list(style.animationDuration), list(style.animationIterationCount), list(style.animationPlayState)];
+    const total = Math.max(0, ...list(style.animationName).map((animation, i) => {
+      if (animation === 'none' || states[i % states.length] === 'paused') return 0;
+      const t = durations[i % durations.length] ?? '0s';
+      const d = t.endsWith('ms') ? parseFloat(t) / 1000 : parseFloat(t);
+      const count = counts[i % counts.length] ?? '1';
+      return d > 0 && count === 'infinite' ? Infinity : d * parseFloat(count);
+    }));
     if (total > 5 && !hasPause) out.push({ ruleId, status: 'fails', where: name(el) + '::placeholder', measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required, fix });
   }
   // Movement written into a drawing itself: the animation elements of SVG. No style sheet names them (finding F-4 as well).
@@ -223,7 +231,7 @@ export function visibleLabels(doc: Document): Finding[] {
     for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
       const box = at.getBoundingClientRect();
       const computed = view.getComputedStyle(at);
-      if (((box.width <= 1.5 || box.height <= 1.5) && (at === el || cuts(computed))) || box.right <= 0 || box.bottom + view.scrollY <= 0 || computed.visibility === 'hidden' || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
+      if (((box.width <= 1.5 || box.height <= 1.5) && (at === el || cuts(computed))) || box.right <= 0 || box.bottom + view.scrollY <= 0 || (at === el && computed.visibility === 'hidden') || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
     }
     return false;
   };

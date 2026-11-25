@@ -68,7 +68,7 @@ export function keyboardReachable(doc: Document): Finding[] {
     for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
       const box = at.getBoundingClientRect();
       const computed = view.getComputedStyle(at);
-      if (((box.width <= 1.5 || box.height <= 1.5) && (at === el || cuts(computed))) || box.right <= 0 || box.bottom + view.scrollY <= 0 || computed.visibility === 'hidden' || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
+      if (((box.width <= 1.5 || box.height <= 1.5) && (at === el || cuts(computed))) || box.right <= 0 || box.bottom + view.scrollY <= 0 || (at === el && computed.visibility === 'hidden') || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
     }
     return false;
   };
@@ -230,7 +230,20 @@ export function controlsHaveNames(doc: Document): Finding[] {
   const unseen = /[\p{Default_Ignorable_Code_Point}\p{Bidi_Control}\p{Private_Use}\u2800]/gu;
   for (const el of controls) {
     // A style sheet or a script that `aria-labelledby` points at holds code, never a name.
-    const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)).map((target) => (target && !target.matches('style, script, template, noscript') ? target.textContent ?? '' : '')).join('');
+    // A target that is itself not drawn lends all its text. Of a target that is drawn, only the text that is drawn counts:
+    // the browser leaves out a hidden part inside it.
+    const lent = (target: Element): string => {
+      if (target.getClientRects().length === 0) return target.textContent ?? '';
+      let drawn = '';
+      const within = doc.createTreeWalker(target, 4);
+      const span = doc.createRange();
+      for (let node = within.nextNode(); node; node = within.nextNode()) {
+        span.selectNodeContents(node);
+        if (node.parentElement && !node.parentElement.closest('[aria-hidden="true"]') && span.getClientRects().length > 0 && doc.defaultView?.getComputedStyle(node.parentElement).visibility === 'visible') drawn += node.textContent ?? '';
+      }
+      return drawn;
+    };
+    const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)).map((target) => (target && !target.matches('style, script, template, noscript') ? lent(target) : '')).join('');
     // Only what a screen reader is given counts: nothing inside a part marked aria-hidden, and nothing that is not drawn.
     // The text itself is asked whether it is drawn, because a wrapper with "display: contents" has no box of its own.
     const open = (node: Element): boolean => !node.closest('[aria-hidden="true"]');

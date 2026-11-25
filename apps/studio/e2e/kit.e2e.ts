@@ -763,6 +763,22 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       for (const body of named) expect(await statuses(body, 'controlsHaveNames'), body).toEqual(['holds']);
     });
 
+    it('automated review of 2026-11-25: a hidden part inside the target of aria-labelledby lends no name, and the button keeps its own; a blank that is drawn there is still no name', async () => {
+      expect(await statuses('<span id="n"><span hidden>&#x2800;</span></span><button aria-labelledby="n">Save</button>', 'controlsHaveNames')).toEqual(['holds']);
+      expect(await statuses('<span id="n"><span style="visibility:hidden">&#x2800;</span></span><button aria-labelledby="n">Save</button>', 'controlsHaveNames')).toEqual(['holds']);
+      expect(await statuses('<span id="n">&#x2800;</span><button aria-labelledby="n">Save</button>', 'controlsHaveNames')).toEqual(['fails']);
+    });
+
+    it('automated review of 2026-11-25: of several animations on a placeholder, each is read with its own duration, count and state', async () => {
+      const field = '<input placeholder="Search">';
+      const frames = '@keyframes blink { 50% { opacity: 0.3; } } @keyframes slide { from { letter-spacing: 0; } to { letter-spacing: 1px; } }';
+      // One animation ends in a second; the other is paused. Nothing moves for long.
+      expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: blink, slide; animation-duration: 1s, 20s; animation-iteration-count: 1, infinite; animation-play-state: running, paused; }`)).toEqual(['holds']);
+      expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: none, blink; animation-duration: 20s, 1s; animation-iteration-count: infinite, 1; }`)).toEqual(['holds']);
+      // Two animations share one duration and one count: the list is read again from its start, and the movement has no end.
+      expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: none, blink; animation-duration: 1s; animation-iteration-count: infinite; }`)).toEqual(['fails']);
+    });
+
     it('Hinshitsu audit of WU-1, adversarial findings 3 and 13: endless movement on body, on a marker and a placeholder, in a shadow root, and in drawings that time themselves in other ways fails; an animation that stands still holds', async () => {
       const blink = '@keyframes blink { 50% { opacity: 0.2; } } @keyframes spin { to { transform: rotate(360deg); } }';
       const motion = async (body: string, style = ''): Promise<string[]> => {
@@ -795,6 +811,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       // A trap that is not drawn at all is a trap too (correctness finding 11).
       expect(await statuses(form('visibility:hidden'), 'visibleLabels')).toEqual(['not-applicable']);
       expect(await statuses(form('visibility:hidden'), 'keyboardReachable')).toEqual(['holds']);
+      // A field that makes itself visible again inside a hidden part is drawn, and is judged like any other field
+      // (automated review of 2026-11-25).
+      const shown = '<form><div aria-hidden="true" style="visibility:hidden"><input name="card" tabindex="-1" placeholder="Card number" style="visibility:visible"></div><br><br><button>Pay</button></form>';
+      expect(await statuses(shown, 'visibleLabels')).toEqual(['fails']);
+      expect(await statuses(shown, 'keyboardReachable')).toEqual(['fails']);
       // The trap proper: the part is one pixel high and cuts off the field.
       expect(await statuses(form('height:1px;overflow:hidden'), 'visibleLabels')).toEqual(['not-applicable']);
       expect(await statuses(form('height:1px;overflow:hidden'), 'keyboardReachable')).toEqual(['holds']);
