@@ -1,6 +1,6 @@
 # [00] Studio guarantees: living reference
 
-Version 1.7. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
+Version 1.8. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
 
 Stale-after: 90
 
@@ -420,7 +420,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 <!-- index: contrast check | contrast; passing pair; see also: written color -->
 
-- **Rule.** Every pair that the Studio marks as passing meets its required ratio when measured again from the written colors, and when measured from pixels that the browser drew. [S4; S5]
+- **Rule.** Every pair that the Studio marks as passing meets its required ratio when measured again from the written colors, and when measured from pixels that the browser drew. Fixed floors now precede all reporting profiles without changing the saved setting (D71). [S4; S5; S1 at D71]
 - **Test.** "a pair marked as passing passes when measured again from the emitted colors, across thousands of random combinations (finding T2-01)"; in the browser, "draws every color pair that the Studio calls passing at or above its requirement, measured from pixels in the browser".
 - **Exceptions.** The checks do not cover photographs, text over a glow or glass, or the states of a control; the Studio lists these limits on screen (test: "states what the checks do not cover").
 - **Open.** Measured in Chromium only.
@@ -459,9 +459,9 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 <!-- index: Decision | record; pick; see also: project file -->
 
-- **Rule.** After any sequence of picks, slider moves, Undo, new Directions, and reloads, each recorded Decision names the Option and the values that the design really has. [S9]
+- **Rule.** After any sequence of picks, slider moves, Undo, new Directions, and reloads, each recorded Decision names the Option and the values that the saved recipe has. A Skin can cover those saved colors without rewriting the Decisions (D72); No Skin reveals them. [S9; S1 at D72]
 - **Test.** "keeps every Decision true to the design through 400 random sequences of actions, and through save and reload".
-- **Policy.** The Prescription is written from the Decisions; a Decision that drifts from the design would prescribe the wrong thing.
+- **Policy.** A future Prescription must resolve the saved recipe together with its Skin layer; Decisions alone do not describe covered colors. A Decision that drifts from the saved recipe would prescribe the wrong thing.
 - Last verified: 2026-11-13
 
 ### [50.02] A Step changes only the values that it owns
@@ -513,12 +513,13 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 <!-- index: Skin | other colors; color fade; chip; see also: Direction -->
 
-- **Rule.** A Skin gives a Direction other colors, with or without a color fade in the headline; layout, letter styles, shapes, and the lightness of the main color stay as the Direction made them. A Direction offers a Skin only where the Skin's color shows on something large and the Skin's text is true of what is drawn, and only when it causes no clash and no failing color pair that the Direction's own colors pass. A project records the Skin it started in, and the Studio names it wherever it names the start. [S1 at D52; S1 at D54]
-- **Test.** "offers a color fade only where the headline can really end in the Skin’s second color (code review of 2026-11-14)"; "changes colors only: layout, letters, shapes, and how light the main color is stay as the Direction made them"; "offers a Skin only where its color shows and its text is true, without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass"; "says in a Skin’s text which color it gives and nothing about how light or how vivid, because the Direction keeps those". [S8]
+- **Rule.** A Skin gives a Direction other colors, with or without a color fade in the headline; layout, letter styles, shapes, and the selected lightness of the main color stay unchanged. A Direction offers a Skin only where its color shows on something large and its text is true of what is drawn, without a clash. Every offered Skin must meet every measured floor in both themes and all profiles; inherited failures are no longer allowed (D71). Summary can change the Skin: earlier Decisions remain saved underneath it, a later color-Step choice wins for its Step, and No Skin removes the layer (D72). Each change is one Undo step and persists through reload and project files. [S1 at D52; S1 at D54; S1 at D71; S1 at D72]
+- **Test.** Catalog tests require every measured floor in both themes and all profiles. `skin-change.test.ts` checks color-only invariants across every offer, preserved Decisions/reasons, precedence, files and invalid layers. Browser tests beginning "Skin:" check previews, saving, Undo, Direction changes and axe. Tests beginning "Skin floors:" run kit floors and axe on both pages, both themes and both widths for every Skin. [S8; S9; S3]
 - **Test.** "offers a Direction’s skins on its card; a skin changes the picture and the colors a project starts with, and nothing else". [S3]
 - **Exceptions.** Five Directions offer no Skin: they paint their main color on small marks only, or their main color is nearly gray.
-- **Open.** A Skin can be chosen only when a project starts; a later change of colors goes through the color Steps. Whether a Skin's color is easy to see in a card's small picture was judged from the design's values, not measured in pixels.
-- Last verified: 2026-11-14
+- **Exceptions.** Older files have starting-Skin colors already saved in their recipe; No Skin removes the name but does not reconstruct a recipe that was never stored. Fixed contrast floors can adjust derived color lightness without changing the saved lightness choice.
+- **Open.** Independent unit-5 reviews and a person's inspection of small card pictures, fades, outline lettering and atmospheric backgrounds remain open.
+- Last verified: 2026-11-25
 
 ### [50.08] An Overlay changes no value of the design, and a project without Overlays is stored as before
 
@@ -635,6 +636,8 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 ## [85] Changelog
 
+- 2026-11-25 v1.8: D71 replaces inherited contrast allowances with fixed floors; D72 adds in-project Skin precedence, saving and Undo (§40.02, §50.01, §50.07).
+
 - 2026-11-25 v1.6: added §10.15 for M5 unit 1, the Brief (D64), including warning-only feedback and restoring the sample.
 - 2026-11-14 v1.5: after the reviews of 2026-11-14 (decision D54): §20.06 covers look-alike marks and invisible direction signs; §20.07 says which original is kept; §50.07 states the rule for offering a Skin; §70.03 states its exception. 49 guarantees.
 - 2026-11-14 v1.4: after the saving table, Skins, Overlays, and research rules (decisions D52, D53): added §10.14, §20.07, §30.06, §50.07, §50.08, §60.03, §60.04; §60.01 names the test under its new name. 49 guarantees.
@@ -660,14 +663,14 @@ The lines used most often. Each line ends with the ID of the section that suppor
 ## [91] Cite index
 
 <!-- authorities:start -->
-- [S1] The builder and the owner, *DECISIONS.md*, repository `catcorner22/frontend`, file `DECISIONS.md` (2026-11-13) — §10.02, §10.03, §10.05, §10.07, §10.08, §10.09, §10.12, §10.13, §10.15, §20.05, §20.06, §20.07, §30.06, §40.01, §50.05, §50.06, §50.07, §50.08, §60.01, §60.03, §60.04, §70.02, §70.03
+- [S1] The builder and the owner, *DECISIONS.md*, repository `catcorner22/frontend`, file `DECISIONS.md` (2026-11-13) — §10.02, §10.03, §10.05, §10.07, §10.08, §10.09, §10.12, §10.13, §10.15, §20.05, §20.06, §20.07, §30.06, §40.01, §40.02, §50.01, §50.05, §50.06, §50.07, §50.08, §60.01, §60.03, §60.04, §70.02, §70.03
 - [S2] The builder, *Unit tests of the project file*, file `packages/core/test/project-file.test.ts` (2026-11-13) — §10.15, §20.01, §20.02, §20.03, §20.04, §20.05, §20.07, §50.08
 - [S3] The builder, *Browser tests of the Studio*, file `apps/studio/e2e/studio.e2e.ts` (2026-11-13) — §10.01, §10.02, §10.03, §10.04, §10.05, §10.06, §10.07, §10.08, §10.09, §10.10, §10.11, §10.12, §10.13, §10.14, §10.15, §20.02, §20.03, §20.05, §20.06, §20.07, §30.02, §30.03, §30.04, §50.06, §50.07, §50.08, §60.01, §60.04, §70.04
 - [S4] The builder, *Browser tests of the Mockup and of drawn colors*, file `apps/studio/e2e/visual.e2e.ts`… — §30.05, §40.02, §70.02
 - [S5] The builder, *Unit tests of the color values and contrast checks*, file `packages/core/test/tokens.test.ts`… — §40.01, §40.02, §40.03, §40.05, §40.04
 - [S7] The builder, *Unit tests of the Mockup*, file `packages/core/test/mockup.test.ts` (2026-11-13) — §30.01, §30.02, §30.03, §30.06
 - [S8] The builder, *Unit tests of the Catalog*, file `packages/core/test/catalog.test.ts` (2026-11-13) — §40.04, §50.02, §50.03, §50.07, §60.01, §60.02, §60.03, §60.04, §70.05
-- [S9] The builder, *Unit tests of the engine*, file `packages/core/test/engine.test.ts` (2026-11-13) — §20.01, §50.01, §50.02, §50.03, §50.04, §50.05, §50.06
+- [S9] The builder, *Unit tests of the engine*, file `packages/core/test/engine.test.ts` (2026-11-13) — §20.01, §50.01, §50.02, §50.03, §50.04, §50.05, §50.06, §50.07
 - [S10] The owner and the builder, *Standing rules for every session in this repository*, file `CLAUDE.md`… — §30.01, §30.04, §30.06, §40.04, §60.02, §60.03, §70.01, §70.03, §70.05
 - [S11] The builder, *Boundary rules*, file `.dependency-cruiser.cjs` (2026-11-13) — §70.01
 - [S12] The builder, *The saving table: what the Studio does with your work, in every situation*, file… — §10.14, §10.15

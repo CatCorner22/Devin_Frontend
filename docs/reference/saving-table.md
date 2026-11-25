@@ -111,6 +111,22 @@ The optional `content.contactPage` holds its heading, introduction and visit dir
 | Switching preview pages | Change no Decision or project content; keep the view across Studio screens in this tab, return to Home on reload | "inner page: switch pages without changing the project" |
 | Restoring the sample | The existing confirmation clears the optional contact text too; Undo restores it | "inner page: owner words survive reload and a file" |
 
+## In-project Skins (M5, unit 5)
+
+`skinLayer` optionally holds six color values and the Steps chosen after the Skin. `params`, `base`, content and earlier Decisions stay underneath it. No Skin removes the layer without rewriting that recipe. Older files add no layer on opening. The named browser tests below live in `apps/studio/e2e/studio.e2e.ts`.
+
+| Situation and event | What must happen | Test |
+|---|---|---|
+| Opening: the owner tries to change Skin | Do not show an editable placeholder control or write anything | "Skin: opening records nothing and pending changes flush on background" |
+| Saved: choose a Skin | Save the layer to both stores without changing earlier Decisions | "Skin: changes save to both stores" |
+| Saved: reload or project-file round trip | Keep the effective colors on both pages and every color preview | "Skin: colors reach both pages and every preview, persist through reload and a file, and leave Decisions alone" |
+| Saved/change pending: another Skin or Undo | Each Skin change is one history entry; later color choices win for their Step | "Skin: each change is one Undo step and later color choices win for their Step"; "Skin: a variation can choose a covered underlying color"; "Skin: variation controls use the visible second color, not the covered one-color recipe" |
+| Change pending: background | Flush the current layer at once, not the old colors | "Skin: opening records nothing and pending changes flush on background" |
+| Save failed: continue, then retry | Keep the selected Skin on screen and save it once storage has room | "Skin: failed saves keep the choice and retry" |
+| Not saving: another tab saved; owner changes Skin and backgrounds | Preserve the other tab's saved copy, keep this tab's new layer in a kept copy | "Skin: another tab stops saving and preserves the unsaved choice in a kept copy" |
+| Replace Direction with one not offering the Skin | Explain the loss and clear its name and layer | "Skin: a Direction that does not offer the current Skin says so and unsets it" |
+| Open old file, malformed layer or unavailable Skin | Old files add nothing; reject invalid colors; retain valid anonymous colors and explain unavailable names | Unit tests in `skin-change.test.ts`: "validates color layers and normalizes only invalid exception references, not Decisions" and "rejects unknown or unoffered Skins and handles a plain start and empty no-Skin change" |
+
 ## What no test covers (stated plainly)
 
 - The browser's own "leave this page?" question. The Studio can only ask the browser to put it; the test browser answers it by itself.
