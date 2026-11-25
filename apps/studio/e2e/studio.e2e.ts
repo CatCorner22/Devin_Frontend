@@ -3,7 +3,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { CITED_NAMES, DIRECTIONS, FLOORS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, craftFor, createProject, deriveTokens, findSkin, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
+import { BEHAVIOR_DEFAULTS, CITED_NAMES, DIRECTIONS, EMPTY_BRIEF, FLOORS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, craftFor, createProject, deriveTokens, findSkin, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
+import { focusIsVisible } from '../../../packages/kit/src/page-checks/index.js';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -2712,10 +2713,119 @@ describe('Studio: Brief', () => {
   });
 });
 
+describe('Studio: behavior Steps', () => {
+  const picture = (el: Element): string => JSON.stringify({ text: (el as HTMLElement).innerText, outline: el.querySelector('.focus-example') ? getComputedStyle(el.querySelector('.focus-example')!).outline : '', duration: getComputedStyle(el).getPropertyValue('--dur') });
+  for (const step of STEPS.filter((s) => s.stage === 'behavior')) {
+    it(`behavior: picks every ${step.name} Option, including its card picture and saved Summary`, async () => {
+      const old = createProject();
+      for (const key of Object.keys(BEHAVIOR_DEFAULTS) as (keyof typeof BEHAVIOR_DEFAULTS)[]) { delete old.params[key]; delete old.base[key]; }
+      const { context, page } = await open({ hash: `#${step.id}`, storage: { [LOCAL_KEY]: JSON.stringify(old) } });
+      const seen: string[] = [];
+      for (const option of step.options) {
+        await page.evaluate((id) => { location.hash = `#${id}`; }, step.id);
+        await waitForStep(page, step.name);
+        const card = page.locator('label.option', { hasText: option.label });
+        await card.click();
+        const large = page.frameLocator('.large-preview iframe');
+        await large.locator(`body[data-focus="${step.focus}"]`).waitFor();
+        const small = card.frameLocator('iframe');
+        await small.locator(`body[data-focus="${step.focus}"]`).waitFor();
+        const signature = await small.locator('body').evaluate(picture);
+        expect(seen, option.id).not.toContain(signature);
+        seen.push(signature);
+        await expect.poll(() => large.locator('body').evaluate(picture)).toBe(signature);
+        expect(await large.locator('script').count()).toBe(0);
+        await page.locator('.actions.sticky .primary').click();
+        await settle(page);
+        const project = (await stored(page))!;
+        expect(project.decisions[step.id]?.optionId).toBe(option.id);
+        if (option.voice) {
+          expect(project.brief?.voice ?? EMPTY_BRIEF.voice).toEqual(option.voice);
+          expect(project.decisions[step.id]?.values).toEqual({});
+        } else expect(project.params).toMatchObject(option.patch);
+      }
+      await page.evaluate(() => { location.hash = '#summary'; });
+      await page.locator('.decision-list').waitFor();
+      expect(await page.locator(`.decision-list a[href="#${step.id}"]`).innerText()).toContain(step.options.at(-1)!.label);
+      await page.reload();
+      await page.locator('.decision-list').waitFor();
+      expect(await page.locator(`.decision-list a[href="#${step.id}"]`).innerText()).toContain(step.options.at(-1)!.label);
+      await context.close();
+    });
+  }
+
+  it('behavior: Brief voice stays in sync, keeps owner text, and offers Undo after replacing a Decision', async () => {
+    const initial = pick(createProject(), 'voice', 'formal');
+    initial.content.headline = 'Words from the owner';
+    const { context, page } = await open({ hash: '#brief', storage: { [LOCAL_KEY]: envelope(initial) } });
+    expect(await page.getByRole('combobox', { name: 'Voice: formal or friendly', exact: true }).inputValue()).toBe('formal');
+    await page.getByRole('combobox', { name: 'Voice: brief or detailed', exact: true }).selectOption('detailed');
+    await settle(page);
+    expect((await stored(page))?.decisions['voice']).toBeUndefined();
+    expect((await stored(page))?.content.headline).toBe('Words from the owner');
+    expect(await page.locator('.banner').innerText()).toContain('earlier Step Decision');
+    await page.evaluate(() => { location.hash = '#voice'; });
+    await waitForStep(page, 'Voice and tone');
+    expect(await page.locator('.option[data-in-use]').innerText()).toContain('Your design now');
+    expect(await page.frameLocator('.large-preview iframe').locator('#m-phone-hint').innerText()).toContain('you do not need to wait on this page');
+    await page.getByRole('button', { name: 'Undo', exact: true }).first().click();
+    await settle(page);
+    expect((await stored(page))?.brief?.voice).toEqual(initial.brief?.voice);
+    expect((await stored(page))?.decisions['voice']?.optionId).toBe('formal');
+    await page.evaluate(() => { location.hash = '#brief'; });
+    await page.getByRole('button', { name: 'Restore sample content' }).click();
+    await page.getByRole('button', { name: 'Use the sample', exact: true }).click();
+    await settle(page);
+    expect((await stored(page))?.brief).toBeUndefined();
+    expect((await stored(page))?.decisions['voice']).toBeUndefined();
+    await page.locator('.banner').getByRole('button', { name: 'Undo', exact: true }).click();
+    await settle(page);
+    expect((await stored(page))?.brief?.voice).toEqual(initial.brief?.voice);
+    expect((await stored(page))?.decisions['voice']?.optionId).toBe('formal');
+    await context.close();
+  });
+
+  it('behavior: every focus Option passes the kit mark check in light and dark', async () => {
+    for (const theme of ['light', 'dark'] as const) for (const option of STEPS.find((s) => s.id === 'focus-style')!.options) {
+      const project = pick(createProject(), 'focus-style', option.id);
+      project.params.theme = theme;
+      const { context, page } = await open({ hash: '#focus-style', storage: { [LOCAL_KEY]: envelope(project) } });
+      await page.frameLocator('.large-preview iframe').locator('#m-name').waitFor();
+      const handle = await page.locator('.large-preview iframe').elementHandle();
+      const frame = (await handle!.contentFrame())!;
+      const findings = await frame.evaluate<ReturnType<typeof focusIsVisible>>(`(${focusIsVisible.toString()})(document)`);
+      expect(findings.filter((f) => f.status !== 'holds'), `${theme}/${option.id}`).toEqual([]);
+      await context.close();
+    }
+  });
+
+  it('behavior: every timing curve respects reduced motion and No motion', async () => {
+    for (const option of STEPS.find((s) => s.id === 'motion-timing')!.options) {
+      const project = pick(createProject(), 'motion-timing', option.id);
+      const { context, page } = await open({ hash: '#motion-timing', storage: { [LOCAL_KEY]: envelope(project) } });
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      const dot = page.frameLocator('.large-preview iframe').locator('.timing-moving');
+      await dot.waitFor();
+      expect(await dot.evaluate((el) => getComputedStyle(el).animationName)).toBe('timing-move');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      expect(await dot.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+      expect(await dot.evaluate((el) => getComputedStyle(el).transitionProperty)).toBe('none');
+      await context.close();
+      const off = pick(project, 'motion', 'none');
+      const stopped = await open({ hash: '#motion-timing', storage: { [LOCAL_KEY]: envelope(off) } });
+      await stopped.page.emulateMedia({ reducedMotion: 'no-preference' });
+      const still = stopped.page.frameLocator('.large-preview iframe').locator('.timing-moving');
+      await still.waitFor();
+      expect(await still.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+      await stopped.context.close();
+    }
+  });
+});
+
 describe('Studio: its own interface', () => {
   it('has no serious or critical axe finding on any screen, in light and dark', async () => {
     for (const colorScheme of ['light', 'dark'] as const) {
-      for (const hash of ['#brief', '#directions', '#nav', '#typeface', '#accent', '#motion', '#overlays', '#summary', '#licences']) {
+      for (const hash of ['#brief', '#directions', '#nav', '#typeface', '#accent', '#motion', '#motion-timing', '#focus-style', '#empty-state', '#error-state', '#voice', '#overlays', '#summary', '#licences']) {
         const { context, page } = await open({ hash });
         await page.emulateMedia({ colorScheme });
         await page.waitForSelector('main');
