@@ -29,10 +29,10 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 - Decisions D59 to D63 in `DECISIONS.md`. The repository uses neither Neon nor Vercel (D60).
 - `hinshitsu/kit-repairs/` is a record of the owner's Hinshitsu run (log, scopes, reports, saved outputs) and no code.
 
-**What the tests show** (the builder's machine, commit `c264167`; Chromium revision 1255 through `PW_CHROMIUM`)
+**What the tests show** (the builder's machine, commit `a91c5be`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
 
 - `npm run check`: 8 test files, 264 tests passed.
-- The kit's browser tests (`apps/studio/e2e/kit.e2e.ts`): 122 passed.
+- The kit's browser tests (`apps/studio/e2e/kit.e2e.ts`): 124 passed.
 - `npm run e2e`, the full browser suite: not yet run on this commit. It last ran three times in a row at the older commit `a973e47`: 420 tests passed in each (outputs in `hinshitsu/kit-repairs/evidence/final-runs/`).
 
 **What a reviewer should know**
