@@ -64,7 +64,7 @@ export function grade(given: readonly Finding[], rules: readonly RuleRecord[]): 
  */
 export function fromPage(text: string | undefined): string | undefined {
   if (text === undefined) return undefined;
-  const flat = String(text).replace(/[\u0000-\u001f\u007f\u2028\u2029\u200e\u200f\u202a-\u202e\u2066-\u2069‹›]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const flat = String(text).replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029\u200e\u200f\u202a-\u202e\u2066-\u2069‹›]+/g, ' ').replace(/\s+/g, ' ').trim();
   return `‹${flat.length > 160 ? flat.slice(0, 160) + '…' : flat}›`;
 }
 

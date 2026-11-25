@@ -223,7 +223,7 @@ export function visibleLabels(doc: Document): Finding[] {
     for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
       const box = at.getBoundingClientRect();
       const computed = view.getComputedStyle(at);
-      if (((box.width <= 1.5 || box.height <= 1.5) && (at === el || cuts(computed))) || box.right <= 0 || box.bottom + view.scrollY <= 0 || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
+      if (((box.width <= 1.5 || box.height <= 1.5) && (at === el || cuts(computed))) || box.right <= 0 || box.bottom + view.scrollY <= 0 || computed.visibility === 'hidden' || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
     }
     return false;
   };

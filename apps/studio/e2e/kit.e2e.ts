@@ -792,6 +792,9 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       const form = (wrapper: string): string => `<form><div aria-hidden="true" style="${wrapper}"><input name="card" tabindex="-1" placeholder="Card number" style="height:30px"></div><br><br><button>Pay</button></form>`;
       expect(await statuses(form('height:1px'), 'visibleLabels')).toEqual(['fails']);
       expect(await statuses(form('height:1px'), 'keyboardReachable')).toEqual(['fails']);
+      // A trap that is not drawn at all is a trap too (correctness finding 11).
+      expect(await statuses(form('visibility:hidden'), 'visibleLabels')).toEqual(['not-applicable']);
+      expect(await statuses(form('visibility:hidden'), 'keyboardReachable')).toEqual(['holds']);
       // The trap proper: the part is one pixel high and cuts off the field.
       expect(await statuses(form('height:1px;overflow:hidden'), 'visibleLabels')).toEqual(['not-applicable']);
       expect(await statuses(form('height:1px;overflow:hidden'), 'keyboardReachable')).toEqual(['holds']);
