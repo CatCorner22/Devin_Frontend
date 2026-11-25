@@ -392,6 +392,8 @@ describe('design ID', () => {
     loop.self = loop;
     expect(designId({ '--a': loop })).toMatch(/^rx-[0-9a-f]{16}$/);
     expect(designId({ '--a': { n: 1n } })).toMatch(/^rx-[0-9a-f]{16}$/);
+    // Re-audit of WU-1, finding 3: two big integers are two values.
+    expect(designId({ '--a': { n: 1n } })).not.toBe(designId({ '--a': { n: 2n } }));
     expect(same(8, '8')).toBe(true);
     expect(same(8, 9)).toBe(false);
     expect(same(true, 'true')).toBe(true);
