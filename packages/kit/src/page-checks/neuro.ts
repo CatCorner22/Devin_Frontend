@@ -28,8 +28,6 @@ export function noEndlessMotion(doc: Document): Finding[] {
   const seconds = (text: string): number => (text.endsWith('ms') ? parseFloat(text) / 1000 : parseFloat(text));
   const out: Finding[] = [];
   for (const el of doc.querySelectorAll('marquee, blink')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'text that moves or blinks without end', required: 'still text', fix: 'Replace the moving text with still text.' });
-  // A pause control counts only if a person can see it.
-  // Only a visible button that the builder marked for this job counts. A label that merely holds the word "stop" does not (finding F-6).
   // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
   // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
   // (finding F-10 of the review of 2026-11-24). Its size as a target is the business of the target-size rule.
@@ -405,7 +403,7 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
       if (slid) { resolve([{ ruleId, status: 'fails', where: name(slid[0]), measured: `a script moved the scroll position of this part at ${slid[1].length} moments in 11 s, the last after ${last(slid[1]).toFixed(1)} s`, required, fix }]); return; }
       if (ran) { resolve([{ ruleId, status: 'fails', where: name(ran[0]), measured: `a script kept an animation running on this part for more than 5 s`, required, fix }]); return; }
       const moving = [...momentsOf].find(([, moments]) => moments.length >= 2 && (moments[moments.length - 1] ?? 0) > 5);
-      if (moving) resolve([{ ruleId, status: 'fails', where: name(moving[0]), measured: `a script changed this part at ${moving[1].length} moments in 11 s, the last after ${(moving[1][moving[1].length - 1] ?? 0).toFixed(1)} s`, required: 'at most 5 s, or a control that pauses it', fix: 'End the movement within 5 seconds, or add a visible button that pauses it and mark it with data-pause-motion.' }]);
+      if (moving) resolve([{ ruleId, status: 'fails', where: name(moving[0]), measured: `a script changed this part at ${moving[1].length} moments in 11 s, the last after ${(moving[1][moving[1].length - 1] ?? 0).toFixed(1)} s`, required, fix }]);
       else resolve([{ ruleId, status: 'holds', measured: 'no repeated change in 11 s' }]);
     }, 11000);
   });

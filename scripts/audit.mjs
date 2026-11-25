@@ -68,7 +68,7 @@ export function check(run = npm, exceptions = EXCEPTIONS, today = new Date().toI
     else if (today > exception.until) problems.push(`The exception for ${a.id} ended on ${exception.until}. Look for a patched version, or record a new date in DECISIONS.md and here.`);
     else notes.push(`Excepted until ${exception.until}: ${a.id} (${a.package}, ${a.severity}). ${exception.reason}`);
   }
-  for (const e of exceptions) if (!all.some((a) => a.id === e.id)) problems.push(`The exception for ${e.id} matches no advisory any more. Remove it from scripts/audit.mjs.`);
+  for (const e of exceptions) if (!all.some((a) => a.id === e.id && a.package === e.package)) problems.push(`The exception for ${e.id} matches no advisory any more. Remove it from scripts/audit.mjs.`);
   return { problems, notes };
 }
 

@@ -22,7 +22,7 @@ const byId = (rules: readonly RuleRecord[]): Map<string, RuleRecord> => new Map(
 
 /**
  * The grade. A floor that fails gives "Below floor". A floor that no program measured gives "Not graded", because a grade
- * may not rest on a check that did not run. Warnings never lower the grade. The grade covers only what programs measured.
+ * may not rest on a check that did not run. Warnings never lower the grade. The grade covers what programs measured and what a person answered.
  */
 export function grade(given: readonly Finding[], rules: readonly RuleRecord[]): GradeResult {
   const findings = sound(given);
@@ -167,7 +167,7 @@ export function receipt(given: readonly Finding[], rules: readonly RuleRecord[])
 export function receiptText(r: Receipt): string {
   const lines = (title: string, rows: string[]): string => `${title}\n${rows.length > 0 ? rows.map((row) => `- ${row}`).join('\n') : '- Nothing.'}`;
   return [
-    `Grade of the measured part: ${r.grade.grade}. ${r.grade.reason}`,
+    `Grade: ${r.grade.grade}. ${r.grade.reason}`,
     lines('MEASURED BY A PROGRAM', r.measured.map((line) => `${line.plain} ${line.result}.`)),
     lines('ANSWERED BY A PERSON', r.byAPerson.map((line) => `${line.plain} ${line.result}.`)),
     lines('NOT MEASURED', r.notMeasured.map((line) => `${line.plain} ${line.result}`)),

@@ -780,7 +780,10 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       const turn = () => { let n = 0; setInterval(() => { const el = document.getElementById('slide'); if (el) el.textContent = `Offer ${++n}`; }, 2000); };
       const page = await pageOf('<h1>Shop</h1><p id="slide">Offer 0</p>');
       await page.evaluate(turn);
-      expect((await run(page, 'noScriptedMotion')).map((f) => [f.status, f.where])).toEqual([['fails', 'p#slide']]);
+      const turning = await run(page, 'noScriptedMotion');
+      expect(turning.map((f) => [f.status, f.where])).toEqual([['fails', 'p#slide']]);
+      // Hinshitsu audit of WU-1: all three failures of this check give one repair text, which says that a name is enough.
+      expect(turning[0]?.fix).toMatch(/name it for what it does/);
       await page.context().close();
       const paused = await pageOf('<h1>Shop</h1><p id="slide">Offer 0</p><button data-pause-motion>Pause</button>');
       await paused.evaluate(turn);

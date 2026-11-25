@@ -48,7 +48,7 @@ export function checkBrief(input: unknown): BriefProblem[] {
   const problems: BriefProblem[] = parsed.success ? [] : parsed.error.issues.map((issue) => ({ field: issue.path.join('.') || 'brief', problem: plain(issue, input) }));
   const avoid = at(input, ['wordsToAvoid']);
   // The Brief allows 30 words to avoid of 40 letters each. Words beyond that are reported by the schema and not searched for.
-  const banned = Array.isArray(avoid) ? avoid.slice(0, 30).filter((word): word is string => typeof word === 'string' && word.trim().length >= 2 && word.length <= 200) : [];
+  const banned = Array.isArray(avoid) ? avoid.slice(0, 30).filter((word): word is string => typeof word === 'string' && word.trim().length >= 2 && word.length <= 40) : [];
   // The second pass reads at most 400 texts, at most 8 levels deep. No valid Brief comes near either number; a file that
   // passes them gets one problem that says so, in place of minutes of work or a crash (finding F-27 of 2026-11-24).
   let read = 0;

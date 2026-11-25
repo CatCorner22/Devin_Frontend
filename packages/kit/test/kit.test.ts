@@ -217,7 +217,7 @@ describe('repair plan', () => {
 });
 
 describe('receipt', () => {
-  it('keeps the three lists apart', () => {
+  it('keeps the four lists apart', () => {
     const r = receipt([fails('floor-a'), holds('fit-a'), { ruleId: 'craft-a', status: 'could-not-measure', measured: 'No window.' }], RULES);
     expect(r.measured.map((line) => line.ruleId)).toEqual(['floor-a', 'fit-a']);
     expect(r.notMeasured.map((line) => line.ruleId)).toEqual(['floor-b', 'craft-a', 'tell-a']);
@@ -285,6 +285,9 @@ describe('receipt', () => {
     expect(printed.slice(program, person)).not.toMatch(/A person answered/);
     expect(printed.slice(person, rest)).toMatch(/A person answered: holds/);
     expect(receiptText(open)).toMatch(/ANSWERED BY A PERSON\n- Nothing\./);
+    // Hinshitsu audit of WU-1: a person's answer enters the grade, so the receipt does not call it the grade "of the measured part".
+    expect(printed).toMatch(/^Grade: /);
+    expect(printed).not.toMatch(/measured part/);
   });
   it('a check that did not run is listed as not measured, not as held', () => {
     expect(receipt([], RULES).measured).toEqual([]);
@@ -489,6 +492,9 @@ describe('the Brief', () => {
     // A banned word counts as a whole word, in every text of the Brief.
     expect(checkBrief({ ...good, wordsToAvoid: ['art'] })).toEqual([]);
     expect(checkBrief({ ...good, wordsToAvoid: ['drains'] }).map((p) => p.field)).toContain('services.2.name');
+    // Hinshitsu audit of WU-1: a word to avoid of more than 40 letters is reported once, by the schema, and not searched for.
+    const long = 'cheap'.repeat(9);
+    expect(checkBrief({ ...good, wordsToAvoid: [long], headline: `${long} plumbing, done right the first time` }).map((p) => p.field)).toEqual(['wordsToAvoid.0']);
   });
 });
 

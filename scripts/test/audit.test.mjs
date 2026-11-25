@@ -27,6 +27,9 @@ describe('the dependency audit', () => {
     // An exception never covers a package that the page carries, and a dead exception fails.
     expect(check(npmOf(high, high), exception, '2026-12-01').problems).toHaveLength(1);
     expect(check(npmOf(clean, clean), exception, '2026-12-01').problems[0]).toMatch(/matches no advisory any more/);
+    // Hinshitsu audit of WU-1: an exception that names the right advisory and the wrong package excepts nothing, so it is dead too.
+    const wrongPackage = [{ ...exception[0], package: 'underscore' }];
+    expect(check(npmOf(clean, high), wrongPackage, '2026-12-01').problems).toEqual(['GHSA-35jh-r3h4-6jhm (lodash, high): Command Injection in lodash', 'The exception for GHSA-35jh-r3h4-6jhm matches no advisory any more. Remove it from scripts/audit.mjs.']);
   });
 
   it('second review, F-32: one advisory that many packages inherit is one row', () => {
