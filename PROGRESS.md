@@ -2,6 +2,16 @@
 
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
+## M5 unit 2: craft and floors in the Catalog (2026-11-25)
+
+- D66 quotes D59 and records the builder's choices. The single data home stays in the transferable kit: 31 Catalog entries refer to the same rule objects that `KIT_RULES` uses, not copies. Core exposes 10 craft rules and 21 floors and resolves real Step/Option references without a browser API or React import. No project-file or saving behavior changes.
+- The existing 16 floors remain. Five new floors cover security review, public-page search and real-visit performance, citing research records 01, 02 and 07 as summaries, not newly consulted originals. Each entry states its check method and the person's remaining work. The kit's grade now waits for eight person-only floors, not three; tests require each new answer before "Crafted".
+- Summary lists applicable craft for current values (including a starting look or tuned value) and all floors, with evidence, sources, dates and human-check limits. It lists requirements, not measured results. No switch turns off a floor; search requirements state that they apply only to public pages.
+- Unit checks cover schema errors, empty provenance, genuine dates, single object identity, no duplicates, complete floor kinds, and Step/Option references. Browser checks cover the Summary list and a changed Decision; the existing Summary axe checks remain in light and dark.
+- `npm run check`: type check, lint and boundaries passed; 8 files, 272 tests passed in 10.45 seconds (exit 0). Full `PW_CHROMIUM=$HOME/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome npm run e2e`: 3 files, 443 tests passed in 995.77 seconds (exit 0), including the Brief repairs and Summary axe checks in light and dark. The 1283 KB script passes the 1600 KB budget. Existing `inlineDynamicImports` deprecation and large-chunk warnings remain; no build configuration changed. Browser revision mismatch remains as recorded in Start here.
+- The first unit-check run caught the old three-person-floor expectation; the test now requires all eight and separately withholds each new answer. A targeted Summary run caught a test reading the route before Summary mounted; it now waits for its heading. The builder's audit caught a reused research-list class and a Step ID where the test helper expected its name; both were corrected without weakening assertions. An initial full-suite attempt was stopped during that audit, not counted as a complete run.
+- Unit 2 fast-forwards from the corrected Brief branch, including all five PR 10 review repairs (`53a89ab`, `8bb57ab`, `8f97c7e`, `cf81b6e`, `a29e790`). No independent red-team or visual inspection has run. The available tool catalog has no reviewer/session-spawn tool; `M5-CRAFT-01` records the open review requirement. M5 remains open; this is not its exit gate.
+
 ## M5 started: unit 1, the Brief (2026-11-25)
 
 ### PR 10 review repairs (2026-11-25)
@@ -97,7 +107,7 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 **What the next session should do first.** CI runs 92 and 93 passed on 2026-11-14 (commits `a6c82ee` and `3908189`), so the main line is green. Read "Next" and "Waiting on the owner" below. If the owner has sent the ten trial answers, turn each named problem into a row in `redteam/FINDINGS.md` and repair the serious ones; M4 then closes on the owner's word and M5 starts with the Brief (the owner's own words in every preview).
 
-## Current work: M5 unit 1 (Brief); M4 (Step screen) stays open under D63.
+## Current work: M5 unit 2 (craft and floors); M4 (Step screen) stays open under D63.
 
 **Why M4 is not complete.** Its exit test has three parts: the owner uses the Studio on the private page; a keyboard-only pass; the owner picks the Studio's own look. The keyboard pass runs as an automated test. The owner's trial has not happened; `docs/trial-guide.md` walks the owner through it in about 25 minutes and asks ten questions. The three major ease-of-use findings that stood in the way were repaired on 2026-11-14 (U2-06 and U3-05 fixed; U2-08 fixed in part, with the rest stated on screen in words). Overlays and research rules belong to M5 in the plan; the owner asked for them early (decision D52), and they were built before M4's exit test.
 
@@ -154,7 +164,7 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 1. **The owner tries the Studio** with `docs/trial-guide.md` and sends the ten answers. M4 closes on the owner's word (hard rule 1).
 2. **Repair what the trial names as serious, and decide the open findings of 2026-11-14** (rows "Open" and "Fixed in part" among S5, DT, U5, and C4-F18 to C4-F25 in `redteam/FINDINGS.md`). The first to weigh: the rare loss when several tabs close in the same instant (C4-F18). Then have a reviewer look at the repairs of this unit, which no reviewer has seen (hard rule 12).
-3. **M5**, in this order: the Brief (the owner's product, audience, and real content, so that every preview shows the owner's words); the craft layer and the floors from the knowledge base; the rest of the behavior Steps; an inner page for Template 1. A Skin's name stored in the project, and a change of Skin inside a project, belong here too.
+3. **M5**, in this order: the Brief (implemented; independent review open); the craft layer and the floors from the knowledge base (unit 2, implemented; independent review open); the rest of the behavior Steps; an inner page for Template 1. A Skin's name stored in the project, and a change of Skin inside a project, belong here too.
 4. **M6**: the export bundle (the Prescription). **M7**: the Fitter.
 
 ## Waiting on the owner
