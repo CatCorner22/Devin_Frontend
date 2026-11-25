@@ -536,7 +536,8 @@ describe('Skins: pre-built colors for a Direction', () => {
     expect(gothOcean.colorStrategy).toBe('duo');
     expect(gothOcean.accent2Hue).toBe((245 + (18 - 302) + 360) % 360);
     const cobalt = DIRECTIONS.find((d) => d.id === 'cobalt-wash')!;
-    expect(skinParams(cobalt, findSkin('sunset')!).colorStrategy).toBe(cobalt.params.colorStrategy);
+    expect(skinParams(cobalt, findSkin('sunset')!).colorStrategy).toBe('duo');
+    expect(skinParams(cobalt, findSkin('sunset')!).accent2Hue).toBe(findSkin('sunset')!.accent2Hue);
   });
 });
 

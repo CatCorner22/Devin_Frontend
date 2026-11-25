@@ -72,12 +72,12 @@ const turn = (hue: number, by: number): number => (((hue + by) % 360) + 360) % 3
 /**
  * The design values of a Direction in one of the skins. Only color values change.
  * A two-color skin shows its second color where the Direction's page has room for one: on a page with one main color or with
- * two colors. A page that is tinted as a whole, or that uses color in small details only, keeps its way of using color.
+ * two colors. A headline fade covers an earlier way of using color so its second endpoint remains visible.
  * A one-color skin on a two-color Direction keeps the Direction's distance between the two colors.
  */
 export function skinParams(direction: Direction, skin: Skin): DesignParams {
   const p = direction.params;
-  const twoColors = p.colorStrategy === 'duo' || p.colorStrategy === 'single-accent';
+  const twoColors = p.colorStrategy === 'duo' || p.colorStrategy === 'single-accent' || skin.displayTreatment === 'accent-gradient';
   const out: DesignParams = { ...p, accentHue: skin.accentHue, neutralHue: skin.neutralHue, displayTreatment: skin.displayTreatment };
   if (skin.accentChroma !== undefined) out.accentChroma = skin.accentChroma;
   if (skin.accent2Hue !== null && twoColors) {
@@ -113,4 +113,3 @@ export function skinFits(direction: Direction, skin: Skin): boolean {
   if (skin.accent2Hue !== null && p.colorStrategy !== 'duo' && p.colorStrategy !== 'single-accent') return false;
   return true;
 }
-

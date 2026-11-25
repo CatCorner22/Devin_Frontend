@@ -1,0 +1,102 @@
+import { applyDirection, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, pick, setReason, setSkin, skinParams, type Project } from '@refraction/core';
+import { chromium, type Browser, type Page } from 'playwright';
+import { afterAll, beforeAll, expect, it } from 'vitest';
+
+const pageUrl = new URL('../dist/artifact/local-test.html', import.meta.url).href;
+const key = 'refraction.project.v2';
+let browser: Browser;
+beforeAll(async () => { browser = await chromium.launch(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}); });
+afterAll(async () => { await browser?.close(); });
+const stored = (page: Page): Promise<Project | undefined> => page.evaluate((key) => (JSON.parse(localStorage.getItem(key) ?? 'null') as { project: Project } | null)?.project, key);
+async function open(project?: Project, hash = '#summary') {
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  const faults: string[] = [];
+  page.on('pageerror', (error) => faults.push(String(error)));
+  if (project) await page.addInitScript(({ key, project }) => {
+    if (window.top === window) localStorage.setItem(key, JSON.stringify({ savedAt: '2026-11-25T12:00:00.000Z', project }));
+  }, { key, project });
+  await page.goto(`${pageUrl}${hash}`);
+  await page.locator(hash === '#summary' ? '#project-skin' : hash === '#directions' ? '.direction' : '.cards').first().waitFor();
+  return { context, page, faults };
+}
+
+it('Skin review: Continue preserves the covered Decision and reason, including after No Skin', async () => {
+  const before = setReason(pick(applyDirection(createProject(), 'soft-daylight'), 'accent', 'ink-blue'), 'accent', 'Keep the owner’s blue');
+  const { context, page, faults } = await open(setSkin(before, 'ember'), '#accent');
+  try {
+    await page.locator('.actions.sticky .primary').click();
+    await page.locator('.rail a[href="#summary"]').click();
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('');
+    await expect.poll(async () => (await stored(page))?.skin).toBeUndefined();
+    await expect.poll(async () => (await stored(page))?.params).toEqual(before.params);
+    expect((await stored(page))?.decisions.accent).toEqual(before.decisions.accent);
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: explicitly picking a covered named Option adopts it instead of merely continuing', async () => {
+  const step = findStep('display-treatment')!;
+  const fade = step.options.find((option) => option.patch.displayTreatment === 'accent-gradient')!;
+  const solid = step.options.find((option) => option.patch.displayTreatment === 'solid')!;
+  const before = pick(applyDirection(createProject(), 'soft-daylight'), step.id, fade.id);
+  const { context, page, faults } = await open(setSkin(before, 'ember'), `#${step.id}`);
+  try {
+    await page.locator(`[id="option-${solid.id}"]`).click();
+    expect(await page.locator('.actions.sticky .primary').innerText()).toMatch(/^Pick /);
+    await page.locator('.actions.sticky .primary').click();
+    await expect.poll(async () => (await stored(page))?.skinLayer?.overrides).toContain(step.id);
+    expect((await stored(page))?.params.displayTreatment).toBe('solid');
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: a Skin chosen on Directions is removable after saving and reloading', async () => {
+  const { context, page, faults } = await open(undefined, '#directions');
+  try {
+    const card = page.locator('.direction', { has: page.getByRole('heading', { name: 'Soft Daylight', exact: true }) });
+    await card.locator('.skin', { hasText: 'Berry' }).click();
+    await card.getByRole('button', { name: 'Start from Soft Daylight', exact: true }).click();
+    await expect.poll(async () => (await stored(page))?.skin).toBe('berry');
+    await page.reload();
+    await page.locator('.rail a[href="#summary"]').click();
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('');
+    await expect.poll(async () => (await stored(page))?.skin).toBeUndefined();
+    expect((await stored(page))?.params).toEqual(findDirection('soft-daylight')!.params);
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: old starting-Skin files explain why No Skin cannot remove saved colors', async () => {
+  const direction = findDirection('soft-daylight')!;
+  const params = skinParams(direction, findSkin('berry')!);
+  const old = { ...applyDirection(createProject(), direction), params, base: params, skin: 'berry' };
+  const { context, page, faults } = await open(old);
+  try {
+    expect(await page.locator('[aria-labelledby="project-skin-title"]').innerText()).toContain('No Skin removes the name, but cannot remove those saved colors');
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('');
+    expect(await page.locator('.banner').innerText()).toContain('No Skin removed the name, but cannot remove those saved colors');
+    await expect.poll(async () => (await stored(page))?.skin).toBeUndefined();
+    expect((await stored(page))?.params).toEqual(params);
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: Lagoon replaces a painted first screen with its promised fade on both pages', async () => {
+  const step = findStep('color-strategy')!;
+  const painted = step.options.find((option) => option.patch.colorStrategy === 'color-block')!;
+  const before = pick(applyDirection(createProject(), 'midnight-aurora'), step.id, painted.id);
+  const expected = deriveTokens(effectiveParams(setSkin(before, 'lagoon')), before.a11y).css['--display-fill'];
+  const { context, page, faults } = await open(before);
+  try {
+    await page.getByLabel('Project Skin', { exact: true }).selectOption('lagoon');
+    for (const name of ['home', 'contact']) {
+      await page.getByRole('combobox', { name: 'Preview page', exact: true }).selectOption(name);
+      const frame = page.frameLocator('.summary-side iframe');
+      await expect.poll(() => frame.locator('body').getAttribute('data-strategy')).toBe('duo');
+      expect(await frame.locator('body').evaluate((body) => getComputedStyle(body).getPropertyValue('--display-fill').trim())).toBe(expected);
+      expect(await frame.locator('h1').evaluate((title) => getComputedStyle(title).backgroundImage)).not.toBe('none');
+    }
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
