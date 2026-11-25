@@ -15,6 +15,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 | Items the judge left for a person (`R2-P-*`) | 12 | 4 | 3 | 8 | 0 |
 | The seven auditors of the Hinshitsu run (`H-*`) | 92 | 85 | 45 | 4 | 3 |
 | The two re-auditors of the Hinshitsu run (`H-reaudit-*`) | 12 | 7 | 4 | 5 | 0 |
+| The second re-auditor of the Hinshitsu run (`H-reaudit2-*`) | 8 | 8 | 4 | 0 | 0 |
 
 - A row without a test is a correction of a record, a comment or the README, where no test can fail.
 - **Open, with the reason in each row:**
@@ -31,7 +32,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 - Decisions D59 to D63 in `DECISIONS.md`. The repository uses neither Neon nor Vercel (D60).
 - `hinshitsu/kit-repairs/` is a record of the owner's Hinshitsu run (log, scopes, reports, saved outputs) and no code.
 
-**What the tests show** (the builder's machine, commit `c0cbb62`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
+**What the tests show** (the builder's machine, commit `623f09d`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
 
 - `npm run check`: 8 test files, 264 tests passed.
 - The kit's browser tests (`apps/studio/e2e/kit.e2e.ts`): 124 passed.
@@ -39,7 +40,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 
 **What a reviewer should know**
 
-- No independent reviewer has yet checked the repairs made on 2026-11-25, after the seven auditors reported. A second, different auditor checks them next.
+- Two re-auditors and then a second re-auditor checked the repairs made on 2026-11-25 up to commit `a6aa7e9`. No independent reviewer has yet checked the five commits `7435de9` to `42c2f90`, which repair what the second re-auditor found; one more auditor checks them before delivery.
 - Only Chromium is tested. Firefox and Safari are not checked.
 - One earlier full browser run failed four Studio tests once; the cause is not found (KIT-41). Three passing runs do not settle it.
 - The kit is not connected to the Studio or the Fitter. A page's own script can still deceive a page check; the defense belongs to M7 (see `packages/kit/README.md`).

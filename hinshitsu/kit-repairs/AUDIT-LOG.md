@@ -2001,3 +2001,91 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Report: `audits/WU1-reaudit-round2.md`
 
 24 of 40 SUB-AGENT runs used. Second and last fix-and-re-audit round of WU-1 (rule 14.5).
+
+### E-180 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-112
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts`, function `changes` (commit `1617e2e`)
+- Trigger: A placeholder whose keyframes carry a name that CSS escapes, or sit in a sheet brought in by @import, moves without end and holds. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 1
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-181 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-113
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts`, function `changes`
+- Trigger: A placeholder that moves nothing is blamed where one keyframe says the value at rest, where two rules share a name, and where the keyframes sit in a block for print. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 2
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-182 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-114
+- Class: FRAGILITY
+- Where: `packages/kit/src/page-checks/neuro.ts`, `visibleLabels`
+- Trigger: A field with `visibility: collapse` is blamed. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 3
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-183 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-115
+- Class: DEFECT
+- Where: `packages/kit/src/logic/designId.ts`
+- Trigger: A big integer and the text of its digits with n share an ID; the comment is not exact. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 4
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-184 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-116
+- Class: DEFECT
+- Where: `PROGRESS.md`, `evidence/pr9-text.md`, 7 rows of `redteam/FINDINGS.md`
+- Trigger: Sentences still say that nobody has checked repairs that the first re-audit checked. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 5
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-185 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-117
+- Class: DEFECT
+- Where: `packages/kit/src/data/placeholders.ts`
+- Trigger: A made-up number that follows any group of 4 digits is missed. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 6
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-186 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-118
+- Class: DEFECT
+- Where: `packages/kit/README.md`, line 80
+- Trigger: The README says the text-spacing check fails the waiting slides; with slides wholly beside the box it holds. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 7
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-187 · 2026-11-25T04:01:06Z · FINDING · auditor: RE-AUDIT ROUND 2
+
+- ID: F-119
+- Class: STYLE
+- Where: pull request 9, description
+- Trigger: The live text was not the text of `evidence/pr9-text.md` at the time of reading. The complete trigger is in the report.
+- Violates: as the report states (C1 by a 2nd input, or C7)
+- Raised by: AUDITOR, LAUNCH E-179, `audits/WU1-reaudit-round2.md`, finding 8
+- Lens: re-audit
+- Forward work stopped: no
