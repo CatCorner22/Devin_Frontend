@@ -3,7 +3,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { CITED_NAMES, DIRECTIONS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, createProject, deriveTokens, findSkin, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
+import { CITED_NAMES, DIRECTIONS, FLOORS, FONTS, OVERLAYS, RESEARCH_RULES, STEPS, applyDirection, craftFor, createProject, deriveTokens, findSkin, pick, researchReport, skinParams, skinsOf, tradeWordsOutsideBrackets, tune, vaguePhrasesIn, type Project } from '@refraction/core';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 
@@ -2445,6 +2445,46 @@ describe('Studio: addresses and the browser’s Back button', () => {
     await waitForStep(page, 'First screen');
     await page.goBack();
     await waitForStep(page, 'Menu (navigation)');
+    await context.close();
+  });
+});
+
+describe('Studio: Catalog craft and floors', () => {
+  it('shows current craft and every floor, with methods, limits and sources', async () => {
+    const project = pick(pick(createProject('Catalog rules'), 'theme', 'dark'), 'numerals', 'tabular');
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(project) } });
+    const craft = page.getByTestId('craft-rules');
+    const floors = page.getByTestId('floors');
+    expect(await craft.locator(':scope > li').first().getAttribute('data-rule-id')).toBe(craftFor(project)[0]!.rule.id);
+    expect(await craft.locator(':scope > li').count()).toBe(craftFor(project).length);
+    expect(await floors.locator(':scope > li').count()).toBe(FLOORS.length);
+    expect(await floors.locator('button, input, select').count()).toBe(0);
+    for (const entry of [...craftFor(project), ...FLOORS]) {
+      const row = page.locator(`[data-rule-id="${entry.rule.id}"]`);
+      await row.locator('summary').click();
+      expect(await row.innerText()).toContain(entry.rule.plain);
+      expect(await row.innerText()).toContain('How to check:');
+      expect(await row.innerText()).toContain(entry.notChecked);
+      expect(await row.innerText()).toContain(entry.rule.reviewed);
+      expect(await row.innerText()).toContain(entry.rule.sources[0]!.title.replace(/the builder(?:'s|’s)?/gi, 'the assistant'));
+    }
+    expect(await floors.innerText()).toContain('Required on public pages only');
+    expect(await floors.innerText()).toContain('75th percentile');
+    await context.close();
+  });
+
+  it('changes the applicable craft when a Decision changes, not the floors', async () => {
+    const project = pick(createProject('Dark rules'), 'theme', 'dark');
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(project) } });
+    expect(await page.locator('[data-rule-id="craft-dark-theme-designed"]').count()).toBe(1);
+    await page.evaluate(() => { location.hash = '#theme'; });
+    await waitForStep(page, 'Light or dark');
+    await page.locator('#option-light').check();
+    await page.getByRole('button', { name: /Pick “Light” and continue/ }).click();
+    await page.locator('.top-nav a[href="#summary"]').click();
+    await page.getByRole('heading', { name: 'Floors', exact: true }).waitFor();
+    expect(await page.locator('[data-rule-id="craft-dark-theme-designed"]').count()).toBe(0);
+    expect(await page.getByTestId('floors').locator(':scope > li').count()).toBe(FLOORS.length);
     await context.close();
   });
 });
