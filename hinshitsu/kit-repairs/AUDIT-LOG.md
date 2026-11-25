@@ -2154,3 +2154,46 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Raised by: AUDITOR, LAUNCH E-188, `audits/WU1-audit-after-round2.md`, finding N5
 - Lens: re-audit
 - Forward work stopped: no
+
+### E-194 · 2026-11-25T04:45:22Z · LAUNCH · orchestrator
+
+- Role: AUDITOR, check of the repairs that followed the third audit, WU-1
+- Scope: the first message of the session; it names findings N1 to N5 of `audits/WU1-audit-after-round2.md` and the diff fae1b78..0144deb
+- Commit under review: 0144deb2d5ac2e1eb30354323bc6575711c7684e
+- SUB-AGENT identifier: d820860c5b1a40f1b23945dd57a15940 https://app.devin.ai/sessions/d820860c5b1a40f1b23945dd57a15940
+- Report: `audits/WU1-audit-4.md`
+
+26 of 40 SUB-AGENT runs used. Criterion C13 allows no change of code after the last independent check, so the 3 code commits after E-188 need this check.
+
+### E-195 · 2026-11-25T05:19:56Z · FINDING · auditor: AUDIT 4
+
+- ID: F-125
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts`, `list` (commit `df68556`)
+- Trigger: A placeholder animation whose name ends in a backslash, followed by a second animation, moves and holds. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-194, `audits/WU1-audit-4.md`, finding A1
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-196 · 2026-11-25T05:19:56Z · FINDING · auditor: AUDIT 4
+
+- ID: F-126
+- Class: DEFECT
+- Where: `packages/kit/src/data/placeholders.ts` (commit `d8829e3`)
+- Trigger: `Call +1 212 555-0142` is no longer read as filler. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-194, `audits/WU1-audit-4.md`, finding A2
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-197 · 2026-11-25T05:19:56Z · FINDING · auditor: AUDIT 4
+
+- ID: F-127
+- Class: DEFECT
+- Where: `packages/kit/src/logic/designId.ts`, the comment (commit `aa53c6c`)
+- Trigger: The sentence is false for a big integer from 10^21 up. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-194, `audits/WU1-audit-4.md`, finding A3
+- Lens: re-audit
+- Forward work stopped: no

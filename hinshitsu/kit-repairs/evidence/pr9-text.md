@@ -16,7 +16,8 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 | The seven auditors of the Hinshitsu run (`H-*`) | 92 | 85 | 45 | 4 | 3 |
 | The two re-auditors of the Hinshitsu run (`H-reaudit-*`) | 12 | 7 | 4 | 5 | 0 |
 | The second re-auditor of the Hinshitsu run (`H-reaudit2-*`) | 8 | 7 | 3 | 1 | 0 |
-| The third auditor of the Hinshitsu run (`H-audit3-*`) | 5 | 5 | 3 | 0 | 0 |
+| The third auditor of the Hinshitsu run (`H-audit3-*`) | 5 | 5 | 2 | 0 | 0 |
+| The fourth auditor of the Hinshitsu run (`H-audit4-*`) | 3 | 3 | 2 | 0 | 0 |
 
 - A row without a test is a correction of a record, a comment or the README, where no test can fail.
 - **Open, with the reason in each row:**
@@ -34,7 +35,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 - Decisions D59 to D63 in `DECISIONS.md`. The repository uses neither Neon nor Vercel (D60).
 - `hinshitsu/kit-repairs/` is a record of the owner's Hinshitsu run (log, scopes, reports, saved outputs) and no code.
 
-**What the tests show** (the builder's machine, commit `aa53c6c`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
+**What the tests show** (the builder's machine, commit `7f86d4c`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
 
 - `npm run check`: 8 test files, 264 tests passed.
 - The kit's browser tests (`apps/studio/e2e/kit.e2e.ts`): 124 passed.
@@ -42,7 +43,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 
 **What a reviewer should know**
 
-- Two re-auditors and then a second re-auditor checked the repairs made on 2026-11-25 up to commit `a6aa7e9`. No independent reviewer has yet checked the commits after `fae1b78`, which repair what the third auditor found in the four commits `7435de9` to `42c2f90`; that auditor checked those four on 2026-11-25 (`hinshitsu/kit-repairs/audits/WU1-audit-after-round2.md`).
+- Two re-auditors and then a second re-auditor checked the repairs made on 2026-11-25 up to commit `a6aa7e9`. No independent reviewer has yet checked the three commits `2956a38` to `7f86d4c`, which repair what the fourth auditor found; a third and a fourth auditor checked every commit before them on 2026-11-25 (`hinshitsu/kit-repairs/audits/WU1-audit-after-round2.md` and `WU1-audit-4.md`), and each found faults that the repair before it had brought.
 - Only Chromium is tested. Firefox and Safari are not checked.
 - One earlier full browser run failed four Studio tests once; the cause is not found (KIT-41). Three passing runs do not settle it.
 - The kit is not connected to the Studio or the Fitter. A page's own script can still deceive a page check; the defense belongs to M7 (see `packages/kit/README.md`).
