@@ -561,6 +561,8 @@ describe('the Brief', () => {
     for (const filler of ['Leeds office 0113 555-0142. New York office (212) 555-0199.', 'Invoice 2024-555-0142 is paid. Call us on 555-0100.']) expect(placeholderIn(filler), filler).toBe('555-0');
     // Second re-audit of WU-1, finding 6: nor do four digits that are no telephone number of another country.
     for (const filler of ['0113 555-0142\n555-0100', 'Year 2024 555-0100 is our line', 'Order 20245 555-0100']) expect(placeholderIn(filler), filler).toBe('555-0');
+    // Fourth audit of WU-1, A2: "+1" is North America itself, and a "+" inside a word or a sum begins no country code.
+    for (const filler of ['Call +1 212 555-0142', 'Call +1-212-555-0199', 'Total 5+3 2024 555-0100', 'a+1 800 555-0100']) expect(placeholderIn(filler), filler).toBe('555-0');
     expect(placeholderIn('Unleash the power of AI')).toBe('unleash the power');
     expect(placeholderIn('Call (212) 555-0142')).toBe('555-0');
     const hits: [string, string][] = [['Business Name', 'business name'], ['Headline goes here', 'headline goes here'], ['Service One', 'service one'], ['you@yourdomain.com', 'yourdomain'], ['Address line 1', 'address line 1'], ['Testimonial text will appear in this space.', 'will appear in this space'], ['Customer Name', 'customer name'], ['Sample text', 'sample text'], ['Acme', 'acme'], ['ACME Inc.', 'acme inc'], ['TODO', 'todo'], ['TODO: write the headline', 'todo']];
