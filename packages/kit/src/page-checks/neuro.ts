@@ -305,7 +305,7 @@ export function noSidewaysScroll(doc: Document): Finding[] {
  */
 export function noScriptedMotion(doc: Document): Promise<Finding[]> {
   const ruleId = 'neuro-motion-can-stop';
-  const view = doc.defaultView as (Window & { MutationObserver?: typeof MutationObserver }) | null;
+  const view = doc.defaultView as (Window & { MutationObserver?: typeof MutationObserver; CSSAnimation?: typeof CSSAnimation; CSSTransition?: typeof CSSTransition }) | null;
   if (!view || !view.MutationObserver) return Promise.resolve([{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }]);
   // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
   // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
@@ -374,6 +374,8 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
     if (moments.length === 0 || now - (moments[moments.length - 1] ?? 0) >= 0.9) moments.push(now);
     into.set(el, moments);
   };
+  // An animation that the style sheet made (noEndlessMotion judges those). A browser without these two classes has no such animation to tell apart.
+  const fromStyleSheet = (animation: Animation): boolean => (view.CSSAnimation !== undefined && animation instanceof view.CSSAnimation) || (view.CSSTransition !== undefined && animation instanceof view.CSSTransition);
   const sample = (): void => {
     const now = (view.performance.now() - start) / 1000;
     for (const el of scrollers) {
@@ -383,7 +385,7 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
     for (const animation of typeof doc.getAnimations === 'function' ? doc.getAnimations() : []) {
       const target = (animation.effect as KeyframeEffect | null)?.target ?? null;
       // `CSSAnimation` and `CSSTransition` come from the style sheet; a plain `Animation` comes from a script.
-      if (target && animation.playState === 'running' && animation.constructor.name === 'Animation' && isDrawn(target)) note(animated, target, now);
+      if (target && animation.playState === 'running' && !fromStyleSheet(animation) && isDrawn(target)) note(animated, target, now);
     }
   };
   const sampler = view.setInterval(sample, 250);

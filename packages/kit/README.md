@@ -43,8 +43,10 @@ const checks = pageChecks as unknown as Record<string, (...args: never[]) => unk
 
 // In a browser page (Playwright): send each check into the page as text, so that it runs there.
 // `tokenFit` also takes the design's tokens. `noSidewaysScroll` answers only when the window is 320 pixels wide.
+// `focusIsVisible` moves the focus to each control, which sets off the page's own handlers, so it runs last.
+const order = [...Object.keys(checks).filter((fn) => fn !== 'focusIsVisible'), 'focusIsVisible'];
 const findings: Finding[] = [];
-for (const fn of Object.keys(checks)) {
+for (const fn of order) {
   if (fn === 'noSidewaysScroll') await page.setViewportSize({ width: 320, height: 800 });
   const more = fn === 'tokenFit' ? `, ${JSON.stringify(tokens)}` : '';
   findings.push(...(await page.evaluate(`(${checks[fn]})(document${more})`) as Finding[]));

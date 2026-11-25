@@ -26,19 +26,22 @@ async function run(page: Page, fn: string): Promise<Finding[]> {
   const source = String(CHECKS[fn]);
   return page.evaluate(`(${source})(document${fn === 'tokenFit' ? `, ${JSON.stringify(TOKENS)}` : ''})`) as Promise<Finding[]>;
 }
+/** The order of a run: `focusIsVisible` moves the focus and so sets off the page's own handlers; it runs last (shapes.ts). */
+const ORDER = [...Object.keys(CHECKS).filter((fn) => fn !== 'focusIsVisible'), 'focusIsVisible'];
 async function runAll(page: Page): Promise<Finding[]> {
   const all: Finding[] = [];
-  for (const fn of Object.keys(CHECKS)) all.push(...await run(page, fn));
+  for (const fn of ORDER) all.push(...await run(page, fn));
   return all;
 }
 /** Every check at the present width, with the reflow floor measured where its record says: at 320 pixels. */
 async function runAllWithReflow(page: Page): Promise<Finding[]> {
   const findings: Finding[] = [];
-  for (const fn of Object.keys(CHECKS)) if (fn !== 'noSidewaysScroll') findings.push(...await run(page, fn));
+  for (const fn of ORDER) if (fn !== 'noSidewaysScroll' && fn !== 'focusIsVisible') findings.push(...await run(page, fn));
   const size = page.viewportSize() ?? { width: 1280, height: 800 };
   await page.setViewportSize({ width: 320, height: size.height });
   findings.push(...await run(page, 'noSidewaysScroll'));
   await page.setViewportSize(size);
+  findings.push(...await run(page, 'focusIsVisible'));
   return findings;
 }
 /** Runs a scripted walk. Returns null when every step holds, or a description of the first step that does not. */
@@ -261,7 +264,7 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(comfort.length).toBeGreaterThan(0);
       expect(comfort.some((f) => f.ruleId === 'neuro-line-length' && f.status === 'fails')).toBe(false);
       expect(Date.now() - started).toBeLessThan(40000);
-    }, 60000);
+    });
 
     it('second review, F-23: a notice that leaves the page in use needs no aria-modal; a window that blocks the page does', async () => {
       const text = '<h1>Shop</h1><p>Bread, baked here every morning.</p>';
@@ -522,13 +525,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<main inert><div class="del" onclick="1">Delete</div><button tabindex="-1">Close</button></main>', 'keyboardReachable')).toEqual(['holds']);
       // A window under another open window stays blocked.
       expect(await statuses('<main inert><dialog id="d" aria-label="A"><div class="del" onclick="1">Delete</div></dialog></main><dialog id="e" aria-label="B" style="position:fixed;inset:0;width:100vw;height:100vh;max-width:none;max-height:none"><button>Close</button></dialog><script>document.getElementById("d").showModal();document.getElementById("e").showModal();</script>', 'keyboardReachable')).toEqual(['holds']);
-    }, 60000);
+    });
 
     it('second review, F-24: a pause button that says so in its name counts without the mark; a name that merely holds the word does not', async () => {
       const turn = '<style>@keyframes t { to { transform: rotate(360deg); } } .b { display: inline-block; animation: t 1s linear infinite; }</style><p class="b">Round and round</p>';
       for (const control of ['<button type="button">Pause the moving text</button>', '<button>Pause</button>', '<button>Stop animation</button>', '<button aria-label="Pause slideshow"><svg width="16" height="16"></svg></button>', '<span role="button" tabindex="0">Turn off motion</span>']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['holds']);
       for (const control of ['<button>Bus stop finder</button>', '<button>Stop smoking today</button>', '<button>Stop</button>', '<a href="#">Pause the moving text</a>', '<button style="opacity:0">Pause the moving text</button>', '<button>Play video</button>']) expect(await statuses(`${turn}${control}`, 'noEndlessMotion'), control).toEqual(['fails']);
-    }, 60000);
+    });
 
     it('second review, F-10: a pause control that nobody can see or reach does not switch the motion floor off', async () => {
       const turn = '<style>@keyframes t { to { transform: rotate(360deg); } } .b { display: inline-block; animation: t 1s linear infinite; }</style><p class="b">Round and round</p>';
@@ -550,7 +553,7 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       const page = await pageOf('<p id="s">Offer 0</p><button data-pause-motion style="opacity:0">Pause</button><script>let n = 0; setInterval(() => { document.getElementById("s").textContent = "Offer " + (++n); }, 700);</script>');
       expect((await run(page, 'noScriptedMotion')).map((f) => f.status)).toEqual(['fails']);
       await page.context().close();
-    }, 60000);
+    });
 
     it('F-13: text hidden on purpose for screen readers, and a skip link, fail neither the spacing floor nor the size floor', async () => {
       const body = '<a class="skip" href="#main">Skip to the main part</a><p id="main">Read <span class="sr">this hidden note for screen readers, which is long enough to be cut</span> on.</p>';
@@ -740,7 +743,7 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await motion(svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite" repeatDur="4s"/>'))).toEqual([['holds', undefined]]);
       expect(await motion(`<div hidden>${svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite"/>')}</div>`)).toEqual([['holds', undefined]]);
       expect(await motion(`${svg('<animate attributeName="r" values="10;14;10" dur="1s" repeatCount="indefinite"/>')}<button data-pause-motion>Pause</button>`)).toEqual([['holds', undefined]]);
-    }, 60_000);
+    });
 
     it('second review F-3: a carousel that a script scrolls, and one that a script animates, fail', async () => {
       const track = '<h1>Shop</h1><div id="track" style="width: 300px; overflow: hidden; white-space: nowrap"><span style="display: inline-block; width: 600px">One</span><span style="display: inline-block; width: 600px">Two</span><span style="display: inline-block; width: 600px">Three</span></div>';
@@ -752,12 +755,21 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await animates.evaluate(() => { document.getElementById('belt')?.animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-600px)' }], { duration: 4000, iterations: Infinity }); });
       expect((await run(animates, 'noScriptedMotion')).map((f) => [f.status, f.where])).toEqual([['fails', 'div#belt']]);
       await animates.context().close();
+      // Hinshitsu audit of WU-1: a script's animation is known by what it is not (made by the style sheet), not by the name of its class.
+      const named = await pageOf('<h1>Shop</h1><div style="overflow: hidden; width: 300px"><div id="belt" style="width: 900px">One Two Three</div></div>');
+      await named.evaluate(() => {
+        class Mine extends Animation {}
+        const belt = document.getElementById('belt');
+        new Mine(new KeyframeEffect(belt, [{ transform: 'translateX(0)' }, { transform: 'translateX(-600px)' }], { duration: 4000, iterations: Infinity })).play();
+      });
+      expect((await run(named, 'noScriptedMotion')).map((f) => [f.status, f.where])).toEqual([['fails', 'div#belt']]);
+      await named.context().close();
       // Again and again, each time for less than a second: still a show.
       const again = await pageOf('<h1>Shop</h1><p id="pulse">New</p>');
       await again.evaluate(() => { setInterval(() => { document.getElementById('pulse')?.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 600 }); }, 2000); });
       expect((await run(again, 'noScriptedMotion')).map((f) => f.status)).toEqual(['fails']);
       await again.context().close();
-    }, 60_000);
+    });
 
     it('second review F-3: one scroll to a place and one short animation hold, and so does a scrolling carousel with a pause control', async () => {
       const track = '<h1>Shop</h1><div id="track" style="width: 300px; overflow: hidden; white-space: nowrap"><span style="display: inline-block; width: 600px">One</span><span style="display: inline-block; width: 600px">Two</span><span style="display: inline-block; width: 600px">Three</span></div>';
@@ -774,7 +786,7 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await paused.evaluate(() => { let i = 0; setInterval(() => { const el = document.getElementById('track'); if (el) el.scrollLeft = (++i % 3) * 600; }, 3000); });
       expect((await run(paused, 'noScriptedMotion')).map((f) => f.status)).toEqual(['holds']);
       await paused.context().close();
-    }, 60_000);
+    });
 
     it('F-9: a banner that a script turns every two seconds fails; a still page and a page with a pause button hold', async () => {
       const turn = () => { let n = 0; setInterval(() => { const el = document.getElementById('slide'); if (el) el.textContent = `Offer ${++n}`; }, 2000); };
