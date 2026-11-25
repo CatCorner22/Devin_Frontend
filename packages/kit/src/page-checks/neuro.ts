@@ -25,7 +25,6 @@ export function noEndlessMotion(doc: Document): Finding[] {
   const view = doc.defaultView;
   if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-  const seconds = (text: string): number => (text.endsWith('ms') ? parseFloat(text) / 1000 : parseFloat(text));
   const out: Finding[] = [];
   for (const el of doc.querySelectorAll('marquee, blink')) out.push({ ruleId, status: 'fails', where: name(el), measured: 'text that moves or blinks without end', required: 'still text', fix: 'Replace the moving text with still text.' });
   // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
@@ -48,35 +47,44 @@ export function noEndlessMotion(doc: Document): Finding[] {
   });
   const required = 'at most 5 s, or a control that pauses it';
   const fix = 'End the movement within 5 seconds, or add a visible button that pauses it, and name it for what it does ("Pause the movement") or mark it with the attribute data-pause-motion.';
-  for (const el of doc.querySelectorAll('body *')) {
-    const own = view.getComputedStyle(el);
-    // A part that is not drawn (itself or a part around it has `display: none`) moves nothing that a person sees.
-    if (own.display === 'none' || own.visibility === 'hidden' || (el.getClientRects().length === 0 && own.display !== 'contents')) continue;
-    // The usual loading spinner is drawn by `::before` or `::after`, which no selector reaches; each has a style of its own
-    // (finding F-4 of the review of 2026-11-24). A pseudo-element without content is not drawn.
-    const styles: [string, CSSStyleDeclaration][] = [['', own]];
-    for (const pseudo of ['::before', '::after']) {
-      const style = view.getComputedStyle(el, pseudo);
-      if (style.content !== 'none' && style.content !== 'normal' && style.display !== 'none' && style.visibility === 'visible') styles.push([pseudo, style]);
-    }
-    for (const [pseudo, style] of styles) {
-      if (style.animationName === 'none') continue;
-      const names = style.animationName.split(',');
-      const durations = style.animationDuration.split(',').map((t) => seconds(t.trim()));
-      const counts = style.animationIterationCount.split(',').map((t) => t.trim());
-      let found = false;
-      for (let i = 0; i < names.length && !found; i++) {
-        if ((names[i] ?? '').trim() === 'none') continue;
-        const duration = durations[i % durations.length] ?? 0;
-        const count = counts[i % counts.length] ?? '1';
-        const total = count === 'infinite' ? Infinity : duration * parseFloat(count);
-        if (duration > 0 && total > 5 && !hasPause) {
-          out.push({ ruleId, status: 'fails', where: name(el) + pseudo, measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required, fix });
-          found = true;
-        }
-      }
-      if (found) break;
-    }
+  // The browser itself lists every animation that a style sheet started: on a part, on `body`, on any pseudo-element (the usual
+  // loading spinner is drawn by `::before`; a list's `::marker` and a field's `::placeholder` blink the same way), and inside
+  // an open shadow root (finding F-4 of the review of 2026-11-24; Hinshitsu audit of WU-1, adversarial finding 3). It lists
+  // none for a part that is not drawn or for keyframes that do not exist. An animation that stands paused, or whose
+  // keyframes change no value, moves nothing (adversarial finding 13).
+  const CssAnimation = (view as Window & { CSSAnimation?: typeof CSSAnimation }).CSSAnimation;
+  if (typeof doc.getAnimations !== 'function' || CssAnimation === undefined) return [{ ruleId, status: 'could-not-measure', measured: 'this browser does not list the animations of a page' }];
+  const moving = new Set<string>();
+  // The list of the page leaves out what runs inside a shadow root; each open root has a list of its own.
+  const lists: Animation[] = [...doc.getAnimations()];
+  const roots = (within: Document | ShadowRoot): void => {
+    for (const el of within.querySelectorAll('*')) if (el.shadowRoot) { lists.push(...el.shadowRoot.getAnimations()); roots(el.shadowRoot); }
+  };
+  roots(doc);
+  for (const animation of lists) {
+    const effect = animation.effect;
+    if (!(animation instanceof CssAnimation) || !(effect instanceof (view as Window & typeof globalThis).KeyframeEffect) || !effect.target || animation.playState !== 'running') continue;
+    const el = effect.target;
+    const pseudo = effect.pseudoElement ?? '';
+    const style = view.getComputedStyle(el, pseudo === '' ? null : pseudo);
+    if (style.visibility === 'hidden' || (el.getClientRects().length === 0 && view.getComputedStyle(el).display !== 'contents')) continue;
+    const frames = effect.getKeyframes();
+    const changes = [...new Set(frames.flatMap((frame) => Object.keys(frame)))].some((key) => !['offset', 'computedOffset', 'easing', 'composite'].includes(key) && new Set(frames.map((frame) => String(frame[key]))).size > 1);
+    if (!changes) continue;
+    const timing = effect.getComputedTiming();
+    const duration = typeof timing.duration === 'number' ? timing.duration / 1000 : 0;
+    const total = timing.iterations === Infinity ? Infinity : duration * (timing.iterations ?? 1);
+    const where = name(el) + pseudo;
+    if (duration > 0 && total > 5 && !hasPause && !moving.has(where) && moving.add(where)) out.push({ ruleId, status: 'fails', where, measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required, fix });
+  }
+  // The browser does not list the animation of a field's `::placeholder`; its style is read instead. The words show only
+  // while the field is empty.
+  for (const el of doc.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[placeholder], textarea[placeholder]')) {
+    const style = view.getComputedStyle(el, '::placeholder');
+    if (el.value !== '' || el.getClientRects().length === 0 || style.animationName === 'none' || style.animationPlayState.split(',').every((state) => state.trim() === 'paused')) continue;
+    const counts = style.animationIterationCount.split(',').map((t) => t.trim());
+    const total = Math.max(...style.animationDuration.split(',').map((t, i) => { const d = t.trim().endsWith('ms') ? parseFloat(t) / 1000 : parseFloat(t); const count = counts[i % counts.length] ?? '1'; return d > 0 && count === 'infinite' ? Infinity : d * parseFloat(count); }));
+    if (total > 5 && !hasPause) out.push({ ruleId, status: 'fails', where: name(el) + '::placeholder', measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required, fix });
   }
   // Movement written into a drawing itself: the animation elements of SVG. No style sheet names them (finding F-4 as well).
   const clock = (text: string | null): number => {
@@ -86,10 +94,32 @@ export function noEndlessMotion(doc: Document): Finding[] {
     const parts = t.split(':').map(Number);
     return parts.length >= 2 && parts.every((n) => !Number.isNaN(n)) ? parts.reduce((sum, n) => sum * 60 + n, 0) : NaN;
   };
-  for (const el of doc.querySelectorAll('svg animate, svg animateTransform, svg animateMotion')) {
+  const timed = [...doc.querySelectorAll('svg animate, svg animateTransform, svg animateMotion, svg set')];
+  // An animation that begins when another one ends, and that the other one waits for in turn, runs in a ring without end
+  // (Hinshitsu audit of WU-1, adversarial finding 3). `a.end` names the animation with the id `a`.
+  const waitsFor = (el: Element): string[] => [...(el.getAttribute('begin') ?? '').matchAll(/([A-Za-z_][\w-]*)\.(?:end|begin|repeat)/g)].map((m) => m[1] ?? '');
+  const inRing = (el: Element): boolean => {
+    const seen = new Set<Element>();
+    const walk = (at: Element): boolean => waitsFor(at).some((id) => {
+      const next = doc.getElementById(id);
+      if (!next || !timed.includes(next)) return false;
+      if (next === el) return true;
+      if (seen.has(next)) return false;
+      seen.add(next);
+      return walk(next);
+    });
+    return walk(el);
+  };
+  for (const el of timed) {
     const drawing = el.closest('svg');
-    const target = el.parentElement;
+    // The part that moves is the one that `href` names, or else the one that holds the animation.
+    const ref = (el.getAttribute('href') ?? el.getAttribute('xlink:href') ?? '').replace(/^#/, '');
+    const target = ref !== '' ? doc.getElementById(ref) : el.parentElement;
     if (!drawing || drawing.getClientRects().length === 0 || view.getComputedStyle(drawing).visibility === 'hidden' || !target || ((target as Element) !== drawing && target.getClientRects().length === 0)) continue;
+    // An animation whose only beginning is "indefinite" waits for a script or for a link that names it. On a page that holds
+    // neither, nothing starts it (adversarial finding 13). Where a script is present the check cannot know, and counts it.
+    if ((el.getAttribute('begin') ?? '').trim() === 'indefinite' && doc.scripts.length === 0 && (el.id === '' || ![...doc.querySelectorAll('a')].some((a) => (a.getAttribute('href') ?? a.getAttribute('xlink:href')) === '#' + el.id))) continue;
+    const ring = inRing(el);
     const dur = clock(el.getAttribute('dur'));
     const repeatDur = el.getAttribute('repeatDur') === null ? NaN : clock(el.getAttribute('repeatDur'));
     const repeatCount = el.getAttribute('repeatCount') === 'indefinite' ? Infinity : parseFloat(el.getAttribute('repeatCount') ?? '1');
@@ -98,7 +128,7 @@ export function noEndlessMotion(doc: Document): Finding[] {
     // An `end` written as a time stops the animation then, whatever its count says. "indefinite" names no time.
     const end = clock(el.getAttribute('end'));
     const begin = clock(el.getAttribute('begin'));
-    const lasts = !Number.isNaN(repeatDur) ? (el.getAttribute('repeatCount') === null ? repeatDur : Math.min(repeatDur, dur * repeatCount)) : dur * (Number.isNaN(repeatCount) ? 1 : repeatCount);
+    const lasts = ring ? Infinity : !Number.isNaN(repeatDur) ? (el.getAttribute('repeatCount') === null ? repeatDur : Math.min(repeatDur, dur * repeatCount)) : dur * (Number.isNaN(repeatCount) ? 1 : repeatCount);
     const total = Number.isFinite(end) && end >= 0 ? Math.min(lasts, Math.max(0, end - (Number.isFinite(begin) ? begin : 0))) : lasts;
     if (total > 5 && !hasPause) out.push({ ruleId, status: 'fails', where: `${name(drawing)} ${el.tagName}`, measured: total === Infinity ? 'a drawing that moves without end' : `a drawing that moves for ${total.toFixed(1)} s`, required, fix });
   }

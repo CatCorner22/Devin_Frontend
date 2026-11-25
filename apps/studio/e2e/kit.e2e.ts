@@ -482,7 +482,9 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     });
 
     it('automated review of 2026-11-24, round 2: an animation whose begin and end are both "indefinite" has no stated end', async () => {
-      expect(await statuses('<svg width="40" height="40"><rect width="20" height="20"><animate attributeName="x" from="0" to="20" dur="1s" repeatCount="indefinite" begin="indefinite" end="indefinite"/></rect></svg>', 'noEndlessMotion')).toEqual(['fails']);
+      // Since the Hinshitsu audit of WU-1 (adversarial finding 13) a beginning of "indefinite" counts only on a page that holds
+      // a script or a link that can start it; this page holds a link, so that the case still tests the end.
+      expect(await statuses('<a href="#go">Start</a><svg width="40" height="40"><rect width="20" height="20"><animate id="go" attributeName="x" from="0" to="20" dur="1s" repeatCount="indefinite" begin="indefinite" end="indefinite"/></rect></svg>', 'noEndlessMotion')).toEqual(['fails']);
     });
 
     it('automated review of 2026-11-24, round 2: a spam trap inside an inert part is out of the Tab order', async () => {
@@ -742,6 +744,8 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
         '<button><svg width="20" height="20"><sodipodi:namedview>layer1</sodipodi:namedview><path d="M2 2 L18 18"/></svg></button>',
         '<button aria-label="&#x180E;&#x034F;&#x17B5;&#x2065;&#x061C;&#xFE0F;&#xE0020;"><svg width="20" height="20"><path d="M2 2 L18 18"/></svg></button>',
         '<button><i class="icon">&#xE5CD;</i></button>',
+        // Correctness finding 2: a label of blank letters hides the cross inside the button.
+        '<button aria-label="&#x2800;">&#x2715;</button>',
         '<style id="s">.a{color:red}</style><button aria-labelledby="s"><svg width="20" height="20"><path d="M2 2 L18 18"/></svg></button>',
       ];
       for (const body of none) expect(await statuses(body, 'controlsHaveNames'), body).toEqual(['fails']);
@@ -751,6 +755,31 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
         '<span id="n" hidden>Close</span><button aria-labelledby="n"><svg width="20" height="20"><path d="M2 2 L18 18"/></svg></button>',
       ];
       for (const body of named) expect(await statuses(body, 'controlsHaveNames'), body).toEqual(['holds']);
+    });
+
+    it('Hinshitsu audit of WU-1, adversarial findings 3 and 13: endless movement on body, on a marker and a placeholder, in a shadow root, and in drawings that time themselves in other ways fails; an animation that stands still holds', async () => {
+      const blink = '@keyframes blink { 50% { opacity: 0.2; } } @keyframes spin { to { transform: rotate(360deg); } }';
+      const motion = async (body: string, style = ''): Promise<string[]> => {
+        const page = await pageOf(`<h1>Shop</h1>${body}`, `${blink} ${style}`);
+        const out = (await run(page, 'noEndlessMotion')).map((f) => f.status);
+        await page.context().close();
+        return out;
+      };
+      expect(await motion('<ul><li>Bread</li></ul>', 'li::marker { animation: blink 1s infinite; }')).toEqual(['fails']);
+      expect(await motion('<input placeholder="Search">', 'input::placeholder { animation: blink 1s infinite; }')).toEqual(['fails']);
+      // Chromium runs no animation on a first letter (it lists none and draws none), so that page holds there.
+      expect(await motion('<p>Bread</p>', 'p::first-letter { animation: blink 1s infinite; }')).toEqual(['holds']);
+      expect(await motion('<p>Bread</p>', 'body { animation: blink 1s infinite; }')).toEqual(['fails']);
+      expect(await motion('<div><template shadowrootmode="open"><style>@keyframes turn { to { transform: rotate(360deg); } } i { display: inline-block; width: 16px; height: 16px; animation: turn 1s linear infinite; }</style><i></i></template></div>')).toEqual(['fails']);
+      const svg = (inner: string): string => `<svg id="art" width="40" height="40" viewBox="0 0 40 40">${inner}</svg>`;
+      expect(await motion(svg('<defs><animate href="#c" attributeName="r" values="10;40;10" dur="1s" repeatDur="indefinite"/></defs><circle id="c" cx="20" cy="20" r="10"/>'))).toEqual(['fails']);
+      expect(await motion(svg('<circle cx="20" cy="20" r="10"><animate id="a" attributeName="r" values="10;14" dur="1s" begin="0s;b.end"/><animate id="b" attributeName="r" values="14;10" dur="1s" begin="a.end"/></circle>'))).toEqual(['fails', 'fails']);
+      // Nothing moves: an animation that stands paused, keyframes that do not exist, keyframes that change nothing, and a
+      // drawing whose endless animation waits for a script that never starts it.
+      expect(await motion('<p class="x">Bread</p>', '.x { animation: spin 1s linear infinite paused; }')).toEqual(['holds']);
+      expect(await motion('<p class="x">Bread</p>', '.x { animation: nothere 1s linear infinite; }')).toEqual(['holds']);
+      expect(await motion('<p class="x">Bread</p>', '@keyframes same { from { opacity: 1; } to { opacity: 1; } } .x { animation: same 1s linear infinite; }')).toEqual(['holds']);
+      expect(await motion(svg('<circle cx="20" cy="20" r="10"><animate attributeName="r" values="10;14;10" dur="1s" repeatCount="3"/><animate attributeName="cx" values="20;22;20" dur="1s" repeatCount="indefinite" begin="indefinite"/></circle>'))).toEqual(['holds']);
     });
 
     it('second review F-4: endless movement drawn by ::before or ::after, or written into an SVG drawing, fails; short movement holds', async () => {

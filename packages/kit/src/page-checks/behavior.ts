@@ -248,7 +248,11 @@ export function controlsHaveNames(doc: Document): Finding[] {
     // A button made with `input`: its name is its `value` (Submit and Reset have a name from the browser); a picture button needs `alt`.
     const type = el.tagName === 'INPUT' ? (el.getAttribute('type') ?? '').toLowerCase() : '';
     const own = type === 'image' ? (el.getAttribute('alt') ?? '') : type === 'submit' || type === 'reset' ? (el.hasAttribute('value') ? (el.getAttribute('value') ?? '') : type) : type === 'button' ? (el.getAttribute('value') ?? '') : '';
-    const said = [el.getAttribute('aria-label') ?? '', byId, text, pictures, own, el.getAttribute('title') ?? ''].join('').replace(unseen, '').trim();
+    // A browser takes the name from `aria-labelledby` first, then from `aria-label`, and only then from what the control holds.
+    // A label of letters that draw nothing is still the label: it hides the text inside from a screen reader
+    // (Hinshitsu audit of WU-1, correctness finding 2).
+    const label = el.getAttribute('aria-label') ?? '';
+    const said = (byId.trim() !== '' ? byId : label.trim() !== '' ? label : [text, pictures, own, el.getAttribute('title') ?? ''].join('')).replace(unseen, '').trim();
     if (said === '') out.push({ ruleId, status: 'fails', where: name(el), measured: 'no name: no text, no label', required: 'a name that says what the control does', fix: 'Add visible text, or an aria-label that says what the control does.' });
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
