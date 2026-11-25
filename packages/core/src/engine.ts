@@ -81,6 +81,7 @@ export function startingParams(project: Project): DesignParams {
  * startColors is the immutable starting-Skin snapshot; colors is the current Skin snapshot.
  * off disables the current Skin, overrides reveal raw Steps, keys reveal partial raw choices, and resets reveal starting-Skin Steps.
  * Explicit Decisions select a following Option or fix hand-set values; a visible Skin fixes its colors.
+ * An inherited relationship follows only while the raw recipe satisfies it; other saved numeric colors stay fixed.
  * Resolve all visible layers first, then derive every unfixed dependent color once from its final visible source.
  * Neither visible derivation nor starting-color resets may write Skin values into the underlying recipe.
  */
@@ -100,7 +101,8 @@ export function effectiveParams(project: Project): DesignParams {
     const decision = project.decisions[step.id];
     const optionId = decision?.kind === 'picked' ? decision.optionId : matchingOptionId(project.base, step);
     const option = step.options.find((o) => o.id === optionId);
-    if (decision?.kind !== 'tuned' && option?.derive && !skinCoversKey(project, step, option.derive.key) && Object.entries(option.patch).every(([key, value]) => same(params[key as keyof DesignParams], value))) {
+    const followsRecipe = option?.derive && (decision?.kind === 'picked' || same(project.params[option.derive.key], hueTurn(project.params[option.derive.from], option.derive.turn)));
+    if (decision?.kind !== 'tuned' && option?.derive && followsRecipe && !skinCoversKey(project, step, option.derive.key) && Object.entries(option.patch).every(([key, value]) => same(params[key as keyof DesignParams], value))) {
       const hue = hueTurn(params[option.derive.from], option.derive.turn);
       if (!same(params[option.derive.key], hue)) params = { ...params, [option.derive.key]: hue };
     }
