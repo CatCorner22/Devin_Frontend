@@ -1859,3 +1859,91 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Report: `audits/WU1-reaudit-records-E-166.md`
 
 23 of 40 SUB-AGENT runs used. First fix-and-re-audit round of WU-1 (rule 14.5).
+
+### E-167 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-100
+- Class: BLOCKER
+- Where: `PROGRESS.md`, part "Waiting on the owner"
+- Trigger: The part lists none of the 2 questions this run puts to the USER (C3(e); KIT-46). The complete trigger is in the report.
+- Violates: C7
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 1
+- Lens: framework drift and contract language
+- Forward work stopped: yes
+
+### E-168 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-101
+- Class: BLOCKER
+- Where: `PROGRESS.md` line 44
+- Trigger: "20 of them rated blocker"; the rows and the log entries F-8 to F-99 count 21. The complete trigger is in the report.
+- Violates: C7
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 2
+- Lens: framework drift and contract language
+- Forward work stopped: yes
+
+### E-169 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-102
+- Class: BLOCKER
+- Where: `redteam/FINDINGS.md`, rows R2-F-2, R2-F-4, R2-F-8, R2-F-27, R2-C14-4, and the sentence "No independent reviewer has checked this repair yet." in 62 rows
+- Trigger: The 5 rows name neither the auditor's result nor the later commit; the sentence is untrue after the audit at `183c166`. The complete trigger is in the report.
+- Violates: C7; C15 (b)
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 3
+- Lens: framework drift and contract language
+- Forward work stopped: yes
+
+### E-170 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-103
+- Class: DEFECT
+- Where: `redteam/FINDINGS.md`, rows R2-F-31 and R2-P-12
+- Trigger: Both say "Fixed" with no test; the head of the file defines "Corrected" for a rewritten statement. The complete trigger is in the report.
+- Violates: the status words of the file
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 4
+- Lens: framework drift and contract language
+- Forward work stopped: no
+
+### E-171 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-104
+- Class: DEFECT
+- Where: `redteam/FINDINGS.md`, cell "Evidence" of rows R2-AR-1 to R2-AR-21
+- Trigger: "not on GitHub": GitHub holds a summary of the newest round; no text of a round is saved in the repository. The complete trigger is in the report.
+- Violates: EVIDENCE (glossary); F-93
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 5
+- Lens: framework drift and contract language
+- Forward work stopped: no
+
+### E-172 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-105
+- Class: STYLE
+- Where: `evidence/pr9-text.md` against the live pull request text
+- Trigger: The platform appends 11 lines that the file does not hold. The complete trigger is in the report.
+- Violates: the scope of the re-audit
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 6
+- Lens: framework drift and contract language
+- Forward work stopped: no
+
+### E-173 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-106
+- Class: DEFECT
+- Where: `FRAMEWORK.md`, the line "Order" and 6 marks
+- Trigger: The line still names WU-2; the marks carry the date 2026-11-24 and point at a LAUNCH entry. The complete trigger is in the report.
+- Violates: the form rule of `FRAMEWORK.md`
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 7
+- Lens: framework drift and contract language
+- Forward work stopped: no
+
+### E-174 · 2026-11-25T02:50:13Z · FINDING · auditor: RE-AUDIT RECORDS
+
+- ID: F-107
+- Class: DEFECT
+- Where: `AUDIT-LOG.md`; `SESSION-STATE.md`
+- Trigger: No CARD entry records the question on C3(e); `SESSION-STATE.md` is of E-38. The complete trigger is in the report.
+- Violates: DEFECT (glossary)
+- Raised by: AUDITOR, LAUNCH E-166, `audits/WU1-reaudit-records-E-166.md`, new finding 8
+- Lens: framework drift and contract language
+- Forward work stopped: no
