@@ -35,6 +35,8 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 - Decisions D59 to D63 in `DECISIONS.md`. The repository uses neither Neon nor Vercel (D60).
 - `hinshitsu/kit-repairs/` is a record of the owner's Hinshitsu run (log, scopes, reports, saved outputs) and no code.
 
+**The last independent review** (`hinshitsu/kit-repairs/audits/WU1-audit-6.md`, at `c9505fb`): no blocker. The fifth auditor's two phone-number faults no longer reproduce; the six new places of the check of fit fail on a faulty page and hold on a sound one. It found 8 new faults (5 DEFECT, 3 STYLE; rows `H-audit6-1` to `H-audit6-8`), among them sound pages blamed by the six new lines of the check of fit and an incomplete list in the README. By the owner's word they are not repaired here.
+
 **What the tests show** (the builder's machine, commit `a8f8c69`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
 
 - `npm run check`: 8 test files, 264 tests passed.

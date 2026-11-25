@@ -232,4 +232,12 @@ Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
 - F-129 `packages/kit/src/data/placeholders.ts`, `packages/kit/README.md` line 84, `kit.test.ts` (commit `8b5ccb3`) (DEFECT, open)
 - F-130 `packages/kit/src/logic/designId.ts`, the comment (commit `7f86d4c`) (STYLE, open)
 - F-131 the description of pull request 9 (DEFECT, open)
+- F-132 packages/kit/src/page-checks/fit.ts (commit 995e4d1); packages/kit/README.md line 83 (DEFECT, open)
+- F-133 packages/kit/README.md line 83; row H-correctness-10; evidence/pr9-text.md (DEFECT, open)
+- F-134 packages/kit/src/data/placeholders.ts line 32 (commit 56bb8bd) (DEFECT, open)
+- F-135 packages/kit/src/data/placeholders.ts lines 29-32; row H-audit5-2 (DEFECT, open)
+- F-136 packages/kit/src/logic/designId.ts line 9 (commit 7de126a) (STYLE, open)
+- F-137 evidence/second-review/REFERENCES.md; row R2-AR-25 (DEFECT, open)
+- F-138 packages/kit/src/logic/judge.ts line 116 (commit a8f8c69) (STYLE, open)
+- F-139 redteam/FINDINGS.md row R2-AR-24 (STYLE, open)
 <!-- from the log: end -->

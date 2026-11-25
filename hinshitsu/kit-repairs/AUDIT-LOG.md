@@ -2273,3 +2273,99 @@ Recorded late, on 2026-11-25 (finding F-107, row H-reaudit-records-8): the quest
 - Card: E-204
 - The USER's reply, word for word: "accept; what milestones remain incomplete or not even started?" (2026-11-25 07:21 EST)
 - Effect: The USER accepts the 1 line added to the list of test files in vitest.config.ts (scripts/test/**/*.test.mjs). C3(e) no longer fails on that point. The 3 rows H-* that waited for this word are settled by it.
+
+### E-207 · 2026-11-25T12:37:23Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, the last independent review of WU-1 (the USER's word, E-205)
+- Scope: the first message of the session (`prompts/WU1-audit-6.md`); the diff 4f7aae9..c9505fb, rows R2-AR-24 and R2-AR-25, and the records
+- Commit under review: c9505fb6290fffbb5d8bf1e3d65fe968a30df48d
+- SUB-AGENT identifier: f672a517b7da462facd758cdf2834a9d https://app.devin.ai/sessions/f672a517b7da462facd758cdf2834a9d
+- Report: `audits/WU1-audit-6.md`; its probes and outputs in `evidence/audit-6/WU1-audit-6-evidence.tar.gz`
+
+### E-208 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-132
+- Class: DEFECT
+- Where: packages/kit/src/page-checks/fit.ts (commit 995e4d1); packages/kit/README.md line 83
+- Trigger: the six new lines blame a sound page where the browser draws nothing (one-column rule, border fade with no border, a meter, a checkbox with appearance none, a marker with no content), and miss 3 forms (drop-shadow on svg, column-width, inline list-item). The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N1
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-209 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-133
+- Class: DEFECT
+- Where: packages/kit/README.md line 83; row H-correctness-10; evidence/pr9-text.md
+- Trigger: the list of places not read is not complete: ::placeholder, ::first-line, text-emphasis, the outline and text line of a pseudo-element. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N2
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-210 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-134
+- Class: DEFECT
+- Where: packages/kit/src/data/placeholders.ts line 32 (commit 56bb8bd)
+- Trigger: a made-up number after a sum or word that touches + and a real country code is now missed ("Total 5+44 2024 555-0100"); the price of the repair of B1. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N3
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-211 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-135
+- Class: DEFECT
+- Where: packages/kit/src/data/placeholders.ts lines 29-32; row H-audit5-2
+- Trigger: the pattern excuses 69 unused codes in the same tens; the comment and the row say only codes that exist. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N4
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-212 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-136
+- Class: STYLE
+- Where: packages/kit/src/logic/designId.ts line 9 (commit 7de126a)
+- Trigger: the comment is still false for numbers above 2^53 that JavaScript rounds (12345678901234567000). The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N5
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-213 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-137
+- Class: DEFECT
+- Where: evidence/second-review/REFERENCES.md; row R2-AR-25
+- Trigger: the labels a02 and c03 in B-118 name B-094 and B-089; the file misses 9 references of that kind. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N6
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-214 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-138
+- Class: STYLE
+- Where: packages/kit/src/logic/judge.ts line 116 (commit a8f8c69)
+- Trigger: a known rule record without its sentence now gets the text for an unknown rule; reachable only with a record that breaks the schema. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N7
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-215 · 2026-11-25T12:37:53Z · FINDING · AUDIT 6
+
+- ID: F-139
+- Class: STYLE
+- Where: redteam/FINDINGS.md row R2-AR-24
+- Trigger: "2 new faults in them": 1 of the 2 is older. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the last review (E-207), `audits/WU1-audit-6.md`, finding N8
+- Lens: re-audit
+- Forward work stopped: no
