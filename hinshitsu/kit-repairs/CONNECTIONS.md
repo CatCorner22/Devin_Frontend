@@ -10,10 +10,16 @@ graph LR
   SHAPES -->|types and the 4 statuses| LOGIC["packages/kit/src/logic/judge.ts"]
   SHAPES -->|types and the 4 statuses| CHECKS["packages/kit/src/page-checks"]
   DATA -->|rule records| INDEX["packages/kit/src/index.ts"]
-  CHECKS -->|page checks| INDEX
+  CHECKS -->|page checks, imported directly| E2E
+  CHECKS -->|page checks, imported directly| UNIT
+  CHECKS -->|page checks of the example| README
+  DESIGNID["packages/kit/src/logic/designId.ts"] -->|design ID| INDEX
+  AUDIT["scripts/audit.mjs"] -->|exit code of the dependency audit| CI
+  VITEST["vitest.config.ts"] -->|list of unit-test files| AUDITTEST["scripts/test"]
+  STUDIOE2E["apps/studio/e2e/studio.e2e.ts"] -->|tests it runs| CI
   LOGIC -->|grade, repairPlan, receipt| INDEX
   CHECKS -->|findings with status| LOGIC
-  INDEX -->|rules, checks, grade, plan, receipt| E2E["apps/studio/e2e/kit.e2e.ts"]
+  INDEX -->|rules, grade, plan, receipt| E2E["apps/studio/e2e/kit.e2e.ts"]
   FIX["packages/kit/fixtures"] -->|pages under test| E2E
   INDEX -->|logic and data under test| UNIT["packages/kit/test"]
   INDEX -->|behavior described| README["packages/kit/README.md"]
@@ -36,10 +42,14 @@ graph LR
 | shapes.ts | logic/judge.ts | types and the 4 statuses | a status in shapes.ts is one `grade` does not count |
 | shapes.ts | page-checks | types and the 4 statuses | a check returns a status absent from shapes.ts |
 | data | index.ts | rule records | a floor in the data is absent from `KIT_RULES` |
-| page-checks | index.ts | page checks | an exported check is absent or renamed |
+| page-checks/index.ts | kit.e2e.ts, packages/kit/test, README.md | page checks, imported directly | an exported check is absent or renamed |
+| logic/designId.ts | index.ts | design ID | two different sets of tokens get one ID |
+| scripts/audit.mjs | CI | exit code of the dependency audit | CI is green while `npm audit` lists an advisory of high or critical severity |
+| vitest.config.ts | scripts/test | list of unit-test files | `scripts/test/audit.test.mjs` does not run in `npm test` |
+| studio.e2e.ts | CI | tests it runs | a Studio browser test fails |
 | logic/judge.ts | index.ts | grade, repairPlan, receipt | an export is absent or renamed |
 | page-checks | logic/judge.ts | findings with status | a failed floor ends in a grade above "Below floor" |
-| index.ts | kit.e2e.ts | rules, checks, grade, plan, receipt | the kit browser test fails |
+| index.ts | kit.e2e.ts | rules, grade, plan, receipt | the kit browser test fails |
 | fixtures | kit.e2e.ts | pages under test | a planted defect is not found, or the page built with care fails a check |
 | index.ts | packages/kit/test | logic and data under test | `npm test` fails |
 | index.ts | README.md | behavior described | a README statement does not reproduce |
