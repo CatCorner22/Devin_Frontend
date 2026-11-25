@@ -553,7 +553,7 @@ describe('the Brief', () => {
     for (const filler of ['Lorem\nipsum', 'Lorem  ipsum', 'Lorem\u00a0ipsum', 'Lorem\t\n ipsum dolor']) expect(placeholderIn(filler), JSON.stringify(filler)).toBe('lorem ipsum');
     expect(checkBrief({ ...good, headline: 'Lorem\nipsum' })).toMatchObject([{ field: 'headline' }]);
     // Hinshitsu audit of WU-1, correctness finding 9.
-    for (const real of ['Unleash your dog in our fenced field', 'The parcel goes here, by the side door.', 'Call 0113 555-0142', 'Call +44 1632 555-0142', 'Call +44 113 555-0142', 'Call (0113) 555-0142']) expect(placeholderIn(real), real).toBeNull();
+    for (const real of ['Unleash your dog in our fenced field', 'The parcel goes here, by the side door.', 'Call 0113 555-0142', 'Call +44 1632 555-0142', 'Call +44 113 555-0142', 'Call (0113) 555-0142', 'Tel+44 1632 555-0142', '9+44 1632 555-0142', 'Call +353 1234 555-0142', 'Call +7 4951 555-0142']) expect(placeholderIn(real), real).toBeNull();
     // Audit after the second re-audit, N2: a big integer as a token's own value goes through String; inside an object it is written with n.
     expect(designId({ t: 1n } as never)).toBe(designId({ t: '1' }));
     expect(designId({ t: 10n ** 21n } as never)).toBe(designId({ t: '1000000000000000000000' }));
@@ -563,8 +563,10 @@ describe('the Brief', () => {
     for (const filler of ['Leeds office 0113 555-0142. New York office (212) 555-0199.', 'Invoice 2024-555-0142 is paid. Call us on 555-0100.']) expect(placeholderIn(filler), filler).toBe('555-0');
     // Second re-audit of WU-1, finding 6: nor do four digits that are no telephone number of another country.
     for (const filler of ['0113 555-0142\n555-0100', 'Year 2024 555-0100 is our line', 'Order 20245 555-0100']) expect(placeholderIn(filler), filler).toBe('555-0');
-    // Fourth audit of WU-1, A2: "+1" is North America itself, and a "+" inside a word or a sum begins no country code.
+    // Fourth audit of WU-1, A2: "+1" is North America itself, and "+3" is no country code.
     for (const filler of ['Call +1 212 555-0142', 'Call +1-212-555-0199', 'Total 5+3 2024 555-0100', 'a+1 800 555-0100']) expect(placeholderIn(filler), filler).toBe('555-0');
+    // Fifth audit of WU-1, B1 and B2: a number of another country stays one where a word touches its "+" (the list of real texts above), and digits after a "+" that are no country code begin no such number.
+    for (const filler of ['Total 5 +3 2024 555-0100', 'Gain +12 2024 555-0100', 'Call +11 212 555-0142', 'Call +19 123 555-0142', 'Call +01 212 555-0142', 'Call +0 2024 555-0100']) expect(placeholderIn(filler), filler).toBe('555-0');
     expect(placeholderIn('Unleash the power of AI')).toBe('unleash the power');
     expect(placeholderIn('Call (212) 555-0142')).toBe('555-0');
     const hits: [string, string][] = [['Business Name', 'business name'], ['Headline goes here', 'headline goes here'], ['Service One', 'service one'], ['you@yourdomain.com', 'yourdomain'], ['Address line 1', 'address line 1'], ['Testimonial text will appear in this space.', 'will appear in this space'], ['Customer Name', 'customer name'], ['Sample text', 'sample text'], ['Acme', 'acme'], ['ACME Inc.', 'acme inc'], ['TODO', 'todo'], ['TODO: write the headline', 'todo']];

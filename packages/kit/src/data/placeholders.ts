@@ -26,9 +26,10 @@ export function placeholderIn(text: string): string | null {
   const all = plain.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
   // "555-0" is the made-up number of North America, which follows an area code of three digits or none: "0113 555-0142" is a
   // number of another country (Hinshitsu audit of WU-1, correctness finding 9).
-  // It is written with a leading 0, with that in brackets, or with "+" and a country code other than 1 before 3 or 4 digits ("+1" is North America itself).
+  // It is written with a leading 0, with that in brackets, or with "+" and the country code of another zone than North America's ("+1") before 3 or 4 digits: the pattern holds the codes of one to three digits
+  // that the numbering plan of the telephone union gives out, so "+3", "+12" and "+01" begin no number (fifth audit of WU-1, B1 and B2).
   // Such a number is taken out whole before the made-up number is looked for, so it excuses only itself.
-  const local = plain.replace(/(?:(?<!\d)0\d{3,4}|\(0\d{3,4}\)|(?<![a-z0-9])\+(?!1[ .-])\d{1,3}[ .-]\d{3,4})[ .-]555-0\d{3}(?!\d)/g, ' ');
+  const local = plain.replace(/(?:(?<!\d)0\d{3,4}|\(0\d{3,4}\)|\+(?:7|2[07]|3[0-469]|4[013-9]|5[1-8]|6[0-6]|8[1246]|9[0-58]|2[1-689]\d|3[578]\d|42\d|5[09]\d|6[789]\d|8[0578]\d|9[679]\d)[ .-]\d{3,4})[ .-]555-0\d{3}(?!\d)/g, ' ');
   const found = (phrase: string): boolean => new RegExp(`(^|[^a-z0-9])${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : '($|[^a-z0-9])'}`).test(phrase === '555-0' ? local : plain);
   return PLACEHOLDER_PHRASES.find((phrase) => (WHOLE_PHRASES.includes(phrase) ? all === phrase : found(phrase) && (short || !SHORT_PHRASES.includes(phrase)))) ?? null;
 }
