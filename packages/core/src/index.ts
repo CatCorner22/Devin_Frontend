@@ -4,6 +4,7 @@ export * from './tokens.js';
 export * from './engine.js';
 export * from './catalog/types.js';
 export * from './catalog/brief.js';
+export * from './catalog/craftFloors.js';
 export { STEPS, findStep } from './catalog/steps.js';
 export { CONFLICT_RULES, HARMONY_RULES, RULES } from './catalog/rules.js';
 export * from './catalog/directions.js';

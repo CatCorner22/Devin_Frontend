@@ -295,12 +295,15 @@ describe('receipt', () => {
     const measured = KIT_RULES.filter((rule) => rule.check.kind !== 'person').map((rule) => holds(rule.id));
     const waiting = grade(measured, KIT_RULES);
     expect(waiting.grade).toBe('Meets floor');
-    expect(waiting.floorsForAPerson).toEqual(['neuro-no-flashing', 'neuro-reduced-motion', 'neuro-error-recovery']);
-    expect(waiting.reason).toMatch(/"Crafted" waits for a person. 3 floor\(s\) that only a person can check are still open/);
+    const deployment = ['fit-untrusted-text', 'fit-security-review', 'fit-public-search', 'fit-public-links', 'fit-page-speed'];
+    expect(waiting.floorsForAPerson).toEqual(['neuro-no-flashing', 'neuro-reduced-motion', 'neuro-error-recovery', ...deployment]);
+    expect(waiting.reason).toMatch(/"Crafted" waits for a person. 8 floor\(s\) that only a person can check are still open/);
     const two = grade([...measured, holds('neuro-no-flashing'), holds('neuro-reduced-motion')], KIT_RULES);
-    expect(two).toMatchObject({ grade: 'Meets floor', floorsForAPerson: ['neuro-error-recovery'] });
-    const checked = grade([...measured, holds('neuro-no-flashing'), holds('neuro-reduced-motion'), holds('neuro-error-recovery')], KIT_RULES);
+    expect(two).toMatchObject({ grade: 'Meets floor', floorsForAPerson: ['neuro-error-recovery', ...deployment] });
+    const answered = waiting.floorsForAPerson.map(holds);
+    const checked = grade([...measured, ...answered], KIT_RULES);
     expect(checked).toMatchObject({ grade: 'Crafted', floorsForAPerson: [] });
+    for (const ruleId of deployment) expect(grade([...measured, ...answered.filter((f) => f.ruleId !== ruleId)], KIT_RULES)).toMatchObject({ grade: 'Meets floor', floorsForAPerson: [ruleId] });
     expect(grade([...measured, holds('neuro-no-flashing'), holds('neuro-reduced-motion'), fails('neuro-error-recovery')], KIT_RULES).grade).toBe('Below floor');
   });
 
