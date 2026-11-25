@@ -113,7 +113,7 @@ export function repairPlan(given: readonly (readonly Finding[])[], rules: readon
   const ordered = [...now, ...carried].map((f, index) => ({ f, index })).sort((a, b) => rank(a.f) - rank(b.f) || a.index - b.index).map(({ f }) => f);
   // The repair sentence is the rule's own text, never the finding's: a finding comes out of the page, and a page can shape it.
   // The check's own advice travels beside it as `hint`, marked as text from the page (hard rule 10).
-  const items = ordered.map((f) => ({ ruleId: record.has(f.ruleId) ? f.ruleId : fromPage(f.ruleId) ?? '', where: fromPage(f.where), measured: fromPage(f.measured), hint: fromPage(f.fix), fix: record.has(f.ruleId) ? (record.get(f.ruleId)?.plain ?? 'Make this rule hold.') : 'This finding names a rule that the kit does not know. A person must look at it.' }));
+  const items = ordered.map((f) => ({ ruleId: record.has(f.ruleId) ? f.ruleId : fromPage(f.ruleId) ?? '', where: fromPage(f.where), measured: fromPage(f.measured), hint: fromPage(f.fix), fix: record.get(f.ruleId)?.plain ?? 'This finding names a rule that the kit does not know. A person must look at it.' }));
   const stillOpen = unique(ordered.map((f) => shown(f, record)));
   const repairsDone = Math.max(0, rounds.length - 1);
   // "No failure" from a check that measured nothing, or only a part, is no good news: the plan says so and names what was
