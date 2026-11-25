@@ -2462,6 +2462,24 @@ describe('Studio: Brief', () => {
     await context.close();
   });
 
+  it('Brief review: allowed button labels fit the phone without clipping', async () => {
+    const { context, page } = await open({ hash: '#summary' });
+    await page.getByRole('button', { name: 'Phone', exact: true }).click();
+    await page.evaluate(() => { location.hash = '#brief'; });
+    for (const label of ['Book a careful repair '.repeat(30).slice(0, 600), 'W'.repeat(600)]) {
+      await page.getByLabel('Main button label', { exact: true }).fill(label);
+      const button = page.frameLocator('.brief-preview iframe').locator('.hero .btn-primary');
+      await expect.poll(() => button.innerText()).toBe(label.trim());
+      expect(await button.evaluate((el) => {
+        const range = el.ownerDocument.createRange();
+        range.selectNodeContents(el);
+        const box = el.getBoundingClientRect();
+        return [...range.getClientRects()].every((rect) => rect.left >= box.left && rect.right <= box.right && rect.left >= 0 && rect.right <= 375);
+      })).toBe(true);
+    }
+    await context.close();
+  });
+
   const typeWords = async (page: Page): Promise<void> => {
     await page.getByLabel('Business name', { exact: true }).fill('Moss & Stone');
     await page.getByLabel('Who the page is for', { exact: true }).fill('People who repair old homes');

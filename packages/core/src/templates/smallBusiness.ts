@@ -181,7 +181,7 @@ body[data-atmosphere="grain"][data-theme="dark"]::after { mix-blend-mode: overla
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: var(--target-min); padding: 0 var(--space-5);
   border: var(--control-border-w) solid transparent; border-radius: var(--radius-control);
-  font: inherit; font-weight: 600; letter-spacing: -0.006em; text-decoration: none; cursor: pointer; white-space: nowrap; user-select: none;
+  font: inherit; font-weight: 600; letter-spacing: -0.006em; text-decoration: none; cursor: pointer; white-space: normal; overflow-wrap: anywhere; max-width: 100%; min-width: 0; user-select: none;
 }
 .btn-primary { background: var(--btn-bg); color: var(--btn-color); border-color: var(--btn-border); box-shadow: var(--btn-shadow); }
 @media (hover: hover) {
