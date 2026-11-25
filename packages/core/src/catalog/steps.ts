@@ -7,6 +7,7 @@
 // - No ranking ("the most common …") appears unless a record gives a count.
 
 import type { SourceRef, Step } from './types.js';
+import { BEHAVIOR_STEPS } from './behavior.js';
 
 const REVIEWED = '2026-11-13';
 
@@ -699,6 +700,7 @@ export const STEPS: Step[] = [
   },
 ];
 
+STEPS.push(...BEHAVIOR_STEPS);
 const STEP_TABLE = new Map<string, Step>(STEPS.map((s) => [s.id, s]));
 
 /** Find a Step by its identifier. Returns `undefined` for anything that is not a Step, including names of built-in object members. */

@@ -65,8 +65,8 @@ function checkSource(source: SourceRef, where: string): void {
 }
 
 describe('Catalog: Steps and Options (hard rule 5)', () => {
-  it('has 23 Steps with unique identifiers, and each lookup finds only real Steps', () => {
-    expect(STEPS).toHaveLength(23);
+  it('has 28 Steps with unique identifiers, and each lookup finds only real Steps', () => {
+    expect(STEPS).toHaveLength(28);
     expect(new Set(STEPS.map((s) => s.id)).size).toBe(STEPS.length);
     for (const s of STEPS) expect(findStep(s.id)).toBe(s);
     for (const name of ['constructor', 'toString', 'valueOf', 'hasOwnProperty', '__proto__', 'isPrototypeOf', '__defineGetter__', 'not-a-step', '']) expect(findStep(name), name).toBeUndefined();
@@ -237,7 +237,8 @@ describe('Catalog: one variable per Step', () => {
   it('assigns every design parameter to exactly one Step', () => {
     const owner = new Map<string, string>();
     for (const step of STEPS) {
-      expect(step.owns.length, step.id).toBeGreaterThan(0);
+      if (step.briefVoice) expect(step.id).toBe('voice');
+      else expect(step.owns.length, step.id).toBeGreaterThan(0);
       for (const key of step.owns) {
         expect(owner.has(key), `${key} is owned by ${owner.get(key)} and ${step.id}`).toBe(false);
         owner.set(key, step.id);
@@ -253,7 +254,8 @@ describe('Catalog: one variable per Step', () => {
     for (const step of STEPS) {
       const sets = step.options.map((option) => Object.keys(resolvePatch(option, DEFAULT_PARAMS)).sort());
       for (const [i, keys] of sets.entries()) {
-        expect(keys.length, `${step.id}/${step.options[i]!.id} sets nothing`).toBeGreaterThan(0);
+        if (step.briefVoice) expect(step.options[i]!.voice).toBeDefined();
+        else expect(keys.length, `${step.id}/${step.options[i]!.id} sets nothing`).toBeGreaterThan(0);
         for (const key of keys) expect(step.owns as string[], `${step.id}/${step.options[i]!.id} sets ${key}`).toContain(key);
         if (!mayDiffer.has(step.id)) expect(keys, `${step.id}/${step.options[i]!.id}`).toEqual(sets[0]);
       }
@@ -265,7 +267,7 @@ describe('Catalog: one variable per Step', () => {
     for (const step of STEPS) {
       const seen = new Set<string>();
       for (const option of step.options) {
-        const signature = JSON.stringify(Object.entries(resolvePatch(option, DEFAULT_PARAMS)).sort());
+        const signature = JSON.stringify(step.briefVoice ? option.voice : Object.entries(resolvePatch(option, DEFAULT_PARAMS)).sort());
         expect(seen.has(signature), `${step.id}/${option.id} repeats another Option`).toBe(false);
         seen.add(signature);
       }

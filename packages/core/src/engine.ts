@@ -1,14 +1,14 @@
 // The engine: pure functions that turn the owner's actions into a project state. No React, no browser APIs.
 
 import { z } from 'zod';
-import type { BriefNotes } from './catalog/brief.js';
+import { EMPTY_BRIEF, type BriefNotes } from './catalog/brief.js';
 import { DIRECTIONS, findDirection, type Direction } from './catalog/directions.js';
 import { OVERLAYS, findOverlay } from './catalog/overlays.js';
 import { skinsOf } from './catalog/skins.js';
 import { CONFLICT_RULES, HARMONY_RULES } from './catalog/rules.js';
 import { STEPS, findStep } from './catalog/steps.js';
 import type { Option, Step, Tunable } from './catalog/types.js';
-import { A11Y_PROFILES, DEFAULT_PARAMS, PARAM_RANGES, PARAM_VALUES, assertKnownParams, type A11yProfile, type DesignParams } from './params.js';
+import { A11Y_PROFILES, BEHAVIOR_DEFAULTS, DEFAULT_PARAMS, PARAM_RANGES, PARAM_VALUES, assertKnownParams, type A11yProfile, type DesignParams } from './params.js';
 import { SAMPLE_CONTENT, type SiteContent } from './templates/smallBusiness.js';
 import { deriveTokens, type DerivedTokens } from './tokens.js';
 
@@ -95,15 +95,17 @@ export function previewParams(project: Project, stepId: string, optionId: string
 /** The current values of the parameters that a Step owns. */
 export function ownedValues(step: Step, params: DesignParams): Partial<DesignParams> {
   const out: Partial<Record<keyof DesignParams, DesignParams[keyof DesignParams]>> = {};
-  for (const key of step.owns) out[key] = params[key];
+  for (const key of step.owns) out[key] = params[key] ?? BEHAVIOR_DEFAULTS[key as keyof typeof BEHAVIOR_DEFAULTS];
   return out as Partial<DesignParams>;
 }
 
 /** The Option whose values equal the design's current values for this Step, or `null` when no Option matches. */
-export function matchingOptionId(params: DesignParams, step: Step): string | null {
+export function matchingOptionId(params: DesignParams, step: Step, voice = EMPTY_BRIEF.voice): string | null {
   for (const option of step.options) {
     const patch = resolvePatch(option, params);
-    if ((Object.keys(patch) as (keyof DesignParams)[]).every((key) => same(patch[key], params[key]))) return option.id;
+    if (step.briefVoice) {
+      if (option.voice && Object.keys(voice).every((key) => voice[key as keyof typeof voice] === option.voice?.[key as keyof typeof voice])) return option.id;
+    } else if ((Object.keys(patch) as (keyof DesignParams)[]).every((key) => same(patch[key], params[key] ?? BEHAVIOR_DEFAULTS[key as keyof typeof BEHAVIOR_DEFAULTS]))) return option.id;
   }
   return null;
 }
@@ -209,7 +211,7 @@ function rederive(before: Project, after: Project, actedStepId: string): Project
   for (const [stepId, decision] of Object.entries(decisions)) {
     const step = findStep(stepId);
     if (!step) continue;
-    const optionId = matchingOptionId(params, step);
+    const optionId = matchingOptionId(params, step, after.brief?.voice);
     const values = ownedValues(step, params);
     // A Decision never lists as rejected the Option that it holds. A slider moved onto the exact value of an Option that was
     // rejected earlier would otherwise leave a record that contradicts itself; opening the saved project then "corrected" it
@@ -223,7 +225,7 @@ function rederive(before: Project, after: Project, actedStepId: string): Project
 }
 
 function withDecision(project: Project, step: Step, params: DesignParams, decision: Omit<Decision, 'stepId' | 'values' | 'optionId'>): Project {
-  const full: Decision = { ...decision, stepId: step.id, optionId: matchingOptionId(params, step), values: ownedValues(step, params) };
+  const full: Decision = { ...decision, stepId: step.id, optionId: matchingOptionId(params, step, project.brief?.voice), values: ownedValues(step, params) };
   return rederive(project, { ...project, params, decisions: { ...project.decisions, [step.id]: full } }, step.id);
 }
 
@@ -232,6 +234,7 @@ export function pick(project: Project, stepId: string, optionId: string, now = i
   const step = mustStep(stepId);
   const option = step.options.find((o) => o.id === optionId);
   if (!option) throw new Error('This Step has no such Option.');
+  if (option.voice) project = { ...project, brief: { ...(project.brief ?? EMPTY_BRIEF), voice: { ...option.voice } } };
   const params = { ...project.params, ...resolvePatch(option, project.params) };
   // A written reason belongs to the choice it was written for. It stays when the owner picks the same Option again, and it
   // goes when the owner picks another Option: "friendly" is no reason for square corners. The Studio says so when it removes
@@ -241,12 +244,12 @@ export function pick(project: Project, stepId: string, optionId: string, now = i
   return withDecision(project, step, params, { kind: 'picked', rejected: step.options.filter((o) => o.id !== option.id).map((o) => o.id), at: now, ...(reason ? { reason } : {}) });
 }
 
-/** Keep the value the design already has for a Step. The design does not change; the Decision records that the owner looked and kept it. */
+/** Keep the Step's values, making implied defaults explicit, and record that the owner looked and kept them. */
 export function keep(project: Project, stepId: string, now = isoNow()): Project {
   const step = mustStep(stepId);
   const previous = project.decisions[stepId];
   if (previous) return project;
-  return withDecision(project, step, project.params, { kind: 'kept', rejected: [], at: now });
+  return withDecision(project, step, { ...project.params, ...ownedValues(step, project.params) }, { kind: 'kept', rejected: [], at: now });
 }
 
 function checkOwnedValues(step: Step, values: Partial<DesignParams>): void {
@@ -312,6 +315,7 @@ export function nextSliderValue(tunable: Tunable, current: number, steps: number
 /** Put a Step back to the value the project started with, and remove its Decision. */
 export function revert(project: Project, stepId: string): Project {
   const step = mustStep(stepId);
+  if (step.briefVoice) project = { ...project, brief: { ...(project.brief ?? EMPTY_BRIEF), voice: { ...EMPTY_BRIEF.voice } } };
   let params = { ...project.params, ...ownedValues(step, project.base) };
   // If the starting design matched an Option whose value follows another value ("Two colors: a third of the wheel apart"),
   // the Step goes back to that Option, not to the starting number: the second color is worked out again from the main
@@ -671,7 +675,10 @@ z.config({ jitless: true });
 
 const shortText = z.string().max(600);
 const paramShape: Record<string, z.ZodType> = {};
-for (const [key, list] of Object.entries(PARAM_VALUES)) paramShape[key] = z.enum(list as unknown as [string, ...string[]]);
+for (const [key, list] of Object.entries(PARAM_VALUES)) {
+  const field = z.enum(list as unknown as [string, ...string[]]);
+  paramShape[key] = key in BEHAVIOR_DEFAULTS ? field.optional() : field;
+}
 for (const [key, [min, max]] of Object.entries(PARAM_RANGES)) paramShape[key] = z.number().min(min).max(max);
 const paramsSchema = z.object(paramShape);
 
@@ -828,7 +835,7 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
       continue;
     }
     const optionIds = step.options.map((o) => o.id);
-    const optionId = matchingOptionId(params, step);
+    const optionId = matchingOptionId(params, step, data.brief?.voice);
     let kind: DecisionKind = d.kind;
     if (kind === 'picked' && optionId === null) {
       // The file records a pick, and its design values match no Option: the picked Option no longer exists in the Catalog, or

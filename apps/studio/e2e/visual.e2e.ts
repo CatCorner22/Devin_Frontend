@@ -7,7 +7,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_PARAMS, DIRECTIONS, FONTS, SAMPLE_CONTENT, STEPS, deriveTokens, renderSmallBusiness, resolvePatch, type DesignParams, type FontId, type MockupFocus } from '@refraction/core';
+import { DEFAULT_PARAMS, DIRECTIONS, FONTS, SAMPLE_CONTENT, STEPS, deriveTokens, renderSmallBusiness, resolvePatch, type DesignParams, type FontId, type MockupFocus, type Voice } from '@refraction/core';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 
@@ -35,9 +35,9 @@ function fontFace(id: FontId): string {
   return css;
 }
 
-function mockup(params: DesignParams, focus: MockupFocus): string {
+function mockup(params: DesignParams, focus: MockupFocus, voice?: Voice): string {
   const fonts: FontId[] = [params.fontHeading, params.fontBody, ...(params.numerals === 'mono' ? (['jetbrains-mono'] as FontId[]) : [])];
-  return renderSmallBusiness({ params, tokens: deriveTokens(params, 'advise').css, content: SAMPLE_CONTENT, focus, still: true, links: 'inert', fontFaceCss: [...new Set(fonts)].map(fontFace).join('\n') });
+  return renderSmallBusiness({ params, tokens: deriveTokens(params, 'advise').css, content: SAMPLE_CONTENT, voice, focus, still: true, links: 'inert', fontFaceCss: [...new Set(fonts)].map(fontFace).join('\n') });
 }
 
 // A machine whose installed browser is older than this Playwright version names its browser here; CI sets nothing.
@@ -139,7 +139,7 @@ describe('Mockup: every Option shows (M3 exit test)', () => {
         for (const option of step.options) {
           const params = { ...base.params, ...resolvePatch(option, base.params) };
           // Each Option is judged where the Studio shows it: at its own region when it has one, and also at the Step's region.
-          const picture = Buffer.concat([await shot(mockup(params, option.focus ?? step.focus)), await shot(mockup(params, step.focus))]).toString('base64');
+          const picture = Buffer.concat([await shot(mockup(params, option.focus ?? step.focus, option.voice)), await shot(mockup(params, step.focus, option.voice))]).toString('base64');
           const twin = seen.get(picture);
           expect(twin, `on the ${base.label}, "${option.label}" looks exactly like "${twin}"`).toBeUndefined();
           seen.set(picture, option.label);

@@ -313,8 +313,8 @@ describe('saved projects: files from version 1 (finding M-07)', () => {
   it('covers every Step in a fixture or in the current catalog', () => {
     // A reminder that fails when the saved shape changes without a new version: the current project's keys are fixed here.
     expect(Object.keys(createProject()).sort()).toEqual(['a11y', 'base', 'content', 'decisions', 'direction', 'name', 'params', 'schemaVersion', 'template']);
-    expect(Object.keys(DEFAULT_PARAMS)).toHaveLength(31);
-    expect(STEPS).toHaveLength(23);
+    expect(Object.keys(DEFAULT_PARAMS)).toHaveLength(35);
+    expect(STEPS).toHaveLength(28);
     expect(SCHEMA_VERSION).toBe(2);
   });
 });

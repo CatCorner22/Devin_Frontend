@@ -366,7 +366,7 @@ describe('engine: a second color follows the main color (finding T2-02)', () => 
   };
   const consistent = (p: Project): void => {
     for (const [id, d] of Object.entries(p.decisions)) {
-      expect(d.optionId, `${id}: the Decision names the Option that the design matches`).toBe(matchingOptionId(p.params, step(id)));
+      expect(d.optionId, `${id}: the Decision names the Option that the design matches`).toBe(matchingOptionId(p.params, step(id), p.brief?.voice));
       expect(d.values, `${id}: the Decision holds the design's values`).toEqual(ownedValues(step(id), p.params));
       if (d.optionId !== null) expect(d.rejected, `${id}: the Decision does not reject the Option it holds`).not.toContain(d.optionId);
     }

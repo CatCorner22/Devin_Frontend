@@ -34,7 +34,7 @@ const setBy: Record<string, CatalogEntry['setBy']> = {
   'craft-tabular-numerals': [{ stepId: 'numerals', optionIds: ['tabular', 'mono'] }],
   'craft-balanced-headings': [{ stepId: 'heading-treatment' }],
   'craft-nested-radii': [{ stepId: 'radius' }],
-  'craft-short-transitions': [{ stepId: 'motion', optionIds: ['subtle', 'expressive'] }],
+  'craft-short-transitions': [{ stepId: 'motion', optionIds: ['subtle', 'expressive'] }, { stepId: 'motion-timing', optionIds: ['settle', 'steady', 'gentle'] }],
   'craft-one-type-scale': [{ stepId: 'size-scale' }],
   'craft-dark-theme-designed': [{ stepId: 'theme', optionIds: ['dark'] }],
 };

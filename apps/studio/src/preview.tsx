@@ -1,5 +1,5 @@
 // Mockup previews. Each preview is a sandboxed frame: no scripts, no forms, no access to the Studio.
-import { deriveTokens, renderSmallBusiness, wireframeParams, type A11yProfile, type DesignParams, type FontId, type MeasuredPair, type MockupFocus, type Project, type TokenIssue } from '@refraction/core';
+import { deriveTokens, renderSmallBusiness, wireframeParams, type A11yProfile, type BriefNotes, type DesignParams, type FontId, type MeasuredPair, type MockupFocus, type Project, type TokenIssue } from '@refraction/core';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { fontFaceCss } from './fonts';
 
@@ -11,6 +11,7 @@ export interface MockupOptions {
   still: boolean;
   /** The Overlays that the preview draws. Only the Overlays screen and the Summary pass them; the cards of a Step do not. */
   overlays?: readonly string[];
+  voice?: BriefNotes['voice'];
 }
 
 export interface MockupResult {
@@ -46,7 +47,8 @@ export function tokensFor(params: DesignParams, profile: A11yProfile): Derived {
 export function mockupHtml(project: Project, params: DesignParams, options: MockupOptions): MockupResult {
   const shown = options.wireframe ? wireframeParams(params) : params;
   const overlays = options.overlays ?? [];
-  const key = JSON.stringify([shown, project.a11y, project.content, options.focus, options.still, overlays]);
+  const voice = options.voice ?? project.brief?.voice;
+  const key = JSON.stringify([shown, project.a11y, project.content, voice, options.focus, options.still, overlays]);
   const known = built.get(key);
   if (known) {
     // Used again: move it to the young end.
@@ -57,7 +59,7 @@ export function mockupHtml(project: Project, params: DesignParams, options: Mock
   const tokens = tokensFor(shown, project.a11y);
   const fonts: FontId[] = [shown.fontHeading, shown.fontBody];
   if (shown.numerals === 'mono') fonts.push('jetbrains-mono');
-  const html = renderSmallBusiness({ params: shown, tokens: tokens.css, content: project.content, focus: options.focus, still: options.still, overlays, fontFaceCss: fontFaceCss(fonts), links: 'inert' });
+  const html = renderSmallBusiness({ params: shown, tokens: tokens.css, content: project.content, voice, focus: options.focus, still: options.still, overlays, fontFaceCss: fontFaceCss(fonts), links: 'inert' });
   const result: MockupResult = { html, issues: tokens.issues, pairs: tokens.pairs };
   built.set(key, result);
   if (built.size > BUILT_MAX) built.delete(built.keys().next().value as string);

@@ -133,7 +133,7 @@ export function directionName(project: Project, generated: Direction[] = []): st
 
 /** The card that shows the design as it stands: the matching Catalog Option, or the "current" card. */
 export function appliedCardId(project: Project, step: Step): string {
-  return matchingOptionId(project.params, step) ?? CURRENT;
+  return matchingOptionId(project.params, step, project.brief?.voice) ?? CURRENT;
 }
 
 /** The parameters that a card of the current Step shows. */
@@ -840,7 +840,7 @@ export const useStudio = create<StudioState>((set, get) => {
       // Putting a Step back removes its Decision, and with it the reason the owner wrote. The notice says so.
       const reason = project.decisions[stepId]?.reason;
       commit(revert(project, stepId));
-      set({ variations: null, shownId: appliedCardId(get().project, step), notice: { text: `“${step.name}” is back to the value this project started with.${reason ? ' The reason you wrote for this Step is removed with its Decision; Undo brings both back.' : ''}`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
+      set({ variations: null, shownId: appliedCardId(get().project, step), notice: { text: `${step.briefVoice ? 'Voice is back to Friendly and brief.' : `“${step.name}” is back to the value this project started with.`}${reason ? ' The reason you wrote for this Step is removed with its Decision; Undo brings both back.' : ''}`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
       refocus();
     },
 
@@ -934,19 +934,26 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     setBrief(brief, field) {
-      commit({ ...get().project, brief }, `brief:${field}`);
+      const project = get().project;
+      const changedVoice = JSON.stringify(brief.voice) !== JSON.stringify(project.brief?.voice) && project.decisions['voice'] !== undefined;
+      const decisions = { ...project.decisions };
+      if (changedVoice) delete decisions['voice'];
+      commit({ ...project, brief, decisions }, `brief:${field}`);
+      if (changedVoice) set({ notice: { text: 'The Brief changed the voice. Its earlier Step Decision and reason were removed. Undo can restore them.', actions: [{ label: 'Undo', run: () => get().undo() }] } });
     },
 
     requestSample() {
       set({ confirmation: {
         title: 'Replace your words with the sample?',
-        body: `This replaces all page text and clears the Brief notes for the builder. It leaves your design choices unchanged. ${UNDO_PROMISE}.`,
+        body: `This replaces all page text and clears the Brief notes and its voice Decision. Other design choices stay unchanged. ${UNDO_PROMISE}.`,
         confirmLabel: 'Use the sample', cancelLabel: 'Keep my words',
         run: () => {
           const project = { ...get().project, content: createProject().content };
           delete project.brief;
+          project.decisions = { ...project.decisions };
+          delete project.decisions['voice'];
           commit(project);
-          set({ notice: { text: 'The sample content is back. Your design choices are unchanged.', actions: [{ label: 'Undo', run: () => get().undo() }] } });
+          set({ notice: { text: 'The sample content is back. The Brief notes and voice Decision are cleared; other design choices are unchanged.', actions: [{ label: 'Undo', run: () => get().undo() }] } });
         },
       } });
     },
