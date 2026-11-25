@@ -104,7 +104,7 @@ export function noEndlessMotion(doc: Document): Finding[] {
       return moves;
     };
     // One entry per animation name; a shorter list of durations, counts or states is read again from its start, as CSS does.
-    const list = (text: string): string[] => text.split(/(?<!\\),/).map((t) => t.trim());
+    const list = (text: string): string[] => text.split(/(?<=(?<!\\)(?:\\\\)*),/).map((t) => t.trim());
     const [durations, counts, states] = [list(style.animationDuration), list(style.animationIterationCount), list(style.animationPlayState)];
     const total = Math.max(0, ...list(style.animationName).map((animation, i) => {
       if (animation === 'none' || states[i % states.length] === 'paused' || !changes(animation)) return 0;

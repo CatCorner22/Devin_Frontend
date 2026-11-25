@@ -793,6 +793,8 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       // Second re-audit of WU-1, finding 1: a name that CSS writes escaped still moves, and so do keyframes that @import brings in.
       for (const named of ['a\\.b', '"q n"', '\\31 up', 'a\\,b', '"none"']) expect(await statuses(field, 'noEndlessMotion', `@keyframes ${named} { 50% { opacity: 0.3 } } input::placeholder { animation: ${named} 1s infinite; }`), named).toEqual(['fails']);
       expect(await statuses(`<style>@import url("data:text/css,${encodeURIComponent('@keyframes far { 50% { opacity: 0.3 } }')}"); input::placeholder { animation: far 1s infinite; }</style>${field}`, 'noEndlessMotion')).toEqual(['fails']);
+      // Fourth audit of WU-1, A1: a name that ends in a backslash does not swallow the comma after it.
+      expect(await statuses(field, 'noEndlessMotion', '@keyframes a\\\\ { 50% { opacity: 0.3 } } input::placeholder { animation: a\\\\ 1s infinite, nothing 1s infinite; }')).toEqual(['fails']);
       // Audit after the second re-audit, finding N1: which rule of a name the browser takes is not decided here; where any rule of the name moves, the check fails.
       // So the two cases below, which the commit before this one held, fail again: both are sound pages blamed, and the README says so.
       expect(await statuses(field, 'noEndlessMotion', '@keyframes dup { from { opacity: 1 } to { opacity: 0.2 } } @keyframes dup { from { opacity: 1 } to { opacity: 1 } } input::placeholder { animation: dup 1s infinite; }')).toEqual(['fails']);
