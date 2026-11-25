@@ -65,9 +65,9 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
       {columns.map(([column, label]) => <TextField key={column} label={`${title} ${index + 1}: ${label}`} value={itemText(item, column)} words={words}
         sample={itemText(SAMPLE_CONTENT[key][index], column)}
         change={(value) => { setPreviewFocus(key); s.setContent({ ...c, [key]: c[key].map((old, at) => at === index ? { ...old, [column]: value } : old) }, `${key}:${index}:${column}`); }} />)}
-      <button type="button" onClick={() => s.setContent({ ...c, [key]: c[key].filter((_, at) => at !== index) }, key)}>Remove {title.toLowerCase()} {index + 1}</button>
+      <button type="button" onClick={() => s.setContent({ ...c, [key]: c[key].filter((_, at) => at !== index) })}>Remove {title.toLowerCase()} {index + 1}</button>
     </fieldset>)}
-    <button type="button" disabled={c[key].length >= max} onClick={() => s.setContent({ ...c, [key]: [...c[key], { ...blank }] }, key)}>Add {title.toLowerCase()}</button>
+    <button type="button" disabled={c[key].length >= max} onClick={() => s.setContent({ ...c, [key]: [...c[key], { ...blank }] })}>Add {title.toLowerCase()}</button>
   </fieldset>;
 
   return <div className="work">

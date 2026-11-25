@@ -2480,6 +2480,21 @@ describe('Studio: Brief', () => {
     await context.close();
   });
 
+  it('Brief review: each list add and remove has its own Undo step', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    const remove = page.getByRole('button', { name: /^Remove service / });
+    const original = await remove.count();
+    await page.getByRole('button', { name: 'Add service', exact: true }).click();
+    await page.getByRole('button', { name: 'Add service', exact: true }).click();
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    expect(await remove.count()).toBe(original + 1);
+    await remove.last().click();
+    await remove.last().click();
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    expect(await remove.count()).toBe(original);
+    await context.close();
+  });
+
   const typeWords = async (page: Page): Promise<void> => {
     await page.getByLabel('Business name', { exact: true }).fill('Moss & Stone');
     await page.getByLabel('Who the page is for', { exact: true }).fill('People who repair old homes');

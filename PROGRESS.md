@@ -4,6 +4,12 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 ## M5 started: unit 1, the Brief (2026-11-25)
 
+### PR 10 review repairs (2026-11-25)
+
+- The preview follows the section being edited instead of returning to the first screen on each letter. It keeps the locked, script-free frame and its history isolation.
+- Button labels wrap, including a 600-character unbroken word at 375 pixels. Each list add and remove has its own Undo entry; typing still groups by field.
+- Three regression tests failed on the reviewed code (3 failed, 114 skipped); after the repairs, the affected Brief, Back-button, plain-words and axe tests passed (15 passed, 102 skipped). `npm run check`: 8 files, 267 tests passed; type check, lint and boundaries passed. Both commands exited 0. The full browser suite runs with M5 unit 2, not twice here.
+
 - D63 permits M5 to start while M4 still waits for the owner's trial. This unit does not close either milestone.
 - The Brief is first in navigation, before Layout. It edits the page text and optional notes for the builder (business purpose, audience, main job, voice and words to avoid). Every existing preview reads the project content. Sample warnings remain beside unchanged sample fields; restoring the sample asks first and offers Undo.
 - The Studio uses the kit's placeholder check for warning-only feedback. Files without Brief notes keep their old shape (format version 2, following D53). `docs/reference/saving-table.md` recorded eight new saving cases before the implementation; each names a browser test.

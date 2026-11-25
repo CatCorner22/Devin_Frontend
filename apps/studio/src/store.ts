@@ -102,7 +102,7 @@ export interface StudioState {
   /** Switch one Overlay on or off for this project. */
   toggleOverlay(overlayId: string, on: boolean): void;
   rename(name: string): void;
-  setContent(content: SiteContent, field: string): void;
+  setContent(content: SiteContent, field?: string): void;
   setBrief(brief: BriefNotes, field: string): void;
   requestSample(): void;
   /** Try once more to save, after a save failed (for example when the owner has made room in storage). */
@@ -930,7 +930,7 @@ export const useStudio = create<StudioState>((set, get) => {
 
     setContent(content, field) {
       const note = content.footerNote === SAMPLE_CONTENT.footerNote && !isSampleContent(content) ? '' : content.footerNote;
-      commit({ ...get().project, content: { ...content, footerNote: note } }, `content:${field}`);
+      commit({ ...get().project, content: { ...content, footerNote: note } }, field === undefined ? undefined : `content:${field}`);
     },
 
     setBrief(brief, field) {
