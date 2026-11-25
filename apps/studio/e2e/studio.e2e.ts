@@ -2450,6 +2450,18 @@ describe('Studio: addresses and the browser’s Back button', () => {
 });
 
 describe('Studio: Brief', () => {
+  it('Brief review: editing a lower section keeps that section in view', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    const frame = page.frameLocator('.brief-preview iframe');
+    await frame.locator('.about').evaluate((el) => el.scrollIntoView());
+    await page.getByLabel('About text', { exact: true }).fill('We repair old houses with care.');
+    await expect.poll(() => frame.locator('.about p').first().evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return el.textContent?.includes('We repair old houses') && box.top >= 0 && box.top < window.innerHeight;
+    })).toBe(true);
+    await context.close();
+  });
+
   const typeWords = async (page: Page): Promise<void> => {
     await page.getByLabel('Business name', { exact: true }).fill('Moss & Stone');
     await page.getByLabel('Who the page is for', { exact: true }).fill('People who repair old homes');

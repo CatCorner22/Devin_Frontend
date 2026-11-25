@@ -1,6 +1,6 @@
-import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, isSampleContent, type BriefNotes, type SiteContent } from '@refraction/core';
+import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, isSampleContent, type BriefNotes, type MockupFocus, type SiteContent } from '@refraction/core';
 import { placeholderIn } from '@refraction/kit';
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { LargePreview, mockupHtml } from './preview';
 import { DEVICE_WIDTH, useStudio } from './store';
 
@@ -45,11 +45,15 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
   const c = s.project.content;
   const notes = s.project.brief ?? EMPTY_BRIEF;
   const words = notes.wordsToAvoid;
-  const html = mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'top', still: true });
+  const [previewFocus, setPreviewFocus] = useState<MockupFocus>('top');
+  const html = mockupHtml(s.project, s.project.params, { wireframe: false, focus: previewFocus, still: true });
   const field = (key: (typeof PAGE_FIELDS)[number][0], label: string): React.JSX.Element => <TextField
     key={key} label={label} value={c[key]} sample={SAMPLE_CONTENT[key]} words={words}
     warning={key === 'headlineEmphasis' && c.headlineEmphasis && !c.headline.includes(c.headlineEmphasis) ? 'The highlighted phrase must occur in the headline. Until it does, the preview shows the headline without a highlight.' : undefined}
-    change={(value) => s.setContent({ ...c, [key]: value }, key)} />;
+    change={(value) => {
+      setPreviewFocus(key.startsWith('services') ? 'services' : key.startsWith('fees') ? 'fees' : key.startsWith('about') || key === 'promise' ? 'about' : ['contactTitle', 'contactBody', 'phone', 'address', 'hours', 'footerNote'].includes(key) ? 'contact' : 'top');
+      s.setContent({ ...c, [key]: value }, key);
+    }} />;
   const note = (key: 'whatItDoes' | 'audience' | 'mainJob', label: string): React.JSX.Element => <TextField
     label={label} value={notes[key]} words={words} change={(value) => s.setBrief({ ...notes, [key]: value }, key)} />;
 
@@ -60,7 +64,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
       <legend>{title} {index + 1}</legend>
       {columns.map(([column, label]) => <TextField key={column} label={`${title} ${index + 1}: ${label}`} value={itemText(item, column)} words={words}
         sample={itemText(SAMPLE_CONTENT[key][index], column)}
-        change={(value) => s.setContent({ ...c, [key]: c[key].map((old, at) => at === index ? { ...old, [column]: value } : old) }, `${key}:${index}:${column}`)} />)}
+        change={(value) => { setPreviewFocus(key); s.setContent({ ...c, [key]: c[key].map((old, at) => at === index ? { ...old, [column]: value } : old) }, `${key}:${index}:${column}`); }} />)}
       <button type="button" onClick={() => s.setContent({ ...c, [key]: c[key].filter((_, at) => at !== index) }, key)}>Remove {title.toLowerCase()} {index + 1}</button>
     </fieldset>)}
     <button type="button" disabled={c[key].length >= max} onClick={() => s.setContent({ ...c, [key]: [...c[key], { ...blank }] }, key)}>Add {title.toLowerCase()}</button>
@@ -74,6 +78,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
         <h1 ref={heading} tabIndex={-1}>Your Brief</h1>
         <p>{BRIEF_STAGE.teach}</p>
         <p>Warnings only warn. They never stop saving. Text fields accept up to 600 characters. The status line above tells you whether saving worked.</p>
+        <p>The preview follows the page section you edit.</p>
         {isSampleContent(c) && <p className="note">This is sample content for a made-up dental practice, not your content.</p>}
         <fieldset><legend>Notes for the Fitter (the AI coding assistant that will build your page)</legend>
           <p>These notes travel in the project file. They do not appear as text on the page.</p>
