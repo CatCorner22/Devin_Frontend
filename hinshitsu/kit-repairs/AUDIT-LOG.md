@@ -2099,3 +2099,58 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Report: `audits/WU1-audit-after-round2.md`
 
 25 of 40 SUB-AGENT runs used. Rule 14.5 allows 2 fix-and-re-audit rounds; the second found 0 BLOCKER and 8 smaller faults. By E-57 the USER ordered the repair of every finding, so the ORCHESTRATOR repaired them and has this AUDITOR check those repairs; the USER is told.
+
+### E-189 · 2026-11-25T04:40:06Z · FINDING · auditor: AUDIT AFTER ROUND 2
+
+- ID: F-120
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts`, function `changes` (commit `7435de9`)
+- Trigger: 6 kinds of placeholder that move without end hold, where the commit before failed them: a still rule of the same name in a layer, in an earlier layer, with a prefix, in a sheet for print, in a switched-off sheet, in an alternate sheet. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-188, `audits/WU1-audit-after-round2.md`, finding N1
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-190 · 2026-11-25T04:40:06Z · FINDING · auditor: AUDIT AFTER ROUND 2
+
+- ID: F-121
+- Class: DEFECT
+- Where: `packages/kit/src/logic/designId.ts`, the comment (commit `42c2f90`)
+- Trigger: The sentence on the big integer is false where the big integer is a token's own value. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-188, `audits/WU1-audit-after-round2.md`, finding N2
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-191 · 2026-11-25T04:40:06Z · FINDING · auditor: AUDIT AFTER ROUND 2
+
+- ID: F-122
+- Class: STYLE
+- Where: `PROGRESS.md` line 44, `evidence/pr9-text.md` line 43
+- Trigger: The text says five commits; the range holds 4. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-188, `audits/WU1-audit-after-round2.md`, finding N3
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-192 · 2026-11-25T04:40:06Z · FINDING · auditor: AUDIT AFTER ROUND 2
+
+- ID: F-123
+- Class: DEFECT
+- Where: `packages/kit/src/data/placeholders.ts` (commit `623f09d`)
+- Trigger: `Call +44 1632 555-0142` is blamed, where the commit before passed it. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-188, `audits/WU1-audit-after-round2.md`, finding N4
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-193 · 2026-11-25T04:40:06Z · FINDING · auditor: AUDIT AFTER ROUND 2
+
+- ID: F-124
+- Class: STYLE
+- Where: `PROGRESS.md` line 44
+- Trigger: Two counts run together without a comma. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH E-188, `audits/WU1-audit-after-round2.md`, finding N5
+- Lens: re-audit
+- Forward work stopped: no
