@@ -217,6 +217,13 @@ describe('repair plan', () => {
 });
 
 describe('receipt', () => {
+  it('Hinshitsu audit of WU-1: two checks that answer alike for one rule give one line of the receipt; a failure beside a pass keeps both', () => {
+    const id = 'neuro-motion-can-stop';
+    const lines = (findings: Finding[]) => receipt(findings, KIT_RULES).measured.filter((line) => line.ruleId === id).map((line) => line.result);
+    expect(lines([{ ruleId: id, status: 'holds' }, { ruleId: id, status: 'holds', measured: 'no repeated change in 11 s' }])).toEqual(['Holds (found: ‹no repeated change in 11 s›)']);
+    expect(lines([{ ruleId: id, status: 'holds' }, { ruleId: id, status: 'holds' }])).toEqual(['Holds']);
+    expect(lines([{ ruleId: id, status: 'holds' }, { ruleId: id, status: 'fails', where: 'div.turn' }])).toEqual(['Holds', 'Fails (‹div.turn›)']);
+  });
   it('keeps the four lists apart', () => {
     const r = receipt([fails('floor-a'), holds('fit-a'), { ruleId: 'craft-a', status: 'could-not-measure', measured: 'No window.' }], RULES);
     expect(r.measured.map((line) => line.ruleId)).toEqual(['floor-a', 'fit-a']);

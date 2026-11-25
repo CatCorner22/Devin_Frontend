@@ -153,10 +153,14 @@ export function receipt(given: readonly Finding[], rules: readonly RuleRecord[])
     // page it could see is not listed as measured. A failure that a check did find is still listed.
     const refused = own.find((f) => f.status === 'could-not-measure');
     if (answered.length === 0 || refused) notMeasured.push({ ruleId: rule.id, plain: rule.plain, result: fromPage(refused?.measured) ?? 'The check did not run.' });
+    // Several checks may answer for one rule. Each different answer is one line; the same answer twice, or a bare "Holds"
+    // beside a "Holds" that says what was found, is one line and not two.
+    const results: string[] = [];
     for (const f of refused ? answered.filter((a) => a.status === 'fails') : answered) {
       const detail = [fromPage(f.where), f.measured && `found: ${fromPage(f.measured)}`, f.required && `required: ${fromPage(f.required)}`].filter(Boolean).join('; ');
-      measured.push({ ruleId: rule.id, plain: rule.plain, result: `${f.status === 'fails' ? 'Fails' : f.status === 'holds' ? 'Holds' : 'Does not apply to this page'}${detail ? ` (${detail})` : ''}` });
+      results.push(`${f.status === 'fails' ? 'Fails' : f.status === 'holds' ? 'Holds' : 'Does not apply to this page'}${detail ? ` (${detail})` : ''}`);
     }
+    for (const result of new Set(results)) if (result !== 'Holds' || !results.some((other) => other.startsWith('Holds ('))) measured.push({ ruleId: rule.id, plain: rule.plain, result });
   }
   const known = new Set(rules.map((rule) => rule.id));
   for (const f of findings) if (!known.has(f.ruleId)) notMeasured.push({ ruleId: fromPage(f.ruleId) ?? '', plain: 'No rule of this set has this id.', result: `A finding with the status "${f.status}" names it. Check the spelling of the id.` }); // the status is one of the four: `sound` saw to it
