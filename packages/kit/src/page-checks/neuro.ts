@@ -253,7 +253,7 @@ export function visibleLabels(doc: Document): Finding[] {
   // A label in the very color of the ground behind it is not caught here; the contrast rule answers for that.
   const clear = (color: string): boolean => { const share = /^rgba\([^)]*,\s*([\d.]+)\)$/.exec(color)?.[1] ?? /\/\s*([\d.]+)(%?)\)$/.exec(color)?.[1]; return share !== undefined && parseFloat(share) < (/%\)$/.test(color) ? 10 : 0.1); };
   const seen = (el: Element): boolean => { const computed = view.getComputedStyle(el); return el.getClientRects().length > 0 && !tiny(el) && computed.visibility === 'visible' && parseFloat(computed.opacity) > 0 && !clear(computed.color) && !clear(computed.getPropertyValue('-webkit-text-fill-color')) && (el.textContent ?? '').trim().length > 0; };
-  const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0 && !unmet(el));
+  const fields = [...doc.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')].filter((el) => !['hidden', 'submit', 'button', 'reset', 'image'].includes(el.getAttribute('type') ?? '') && el.getClientRects().length > 0 && view.getComputedStyle(el).visibility !== 'hidden' && !unmet(el));
   if (fields.length === 0) return [{ ruleId, status: 'not-applicable' }];
   const out: Finding[] = [];
   for (const el of fields) {

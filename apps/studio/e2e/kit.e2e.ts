@@ -829,6 +829,8 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       const shown = '<form><div aria-hidden="true" style="visibility:hidden"><input name="card" tabindex="-1" placeholder="Card number" style="visibility:visible"></div><br><br><button>Pay</button></form>';
       expect(await statuses(shown, 'visibleLabels')).toEqual(['fails']);
       expect(await statuses(shown, 'keyboardReachable')).toEqual(['fails']);
+      // A field that nobody sees needs no label that people see, with or without the mark for screen readers (re-audit of WU-1, on F-18).
+      expect(await statuses('<form><input name="website" tabindex="-1" autocomplete="off" style="visibility:hidden"><button>Send</button></form>', 'visibleLabels')).toEqual(['not-applicable']);
       // The trap proper: the part is one pixel high and cuts off the field.
       expect(await statuses(form('height:1px;overflow:hidden'), 'visibleLabels')).toEqual(['not-applicable']);
       expect(await statuses(form('height:1px;overflow:hidden'), 'keyboardReachable')).toEqual(['holds']);
