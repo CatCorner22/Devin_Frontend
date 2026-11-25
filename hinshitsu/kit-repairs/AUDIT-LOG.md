@@ -740,3 +740,20 @@ C16 The delivery message to the USER holds at most 250 words, asks the USER for 
 - Event: progress
 
 C14 report received from LAUNCH E-58 and saved whole at `audits/E-58-c14-review-from-zero.md`. It names 9 faults in the changed lines: C14-1, C14-4 and C14-8 with the class major, C14-2, C14-3, C14-5, C14-6, C14-7 and C14-9 with the class minor. It rates 6 of the judge's minors higher, as major: F-7, F-13, F-20, F-22, F-23 and F-24 of the judge report. By C14 all 15 join the confirmed list; the list of majors under C1 now holds 9 + 3 + 6 = 18 entries. The judge's F-12 did not reproduce for the AUDITOR at 86287c2. C14-6 and C14-7 name faults that commits 1115cfd and 63709e2 changed before the report arrived; no AUDITOR has re-run them.
+
+### E-64 · 2026-11-25T00:02:00Z · STAGE · ORCHESTRATOR
+
+- Stage: S7
+- Event: progress
+
+WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e50434..183c166 -- . ':!hinshitsu'`: the repairs to `packages/kit`, their tests, and the records. The last commit that changes code is a973e47; 183c166 adds records and the saved outputs `evidence/final-runs/` (`npm run check` 257 passed; 3 runs of the browser command of C5, 420 passed each, exit 0). 3 earlier full runs on older commits were stopped by the BUILDER before they ended and are counted as started, not as passed: `/home/ubuntu/e2e-runs/aborted-28a51a9`, `aborted-828796b` and `pre-d38a239.log` on the BUILDER's machine. The plan of E-4 named 2 WORK UNITS; the repairs were built as 1 set, so 1 WORK UNIT is audited in 1 round, which spends fewer SUB-AGENT runs. The automated reviewer of the pull request raised 18 faults in 3 rounds (rows R2-AR-1 to R2-AR-18 of `redteam/FINDINGS.md`): 14 repaired, 4 open with a reason.
+
+### E-65 · 2026-11-25T00:02:00Z · LAUNCH · ORCHESTRATOR
+
+- Role: seeder for WU-1 (rule 16.7)
+- Scope: `prompts/WU1-seeder.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: e4a15aea8e8f4dc4b3d9a9ca53c47e1e https://app.devin.ai/sessions/e4a15aea8e8f4dc4b3d9a9ca53c47e1e
+- Report: `audits/WU1-seed-E-65.md`
+
+13 of 40 SUB-AGENT runs used (12 LAUNCH entries before this one and the probe E-1 are counted as the log counts them).
