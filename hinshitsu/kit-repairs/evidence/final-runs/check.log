@@ -1,0 +1,33 @@
+
+> check
+> npm run typecheck && npm run lint && npm run boundaries && npm run test
+
+
+> typecheck
+> tsc -p packages/core && tsc -p packages/core/tsconfig.test.json && tsc -p packages/kit && tsc -p packages/kit/tsconfig.page.json && tsc -p packages/kit/tsconfig.test.json && tsc -p apps/studio && tsc -p tsconfig.e2e.json
+
+
+> lint
+> eslint . --max-warnings 0
+
+
+> boundaries
+> depcruise packages apps --config .dependency-cruiser.cjs
+
+
+✔ no dependency violations found (82 modules, 143 dependencies cruised)
+
+
+> test
+> vitest run
+
+
+ RUN  v5.1.0 /home/ubuntu/repos/Devin_Frontend
+
+
+ Test Files  8 passed (8)
+      Tests  257 passed (257)
+   Start at  23:58:35
+   Duration  9.65s (tests 95%, import 3%, transform 2%)
+
+EXIT 0 2026-11-24T23:58:44Z at a973e47119bc5184c7d96671b1bf6020c3b9bd4c

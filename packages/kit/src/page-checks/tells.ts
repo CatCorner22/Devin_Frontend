@@ -2,18 +2,64 @@
 // Each function is self-contained (see neuro.ts).
 import type { Finding } from '../shapes.js';
 
-/** Placeholder words and stock marketing phrases. The list must equal PLACEHOLDER_PHRASES in data/placeholders.ts; a test compares the two. */
+/** Placeholder words and stock marketing phrases. The three lists must equal those in data/placeholders.ts; a test compares them. */
 export function placeholderCopy(doc: Document): Finding[] {
   const ruleId = 'tell-placeholder-copy';
-  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'your company', 'company name', 'insert text', 'placeholder', 'john doe', 'jane doe', 'example.com', '555-0', 'empower your', 'unlock the power', 'unleash', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced'];
-  const out: Finding[] = [];
+  const phrases = ['lorem ipsum', 'dolor sit amet', 'your tagline here', 'your headline here', 'insert text', 'john doe', 'jane doe', '555-0', 'welcome to our website', 'service 1', 'service one', 'description goes here', 'headline goes here', 'title goes here', 'text goes here', 'content goes here', 'copy goes here', 'image goes here', 'logo goes here', 'name goes here', 'sample text', 'will appear in this space', 'address line 1', 'yourdomain', '000-000-0000', 'name@email.com', 'anytown, usa', 'empower your', 'unlock the power', 'unleash the power', 'unleash your potential', 'unleash your team', 'unleash your business', 'unleash the full', 'elevate your', 'revolutionize', 'supercharge', 'seamlessly', 'cutting-edge', 'next-generation', 'game-changing', 'take your business to the next level', 'in today\'s fast-paced', 'your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com', 'acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation'];
+  // A phrase counts as whole words: "sample text" is not in "sample textile". Some phrases are also plain words of ordinary sentences
+  // and of forms, so they count only in a short text (4 words or fewer) that is not the label or the hint of a form field.
+  const slots = ['your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com'];
+  // Others are also real names and real words ("Acme Plumbing"): they count only as the whole text. "TODO" counts only in capitals,
+  // as the whole text or as "TODO:"; "todo" is the Spanish word for "all".
+  const whole = ['acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation', 'service 1', 'address line 1'];
+  const edge = '[^a-z0-9]';
+  // "555-0" is the made-up number of North America, which follows an area code of three digits or none: "0113 555-0142" is a
+  // number of another country (Hinshitsu audit of WU-1, correctness finding 9).
+  const found = (text: string, phrase: string): boolean => new RegExp(`(^|${edge})${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : `($|${edge})`}`).test(text) && !(phrase === '555-0' && /\d{4}[ .-]555-0/.test(text));
+  const described = new Set([...doc.querySelectorAll('[aria-describedby]')].flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/)));
+  const view = doc.defaultView;
+  // The text is read block by block, not text node by text node: "Lorem <b>ipsum</b>" and a line break inside a paragraph
+  // are one text to the reader (finding F-14 of the review of 2026-11-24). A block is the nearest part that is not inline.
+  const inline = (el: Element): boolean => !view || /^(inline|contents)/.test(view.getComputedStyle(el).display);
+  const formText = 'label, legend, option, form small, form [class*="hint" i], form [class*="help" i]';
+  const blocks = new Set<Element>();
   const walker = doc.createTreeWalker(doc.body, 4);
   for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-    const parent = node.parentElement;
-    const text = (node.textContent ?? '').toLowerCase().replace(/’/g, '\'');
-    if (!parent || parent.closest('script, style, code, pre') || text.trim() === '') continue;
-    const hit = phrases.find((phrase) => text.includes(phrase));
-    if (hit) out.push({ ruleId, status: 'fails', where: `${parent.tagName.toLowerCase()}: "${text.trim().slice(0, 40)}"`, measured: `the phrase "${hit}"`, required: 'the owner\'s own words', fix: 'Replace the phrase with the real content from the Brief.' });
+    let el = node.parentElement;
+    if (!el || el.closest('script, style, code, pre, template, noscript') || (node.textContent ?? '').trim() === '') continue;
+    // The label and the hint of a form field are texts of their own, also where they are drawn inline.
+    while (el !== doc.body && el.parentElement && inline(el) && !el.matches(formText)) el = el.parentElement;
+    blocks.add(el);
+  }
+  const textOf = (block: Element): string => {
+    let text = '';
+    const read = (el: Element): void => {
+      for (const child of el.childNodes) {
+        if (text.length > 2000) return;
+        if (child.nodeType === 3) text += child.textContent ?? '';
+        else if (child.nodeType === 1 && (child as Element).tagName === 'BR') text += ' ';
+        else if (child.nodeType === 1 && !blocks.has(child as Element) && !(child as Element).matches('script, style, code, pre, template, noscript') && inline(child as Element)) read(child as Element);
+        else text += ' ';
+      }
+    };
+    read(block);
+    return text.slice(0, 2000).replace(/\s+/g, ' ').trim();
+  };
+  // "Service 1" alone can be a real name (a bus line). Beside "Service 2" it is a row of slots that nobody filled
+  // (Hinshitsu audit of WU-1, adversarial finding 6).
+  const numbered = [...blocks].some((block) => /^[^a-z0-9]*service 2[^a-z0-9]*$/i.test(textOf(block)));
+  const out: Finding[] = [];
+  for (const block of blocks) {
+    const given = textOf(block);
+    if (given === '') continue;
+    const text = given.toLowerCase().replace(/’/g, '\'');
+    // The words of a form's own label, of a table's heading cell, and of a term in a list name what stands beside them
+    // ("Address line 1" over a real address field); they are no filler.
+    const names = block.closest(formText) !== null || (block.id !== '' && described.has(block.id)) || block.matches('th, dt');
+    const short = text.split(' ').length <= 4 && !names;
+    const all = text.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
+    const hit = /(^|[^A-Za-z0-9])TODO:|^[^A-Za-z0-9]*TODO[^A-Za-z0-9]*$/.test(given) ? 'todo' : phrases.find((phrase) => !(names && /^address line/.test(phrase)) && !(phrase === 'service 1' && !numbered) && (whole.includes(phrase) ? all === phrase : found(text, phrase) && (short || !slots.includes(phrase))));
+    if (hit) out.push({ ruleId, status: 'fails', where: `${block.tagName.toLowerCase()}: "${given.slice(0, 40)}"`, measured: `the phrase "${hit}"`, required: 'the owner\'s own words', fix: 'Replace the phrase with the real content from the Brief.' });
   }
   return out.length > 0 ? out.slice(0, 8) : [{ ruleId, status: 'holds' }];
 }
@@ -22,9 +68,20 @@ export function placeholderCopy(doc: Document): Finding[] {
 export function emojiAsIcons(doc: Document): Finding[] {
   const ruleId = 'tell-emoji-icons';
   const out: Finding[] = [];
+  // ©, ® and ™ are marks of text, not pictures; a sign drawn as text (with the text selector U+FE0E) is none either.
+  const emoji = /(?![©®™])\p{Extended_Pictographic}(?!\uFE0E)/u;
+  const atEdge = (text: string): boolean => { const marks = [...text]; return emoji.test(marks.slice(0, 2).join('')) || emoji.test(marks.slice(-2).join('')); };
+  const seen = new Set<Element>();
+  const report = (el: Element, text: string): void => { if (!seen.has(el)) { seen.add(el); out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}: "${text.slice(0, 30)}"`, measured: 'an emoji used as an icon', required: 'one drawn icon set, or no icon', fix: 'Replace the emoji with an icon from one icon set (inline SVG), or remove it.' }); } };
   for (const el of doc.querySelectorAll<HTMLElement>('h1, h2, h3, h4, button, a, [class*="icon" i]')) {
     const text = (el.textContent ?? '').trim();
-    if (el.getClientRects().length > 0 && /^\p{Extended_Pictographic}|\p{Extended_Pictographic}$/u.test(text)) out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}: "${text.slice(0, 30)}"`, measured: 'an emoji used as an icon', required: 'one drawn icon set, or no icon', fix: 'Replace the emoji with an icon from one icon set (inline SVG), or remove it.' });
+    if (el.getClientRects().length > 0 && atEdge(text)) report(el, text);
+  }
+  // An element that holds nothing but one or two emoji, directly before a heading: an icon above a card's title.
+  for (const heading of doc.querySelectorAll<HTMLElement>('h2, h3, h4')) {
+    const before = heading.previousElementSibling;
+    const text = (before?.textContent ?? '').trim();
+    if (before && before.getClientRects().length > 0 && text !== '' && [...text].length <= 4 && emoji.test(text) && !/[\p{L}\p{N}]/u.test(text)) report(before, text);
   }
   return out.length > 0 ? out.slice(0, 8) : [{ ruleId, status: 'holds' }];
 }
@@ -40,13 +97,36 @@ export function purpleGradient(doc: Document): Finding[] {
     const hue = max === r ? ((g - b) / spread) % 6 : max === g ? (b - r) / spread + 2 : (r - g) / spread + 4;
     return (hue * 60 + 360) % 360;
   };
+  const pen = doc.createElement('canvas').getContext('2d', { willReadFrequently: true });
+  if (!pen) return [{ ruleId, status: 'could-not-measure', measured: 'this browser gives no canvas to read colors with' }];
+  const drawn = (color: string): [number, number, number] | null => {
+    pen.clearRect(0, 0, 1, 1);
+    pen.fillStyle = '#000';
+    pen.fillStyle = color;
+    pen.fillRect(0, 0, 1, 1);
+    const pixel = pen.getImageData(0, 0, 1, 1).data;
+    return (pixel[3] ?? 0) < 128 ? null : [pixel[0] ?? 0, pixel[1] ?? 0, pixel[2] ?? 0];
+  };
   const out: Finding[] = [];
-  for (const el of doc.querySelectorAll<HTMLElement>('body, body *')) {
-    const image = view.getComputedStyle(el).backgroundImage;
-    const box = el.getBoundingClientRect();
-    if (!image.includes('gradient') || box.width * box.height < 40_000) continue;
-    const hues = [...image.matchAll(/rgba?\((\d+),\s*(\d+),\s*(\d+)/g)].map((m) => hueOf(Number(m[1]), Number(m[2]), Number(m[3]))).filter((h): h is number => h !== null);
-    if (hues.some((h) => h >= 200 && h < 250) && hues.some((h) => h >= 250 && h <= 310)) out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}`, measured: 'a fade from blue to purple over a large area', required: 'the colors of the design', fix: 'Use the background that the design names; if it names a fade, use its two colors.' });
+  // The fade is read on every element, on the page's root (<html>), and on the ::before and ::after of an element, where
+  // a hero often carries it (finding F-22 of the review of 2026-11-24).
+  for (const el of doc.querySelectorAll<HTMLElement>('html, body, body *')) {
+    for (const pseudo of ['', '::before', '::after']) {
+      const computed = view.getComputedStyle(el, pseudo === '' ? null : pseudo);
+      const image = computed.backgroundImage;
+      if (!image.includes('gradient')) continue;
+      if (pseudo !== '' && (computed.content === 'none' || computed.content === 'normal' || computed.display === 'none' || computed.visibility !== 'visible')) continue;
+      if (computed.visibility !== 'visible') continue;
+      const box = el.getBoundingClientRect();
+      // The root paints the whole window. A ::before or ::after has no box that a script can ask for; its computed size is read.
+      const area = el === doc.documentElement ? view.innerWidth * view.innerHeight : pseudo === '' ? box.width * box.height : (parseFloat(computed.width) || 0) * (parseFloat(computed.height) || 0);
+      if (area < 40_000) continue;
+      // A style sheet can write a color in many ways (hex, rgb, hsl, oklch, a name). The check paints each color of the fade on a
+      // canvas, off the page, and reads the drawn pixel back.
+      const stops = image.slice(0, 4000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? [];
+      const hues = stops.map((stop) => { const rgb = drawn(stop); return rgb ? hueOf(rgb[0], rgb[1], rgb[2]) : null; }).filter((h): h is number => h !== null);
+      if (hues.some((h) => h >= 200 && h < 250) && hues.some((h) => h >= 250 && h <= 310)) out.push({ ruleId, status: 'fails', where: `${el.tagName.toLowerCase()}${el.classList[0] ? '.' + el.classList[0] : ''}${pseudo}`, measured: 'a fade from blue to purple over a large area', required: 'the colors of the design', fix: 'Use the background that the design names; if it names a fade, use its two colors.' });
+    }
   }
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
 }

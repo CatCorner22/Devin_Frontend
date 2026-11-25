@@ -1314,6 +1314,9 @@ describe('Studio: a slow or faulty page database never costs a saved copy (code 
     await second.page.locator('.banner.hold').getByRole('button', { name: 'Open the newer copy' }).click();
     await expect.poll(() => second.page.locator('#project-name').inputValue()).toBe('Newer, on the page');
     expect((await keptCopies(second.page)).some((copy) => copy.text.includes('Older, in this browser'))).toBe(true);
+    // The button that was pressed is gone with its notice. The keyboard focus must not fall back to the page as a whole:
+    // it goes to the card on show of the opened project (kit review of 2026-11-18, F-40).
+    await expect.poll(() => second.page.evaluate(() => { const at = document.activeElement; return !at || at === document.body ? 'the page as a whole' : at.matches('.cards input[type="radio"]:checked') ? 'the card on show' : `${at.tagName.toLowerCase()}#${at.id}.${at.className}`; })).toBe('the card on show');
     // The main button acts on the opened project, without an error.
     await second.page.locator('.actions.sticky .primary').click();
     await settle(second.page);

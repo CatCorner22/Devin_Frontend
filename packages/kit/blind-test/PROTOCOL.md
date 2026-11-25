@@ -2,7 +2,7 @@
 
 ## What it is
 
-A test in which people judge pages without knowing who made them. Some pages were built from a Prescription by the Fitter; some were made by skilled people. Each reviewer says, for each page, "made by a person" or "made by AI", and rates the quality from 1 to 7.
+A test in which people judge pages without knowing who made them. Some pages were built from a Prescription by the Fitter; some were made by skilled people. Each reviewer says, for each page, "made by a person" or "made by AI".
 
 ## Why it exists
 
@@ -16,7 +16,7 @@ The aim of this tool is output that a skilled reviewer cannot tell apart from th
 
 ## The pages
 
-1. At least 5 tool-built pages and at least 5 person-made pages. More is better.
+1. At least 6 tool-built pages and at least 6 person-made pages. With the fewest reviewers (5) that gives 30 answers on each kind, the least that the count accepts. More is better.
 2. Match them: same kind of business, same kind of page (a small-business home page against a small-business home page), similar amount of content.
 3. Choose the person-made pages before you look at the tool-built ones, and write down why each was chosen. Otherwise you will pick weak human pages without meaning to.
 4. Show every page the same way: the same browser, the same window width, a full-page picture or the live page with the address bar hidden. Remove footers that name the builder or the tool.
@@ -31,15 +31,13 @@ The aim of this tool is output that a skilled reviewer cannot tell apart from th
 ## The session
 
 1. Shuffle the pages separately for each reviewer.
-2. For each page, ask two questions, in this order:
-   - "Was this page made by a person or by AI?"
-   - "How good is this page, from 1 (poor) to 7 (excellent)?"
+2. For each page, ask one question: "Was this page made by a person or by AI?"
 3. Then ask, in the reviewer's own words: "What made you decide?" Write the answer down. These answers are the most useful result: each names a mark that a new rule could check.
 4. Do not tell the reviewer whether an answer was right until the whole session is over.
 
 ## The count
 
-Record one line per answer: reviewer, page, who made the page (`tool` or `person`), and whether the reviewer judged it person-made. Give the lines to `blindScore` (in `src/logic/blindTest.ts`). It returns, for each kind of page, the share judged person-made with its range of doubt, the difference between the two shares with its range, and one plain statement.
+Record one line per answer: reviewer, page, who made the page (`tool` or `person`), and whether the reviewer judged it person-made, as `true` or `false` (`judgedPerson`), never as a word. `blindScore` leaves out a line that lacks one of the four or writes the answer as a word, and its statement says how many it left out. Give the lines to `blindScore` (in `src/logic/blindTest.ts`). It returns, for each kind of page, the share judged person-made with its range of doubt, the difference between the two shares with its range, and one plain statement.
 
 ## What makes the result wrong
 

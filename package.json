@@ -22,6 +22,7 @@
     "size": "node scripts/check-size.mjs",
     "e2e": "npm run build:page && npm run size && vitest run --config vitest.e2e.config.ts",
     "notices": "node scripts/make-notices.mjs",
+    "audit:deps": "node scripts/audit.mjs",
     "visual:update": "UPDATE_BASELINES=1 vitest run --config vitest.e2e.config.ts apps/studio/e2e/visual.e2e.ts"
   },
   "devDependencies": {

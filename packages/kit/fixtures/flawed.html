@@ -6,7 +6,7 @@
 <meta http-equiv="refresh" content="86400" data-defect="neuro-no-time-limit">
 <title>Flawed page</title>
 <style>
-:root { --ink: #1a1a1a; --paper: #ffffff; --accent: #0b5fff; --line: #d0d5dd; --radius: 8px; --radius-in: 4px; --font-body: Georgia, serif; }
+:root { --ink: #1a1a1a; --paper: #ffffff; --accent: #0b5fff; --line: #d0d5dd; --radius: 8px; --radius-in: 4px; --font-body: serif; }
 * { box-sizing: border-box; }
 body { margin: 0; padding: 24px; font-family: var(--font-body); font-size: 16px; line-height: 1.6; color: var(--ink); background: var(--paper); }
 h1, h2, h3 { text-wrap: balance; line-height: 1.2; margin: 0 0 12px; }
@@ -36,6 +36,8 @@ dialog { color: var(--ink); background: var(--paper); border: 1px solid var(--in
 .same { border-radius: 16px; padding: 6px; background: var(--accent); width: 200px; } .same div { border-radius: 16px; background: var(--paper); }
 .off { color: #ff00aa; font-family: Arial, sans-serif; border-radius: 13px; background: var(--paper); }
 .hero { width: 400px; height: 200px; background: linear-gradient(90deg, #2f6bff, #8a2be2); }
+/* At the width of the reflow floor only the box planted for that floor is too wide; the two wide parts above give way. */
+@media (max-width: 400px) { .hard, .hero { width: auto; } }
 .center * { text-align: center; }
 .row { display: flex; gap: 12px; } .row > div { width: 180px; }
 td.raw { font-variant-numeric: normal; }
@@ -48,7 +50,7 @@ td.raw { font-variant-numeric: normal; }
 <h1>Welcome</h1>
 <audio autoplay data-defect="neuro-no-autoplay"></audio>
 <div class="spin" data-defect="neuro-motion-can-stop"></div>
-<p class="hard" data-defect="neuro-line-length" data-defect="neuro-line-height" data-defect="neuro-text-size" data-defect="neuro-no-justified-text">We repair and install pipes, heaters, and drains in homes around Portland. A plumber stands at your door within two hours of your call, by day and by night, and tells you the price before the work begins. We have done so for twenty years.</p>
+<p class="hard" data-defect="neuro-line-length neuro-line-height neuro-text-size neuro-no-justified-text">We repair and install pipes, heaters, and drains in homes around Portland. A plumber stands at your door within two hours of your call, by day and by night, and tells you the price before the work begins. We have done so for twenty years.</p>
 <input name="q" aria-label="hidden name" style="display:none"><input name="email" placeholder="Your email" data-defect="neuro-visible-label">
 <div class="cut" data-defect="neuro-text-spacing"><span>These words need two full lines of room to be read</span></div>
 <div class="wide" data-defect="neuro-reflow"></div>
@@ -64,7 +66,7 @@ td.raw { font-variant-numeric: normal; }
 <div class="same" data-defect="craft-nested-radii"><div>Inner box</div></div>
 <button class="slow" type="button" data-defect="craft-short-transitions">Slow button</button>
 <p data-defect="craft-one-type-scale"><span style="font-size:11px">size </span><span style="font-size:13px">size </span><span style="font-size:15px">size </span><span style="font-size:17px">size </span><span style="font-size:19px">size </span><span style="font-size:21px">size </span><span style="font-size:23px">size </span><span style="font-size:25px">size </span><span style="font-size:27px">size </span></p>
-<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%230b5fff'/%3E%3C/svg%3E" data-defect="craft-picture-size" data-defect="craft-picture-alt">
+<img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%230b5fff'/%3E%3C/svg%3E" data-defect="craft-picture-size craft-picture-alt">
 <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect width='80' height='80' fill='%230b5fff'/%3E%3C/svg%3E" width="200" height="50" alt="Stretched" style="height:50px" data-defect="craft-picture-not-stretched">
 <p data-defect="craft-typographic-marks">He said "hello" -- and left...</p>
 <p data-defect="tell-placeholder-copy">Empower your business with lorem ipsum.</p>
@@ -72,7 +74,9 @@ td.raw { font-variant-numeric: normal; }
 <div class="hero" data-defect="tell-purple-gradient"></div>
 <div class="center" data-defect="tell-all-centered"><h2>One</h2><p>Two</p><h2>Three</h2><p>Four</p><h2>Five</h2><p>Six</p></div>
 <div class="row" data-defect="tell-three-icon-cards"><div><span>*</span><h3>Fast</h3><p>Text one.</p></div><div><span>*</span><h3>Safe</h3><p>Text two.</p></div><div><span>*</span><h3>Easy</h3><p>Text three.</p></div></div>
-<p class="off" data-defect="fit-colors" data-defect="fit-fonts" data-defect="fit-radii" data-defect="fit-unused-color">Wrong color, wrong typeface, wrong corner.</p>
+<p class="off" data-defect="fit-colors fit-fonts fit-radii">Wrong color, wrong typeface, wrong corner.</p>
+<!-- fit-unused-color has no element of its own: the style sheet above draws every border in the ink color, so the page never uses the token for lines (the good page uses it). -->
+<div data-defect="behavior-tab-order"><button type="button" id="order-a">First</button> <button type="button" id="order-b" tabindex="2">Second</button> <button type="button" id="order-c" tabindex="1">Third</button></div>
 <div role="tablist"><button role="tab" id="tab-a" aria-selected="true">Leaks</button><button role="tab" id="tab-b" aria-selected="false">Heaters</button></div>
 <button type="button" id="open" data-defect="behavior-dialog-keys">Open the false window</button>
 <div id="fake"><button type="button" id="inside">Inside</button></div>

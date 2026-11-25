@@ -1,5 +1,5 @@
 // The shapes that every part of the kit shares. A rule is a data record; a page check reads a drawn page and returns findings.
-// Code in `data/` and `logic/` is pure: no browser, no network, no clock. Code in `page-checks/` reads a page and nothing else.
+// Code in `data/` and `logic/` is pure: no browser, no network, no clock. Code in `page-checks/` works on one page and uses no network. A check is not a silent reader: `focusIsVisible` moves the focus to each control, so the page's own handlers run, and some checks add a style or a probe element and remove it again. Run the checks on a copy of the page that nobody uses, and run `focusIsVisible` last.
 import { z } from 'zod';
 
 /** How strong the evidence behind a rule is. The same three grades as the Catalog. */

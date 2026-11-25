@@ -40,4 +40,4 @@ jobs:
       - name: End-to-end tests (builds the page, checks its size, drives it in a browser)
         run: npm run e2e
       - name: Dependency audit
-        run: npm audit --audit-level=high
+        run: npm run audit:deps
