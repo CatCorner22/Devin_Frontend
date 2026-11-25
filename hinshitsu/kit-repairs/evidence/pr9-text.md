@@ -11,7 +11,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 |---|---|---|---|---|---|
 | The judge of the second review (`R2-F-*`) | 34 | 34 | 33 | 0 | 0 |
 | The independent review from zero, 2026-11-24, of the lines changed after the judge saw the code (`R2-C14-*`) | 9 | 9 | 9 | 0 | 0 |
-| The automated review of this pull request, three rounds (`R2-AR-*`) | 18 | 14 | 14 | 4 | 0 |
+| The automated review of this pull request, four rounds (`R2-AR-*`) | 21 | 17 | 17 | 4 | 0 |
 | Items the judge left for a person (`R2-P-*`) | 12 | 4 | 3 | 8 | 0 |
 | The seven auditors of the Hinshitsu run (`H-*`) | 92 | 85 | 45 | 4 | 3 |
 
