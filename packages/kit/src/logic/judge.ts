@@ -84,7 +84,7 @@ export function repairPlan(given: readonly (readonly Finding[])[], rules: readon
   // What was open before the newest check: every failure of an earlier round that no later round has answered for.
   // A failure stays open through any number of rounds that did not measure its rule.
   const openBefore = new Map<string, Finding>();
-  for (const round of rounds.slice(0, -1)) {
+  for (const round of given.slice(0, -1)) {
     const refusedThen = new Set(round.filter((f) => f.status === 'could-not-measure').map((f) => f.ruleId));
     const answered = new Set(round.filter((f) => f.status !== 'could-not-measure' && !refusedThen.has(f.ruleId)).map((f) => f.ruleId));
     for (const [k, f] of openBefore) if (answered.has(f.ruleId)) openBefore.delete(k);
