@@ -47,7 +47,7 @@ export function grade(given: readonly Finding[], rules: readonly RuleRecord[]): 
   if (unmeasuredFloors.length > 0) return result('Not graded', `${unmeasuredFloors.length} floor(s) were not measured.`);
   if (failedRules.length > 0) return result('Meets floor', `Every measured floor holds; ${failedRules.length} rule(s) fail.`);
   if (floorsForAPerson.length > 0) return result('Meets floor', 'Every measured floor and rule holds. The grade "Crafted" waits for a person.');
-  return result('Crafted', 'Every floor and rule holds, those that a person checked among them.');
+  return result('Crafted', 'Every floor holds, those that a person checked among them, and no measured rule fails.');
 }
 
 /**

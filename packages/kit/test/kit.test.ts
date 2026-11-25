@@ -120,6 +120,8 @@ describe('grade', () => {
     expect(grade([...withPerson, fails('craft-a')], RULES).grade).toBe('Meets floor');
     expect(grade([...withPerson, fails('tell-a')], RULES).grade).toBe('Crafted');
     expect(grade(withPerson, RULES).grade).toBe('Crafted');
+    // Hinshitsu audit of WU-1: the reason claims nothing of a rule that no check measured.
+    expect(grade(withPerson, RULES).reason).toBe('Every floor holds, those that a person checked among them, and no measured rule fails.');
   });
   it('a finding under a rule id that no record holds gives "Not graded", and the receipt names it (review of 2026-11-18, F-19)', () => {
     const slip = grade([...allHold, holds('person-a'), fails('floor-a ')], RULES);
