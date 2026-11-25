@@ -827,3 +827,1015 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Report: `audits/WU1-language-E-72.md`
 
 21 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
+
+### E-73 · 2026-11-25T02:17:44Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-8
+- Class: BLOCKER
+- Where: see finding 1 of `audits/WU1-correctness-E-66.md`
+- Trigger: **BLOCKER, k3 only (C1, R2-F-1).** `repairPlan([[reflow fails], [reflow status "fixed"], []])` returns `stop: true` with no item and nothing still open; p7 keeps the item. An earlier round with an unknown status erases an open failed floor. Fix: line 87 as in p7.
+- Violates: as finding 1 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 1
+- Lens: correctness
+- Forward work stopped: yes — BLOCKER
+
+### E-74 · 2026-11-25T02:17:51Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-9
+- Class: BLOCKER
+- Where: see finding 2 of `audits/WU1-correctness-E-66.md`
+- Trigger: **BLOCKER, both (C1, R2-F-8).** The judge's input (2), `<button aria-label="&#x2800;">&#x2715;</button>` alone, still gives `controlsHaveNames: holds`. `behavior.ts` line 244 joins `aria-label` with the text before removing blank letters, so the "✕" counts as the name. The judge's other F-8 inputs …
+- Violates: as finding 2 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 2
+- Lens: correctness
+- Forward work stopped: yes — BLOCKER
+
+### E-75 · 2026-11-25T02:17:51Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-10
+- Class: FRAGILITY
+- Where: see finding 3 of `audits/WU1-correctness-E-66.md`
+- Trigger: **FRAGILITY, both (C3, not my duty).** No test guards line 87: k3 passes all 257 unit tests and all 420 browser tests with the fault of finding 1.
+- Violates: as finding 3 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 3
+- Lens: correctness
+- Forward work stopped: no
+
+### E-76 · 2026-11-25T02:17:51Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-11
+- Class: DEFECT
+- Where: see finding 4 of `audits/WU1-correctness-E-66.md`
+- Trigger: **DEFECT, both — second inputs of F-8.** SVG `<metadata>` text, undrawn SVG `<text>`, U+180E, U+034F, U+FE0F, U+E0020 and a private-use icon letter each count as a name.
+- Violates: as finding 4 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 4
+- Lens: correctness
+- Forward work stopped: no
+
+### E-77 · 2026-11-25T02:17:51Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-12
+- Class: DEFECT
+- Where: see finding 5 of `audits/WU1-correctness-E-66.md`
+- Trigger: **DEFECT, both — F-3.** A carousel moved by a data attribute, `aria-hidden`, a CSS variable on `<html>`, a radio's `.checked`, or a style-sheet rule passes both movement checks (`neuro.ts` line 392 watches 4 attributes on `body` only).
+- Violates: as finding 5 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 5
+- Lens: correctness
+- Forward work stopped: no
+
+### E-78 · 2026-11-25T02:17:51Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-13
+- Class: DEFECT
+- Where: see finding 6 of `audits/WU1-correctness-E-66.md`
+- Trigger: **DEFECT, both — F-4.** Endless SVG animations that start each other, and endless `::first-letter`, `::marker`, `::backdrop` animations hold; a paused animation that runs only on hover fails.
+- Violates: as finding 6 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 6
+- Lens: correctness
+- Forward work stopped: no
+
+### E-79 · 2026-11-25T02:17:52Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-14
+- Class: DEFECT
+- Where: see finding 7 of `audits/WU1-correctness-E-66.md`
+- Trigger: **DEFECT, both — F-2.** `white-space: nowrap` text cut by an `overflow: hidden` or `contain: paint` parent holds at 320 px (`neuro.ts` line 295 reads element boxes only).
+- Violates: as finding 7 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 7
+- Lens: correctness
+- Forward work stopped: no
+
+### E-80 · 2026-11-25T02:17:52Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-15
+- Class: DEFECT
+- Where: see finding 8 of `audits/WU1-correctness-E-66.md`
+- Trigger: **DEFECT, both — F-24.** Working pause controls are not seen (`input type="button"`, a labelled checkbox, "Pause banner", "Freeze the banner", Spanish "Pausar la animación"); a pause button inside a closed `details` counts.
+- Violates: as finding 8 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 8
+- Lens: correctness
+- Forward work stopped: no
+
+### E-81 · 2026-11-25T02:17:52Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-16
+- Class: DEFECT
+- Where: see finding 9 of `audits/WU1-correctness-E-66.md`
+- Trigger: **DEFECT, both — F-13 and C14-4.** Sound text blamed as filler: Spanish `TODO: pan, dulces y café`, Portuguese `TODO`, a firm named "Acme", "Unleash your dog", "The parcel goes here", "0113 555-0142".
+- Violates: as finding 9 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 9
+- Lens: correctness
+- Forward work stopped: no
+
+### E-82 · 2026-11-25T02:17:52Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-17
+- Class: DEFECT
+- Where: see finding 10 of `audits/WU1-correctness-E-66.md`
+- Trigger: **DEFECT, both — F-20.** Off-design colors hold in `::marker`, `::first-letter`, `-webkit-text-stroke`, `column-rule`, `border-image`, `drop-shadow`, SVG gradient stops, SVG `use`, `::selection`, `accent-color`; an off-design radius on a pseudo-element holds.
+- Violates: as finding 10 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 10
+- Lens: correctness
+- Forward work stopped: no
+
+### E-83 · 2026-11-25T02:17:52Z · FINDING · auditor: CORRECTNESS
+
+- ID: F-18
+- Class: FRAGILITY
+- Where: see finding 11 of `audits/WU1-correctness-E-66.md`
+- Trigger: **FRAGILITY, both — single narrow cases.** An SVG-drawn purple hero holds; a `visibility: hidden` spam trap is blamed; a decorative 300 px bullet is blamed as cut text; `grade` throws on a `null` finding; `fromPage` keeps U+0085.
+- Violates: as finding 11 of the report states
+- Raised by: AUDITOR, LAUNCH E-66, `audits/WU1-correctness-E-66.md`, finding 11
+- Lens: correctness
+- Forward work stopped: no
+
+### E-84 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-19
+- Class: BLOCKER
+- Where: `packages/kit/src/logic/judge.ts:87` in `audit/wu1-k3`.
+- Trigger: `repairPlan([[{ruleId:'neuro-no-autoplay',status:'fails',where:'p'}],[{ruleId:'neuro-no-autoplay',status:'fixed',where:'p'}],[]], KIT_RULES)`. K3 prints `{"stop":true,"reason":"Nothing was measured in the newest check, so there is nothing to repair and nothing is shown to hold.","open":[],"items":0…
+- Violates: C1 (second input of F-1 reproduces).
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 1
+- Lens: adversarial testing
+- Forward work stopped: yes — BLOCKER
+
+### E-85 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-20
+- Class: BLOCKER
+- Where: `packages/kit/src/page-checks/neuro.ts:286–298` (`noSidewaysScroll`).
+- Trigger: window 320 px wide, each alone: (a) `<article style="overflow:hidden"><div><pre>npm install --save-exact some-very-long-package-name@1.2.3 another-long-package-name@4.5.6 third@7</pre></div></article>`; (b) `<div style="overflow:hidden"><canvas width="900" height="100" aria-label="Chart"></canvas><…
+- Violates: C1.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 2
+- Lens: adversarial testing
+- Forward work stopped: yes — BLOCKER
+
+### E-86 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-21
+- Class: BLOCKER
+- Where: `packages/kit/src/page-checks/neuro.ts:23–60` (`noEndlessMotion`).
+- Trigger: each alone answers `holds`: `li::marker{animation:blink 1s infinite}`; `input::placeholder{animation:blink 1s infinite}`; `<animate href="#c" attributeName="r" values="10;40;10" dur="1s" repeatDur="indefinite"/>` inside `<defs>`; two `<animate>` that restart each other (`begin="0s;b.end"`, `begin="…
+- Violates: C1.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 3
+- Lens: adversarial testing
+- Forward work stopped: yes — BLOCKER
+
+### E-87 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-22
+- Class: BLOCKER
+- Where: `packages/kit/src/page-checks/behavior.ts:211–260` (`controlsHaveNames`).
+- Trigger: each alone answers `holds`: a button that holds only an svg with `<metadata><rdf:RDF>…<dc:format>image/svg+xml</dc:format>…</metadata>` (the form Inkscape exports); an svg with `<text display="none">icon-close-24</text>`; an svg with `<sodipodi:namedview>layer1</sodipodi:namedview>`; `aria-label="&…
+- Violates: C1.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 4
+- Lens: adversarial testing
+- Forward work stopped: yes — BLOCKER
+
+### E-88 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-23
+- Class: BLOCKER
+- Where: `packages/kit/src/page-checks/behavior.ts:85–130` (`focusIsVisible`); `packages/kit/src/logic/designId.ts` (`tidy`).
+- Trigger: (a) `<p>` + `'<a href="/x">x</a> '.repeat(20000)`, then `focusIsVisible(document)`: no answer after 120 s, in both versions (`out/atk-focus-p7.log`, `-k3.log`). 5,000 links need 28 to 30 s; 20,000 `<input>` need 26 s. (b) a token value nested 200,000 arrays deep: `designId` throws `RangeError: Maxi…
+- Violates: C1. The row R2-F-27 says fixed.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 5
+- Lens: adversarial testing
+- Forward work stopped: yes — BLOCKER
+
+### E-89 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-24
+- Class: BLOCKER
+- Where: `packages/kit/src/data/placeholders.ts:6–27` (`address line 1`, `service 1`); `packages/kit/src/page-checks/tells.ts:6–60`.
+- Trigger: `<table><tr><th scope="row">Address line 1</th><td>4 Mill Lane</td></tr></table>` fails with `the phrase "address line 1"`; `<p>Bus service 1 runs to the centre every ten minutes.</p><h2>Service 1</h2>` fails twice with `the phrase "service 1"`. At the base both pages hold (`out/atk-page-base.log`,…
+- Violates: C1.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 6
+- Lens: adversarial testing
+- Forward work stopped: yes — BLOCKER
+
+### E-90 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-25
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts:282–296`.
+- Trigger: at 320 px, (a) `<div style="overflow:hidden;height:120px"><img alt="" src="…" style="width:900px;height:120px;max-width:none"></div><p>Bread, baked each morning.</p>` fails `neuro-reflow` at `img`; (b) a carousel `<div style="overflow:hidden;width:100%"><div style="display:flex;width:900px"><p styl…
+- Violates: hard rule 13 of `CLAUDE.md` in effect (row R2-F-2 says fixed and names no such cost); the README limit "It skips parts placed outside the ordinary flow (a drawer, a slide)" is false for a slide in a flex row.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 7
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-91 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-26
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts:308–432` (`noScriptedMotion`; the observer filters attributes to `style`, `class`, `src`, `hidden` and watches `body` only).
+- Trigger: every 2 s a script (a) moves `data-on` from one slide to the next, with `#c p[data-on]{display:block}`; (b) sets `.checked` on the next radio button of a CSS carousel; (c) changes `sheet.cssRules[i].style.transform`; (d) sets a custom property on `<html>`; also `adoptedStyleSheets`, `img.srcset`, a…
+- Violates: C1 if the ORCHESTRATOR rules these the same fault as F-3 (a script-driven carousel that holds both checks); I class them apart because the mechanism differs from the two that F-3 names. In any case the README names only canvas and slow changes as limits, so its statement of limits is incomplete (ha…
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 8
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-92 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-27
+- Class: DEFECT
+- Where: `packages/kit/test/kit.test.ts`, design ID tests (the test `reads a value of many unclosed url( in little time…`, line 314).
+- Trigger: revert `1115cfd` in a scratch copy and run `npx vitest run packages/kit/test`. The run stood at 100 % of 1 processor for 21 min 45 s without a result, and I stopped it; a second run under `timeout` ended with exit code 124 and no test result (`out/rev-1115cfd-unit.log`, `out/rev-1115cfd-unit-one.lo…
+- Violates: C3(a) as worded ("names the test that then fails"): the run does not become red, it never ends. A CI job would end only at its own limit, with no test named.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 9
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-93 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-28
+- Class: DEFECT
+- Where: `packages/kit/test/kit.test.ts`, test `a status outside the four counts as "could not measure"…`: its `repairPlan` case puts the unknown status in the newest round only.
+- Trigger: `npm run check` in K3: 257 passed, exit 0 (`out/check-k3.log`), with the fault of finding 1 present.
+- Violates: C3 ("a test that fails without it") for the part of the F-1 repair that reads older rounds.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 10
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-94 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-29
+- Class: BLOCKER
+- Where: `vitest.config.ts:2`.
+- Trigger: command 7 above.
+- Violates: C3(e).
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 11
+- Lens: adversarial testing
+- Forward work stopped: yes — BLOCKER
+
+### E-95 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-30
+- Class: FRAGILITY
+- Where: `packages/kit/src/page-checks/neuro.ts:174–215` (`visibleLabels`), `behavior.ts:6–84` (`keyboardReachable`).
+- Trigger: `<form><div aria-hidden="true" style="height:1px"><input name="card" tabindex="-1" placeholder="Card number" style="height:30px"></div><br><br><button>Pay</button></form>`. The field is drawn, 30 px high, and takes a click. `visibleLabels`: `not-applicable`; `keyboardReachable`: `holds`. Cases F5-h…
+- Violates: the floors `neuro-visible-labels` and `behavior-keyboard-reach` as the README words them.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 12
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-96 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-31
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts:23–60`.
+- Trigger: each fails `moves without end`: `.x{animation:spin 1s linear infinite paused}`; `.x{animation:nothere 1s linear infinite}` with no such `@keyframes`; `@keyframes same{from{opacity:1}to{opacity:1}}`; an svg that holds one `<animate … repeatCount="3"/>` and one `<animate … repeatCount="indefinite" be…
+- Violates: the floor's own text (movement that cannot stop); a sound page drops to "Below floor".
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 13
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-97 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-32
+- Class: FRAGILITY
+- Where: `packages/kit/src/logic/judge.ts`, `sound()`.
+- Trigger: `grade([null], KIT_RULES)`: `TypeError: Cannot read properties of null (reading 'status')`; the same for `receipt` and `repairPlan`.
+- Violates: the intent of the F-1 repair (findings arrive as data); no CRITERION by itself.
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 14
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-98 · 2026-11-25T02:17:52Z · FINDING · auditor: ADVERSARIAL
+
+- ID: F-33
+- Class: STYLE
+- Where: `redteam/FINDINGS.md:107` (commits `1115cfd` and `7a345e2`).
+- Trigger: read the row.
+- Violates: the letter of C3 ("Each repair under C1 is 1 commit").
+- Raised by: AUDITOR, LAUNCH E-67, `audits/WU1-adversarial-E-67.md`, finding 15
+- Lens: adversarial testing
+- Forward work stopped: no
+
+### E-99 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-34
+- Class: BLOCKER
+- Where: `PROGRESS.md` line 36 ("a receipt in three lists that never mix"); the same count in `packages/kit/test/kit.test.ts` line 220 (test title "keeps the three lists apart") and `packages/kit/README.md` line 54 (comment "measured / not measured / a person must still check").
+- Trigger: `grep -n "three lists" PROGRESS.md packages/kit/test/kit.test.ts` and `grep -n "four lists" packages/kit/src/logic/judge.ts`. The unit added `byAPerson` to `Receipt` and changed the comment at `judge.ts` line 135 to "The four lists never mix"; the 3 other places still say three.
+- Violates: C7 (a number that describes the kit in `PROGRESS.md` does not equal the code).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 1
+- Lens: forensic 5S
+- Forward work stopped: yes — BLOCKER
+
+### E-100 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-35
+- Class: BLOCKER
+- Where: `PROGRESS.md` line 44 ("the judge confirmed 9 major and 23 minor findings"); `redteam/FINDINGS.md` line 107 (row R2-F-27, class "minor").
+- Trigger: command 11: the judge report says "8 major, 24 minor, 2 notes" and rates F-27 "minor at the pin". E-60 makes F-27 major on the confirmed list. `PROGRESS.md` gives the judge the count 9 and 23 and leaves out the 2 notes; the row R2-F-27 says "minor". The 3 records give 3 different readings of 1 fact.
+- Violates: C7; the class of R2-F-27 also bears on C1 (its row must show the class major).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 2
+- Lens: forensic 5S
+- Forward work stopped: yes — BLOCKER
+
+### E-101 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-36
+- Class: DEFECT
+- Where: `packages/kit/src/logic/judge.ts` line 25 (comment of `grade`: "The grade covers only what programs measured.") and line 170 (`Grade of the measured part:`).
+- Trigger: command 13: after a person's answer the receipt prints "Grade of the measured part: Crafted. Every floor and rule holds, those that a person checked among them." Since D59 a person's answer enters the grade, so both texts are false.
+- Violates: rule 14.6 as the glossary states it under DEFECT (a false statement in the DELIVERABLE); hard rule 13 of `CLAUDE.md`.
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 3
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-102 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-37
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts` line 408, against lines 51-52 and 398-399.
+- Trigger: read the 3 failures of `noScriptedMotion`. The unit added the constants `required` and `fix` and uses them for the scroll and the animation failure. The third failure (a script changes a part) keeps its own literal with the old advice: "…add a visible button that pauses it and mark it with data-pau…
+- Violates: the scope's hunt list (copy-paste drift).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 4
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-103 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-38
+- Class: DEFECT
+- Where: `packages/kit/src/page-checks/neuro.ts` lines 31-32 (comments left above the new `hasPause`).
+- Trigger: read lines 31-36. "Only a visible button that the builder marked for this job counts. A label that merely holds the word 'stop' does not" stands directly above the new comment and the code that accept a button by its name alone.
+- Violates: the glossary's DEFECT (a false statement in the DELIVERABLE).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 5
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-104 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-39
+- Class: DEFECT
+- Where: `packages/kit/src/data/brief.ts` lines 50-51.
+- Trigger: command 13. The comment says words beyond 40 letters "are reported by the schema and not searched for"; the filter keeps words up to 200 letters, so a 50-letter word is reported by the schema and searched for as well.
+- Violates: the scope's hunt list (hardcoded value that does not match its comment and the schema's `words(2, 40)`).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 6
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-105 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-40
+- Class: DEFECT
+- Where: `apps/studio/e2e/kit.e2e.ts` lines 891-893.
+- Trigger: read the lines. The comment says "digits of unequal width fail", and no assertion checks that. The only case is `cell('monospace')`, which the old test `/mono|courier/i` already passed, so the new `equalByNature` (`page-checks/craft.ts`) is never reached by this test. `grep -n equalByNature apps/st…
+- Violates: the scope's hunt list (a name that does not match what the thing does). It bears on C3 only if the repair of KIT-28 counts under C1.
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 7
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-106 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-41
+- Class: DEFECT
+- Where: `DECISIONS.md` line 75 (row D63); `docs/owner-instructions.md`.
+- Trigger: commands 8 and 9. Row D63 has 4 cells where every other row has 5: the last column (who decided) is missing. D63 quotes 3 statements of the owner ("First, please use Hinshitsu." and 2 more); `docs/owner-instructions.md` has a row for each owner statement up to D62 and none for these.
+- Violates: hard rule 2 of `CLAUDE.md` (the approval is recorded) in form; the glossary's DEFECT (an out-of-date record).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 8
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-107 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-42
+- Class: DEFECT
+- Where: `packages/kit/src/data/craft.ts` line 6, `fit.ts` line 4, `neuro.ts` line 11, `states.ts` line 8 (`const reviewed = '2026-11-18'`).
+- Trigger: the unit changed 10 records on 2026-11-24 (9 evidence grades, the text of `neuro-motion-can-stop`, `appliesWhen` of `neuro-no-surprise`); each still carries the review date 2026-11-18.
+- Violates: hard rule 5 of `CLAUDE.md` (a record carries a review date); UNVERIFIED whether the project means the date of the last change, so the ORCHESTRATOR may rule this STYLE.
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 9
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-108 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-43
+- Class: FRAGILITY
+- Where: `packages/kit/src/page-checks/behavior.ts` line 63 and `neuro.ts` line 188 (2 copies of `unmet`); the 4 tests of "is this `::before` drawn" in `behavior.ts` line 114, `fit.ts` line 126, `neuro.ts` line 62, `tells.ts` line 112.
+- Trigger: read the copies side by side. The copy in `neuro.ts` has a third condition (the Tab order) and the copy in `behavior.ts` does not; `behavior.ts` falls back on the global `window` (line 67) where every other line uses `doc.defaultView`. The 4 pseudo-element tests differ: `content` "none" only (`tell…
+- Violates: the scope's hunt list (2 copies of 1 thing that no longer match). It fails when the next repair changes 1 copy only; no test compares the copies, as one does for the placeholder lists.
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 10
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-109 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-44
+- Class: FRAGILITY
+- Where: `packages/kit/src/page-checks/behavior.ts` line 287 (`.slice(0, 200)`, `.slice(0, 50)`); `neuro.ts` lines 36 and 315 (`.slice(0, 2000)`).
+- Trigger: read the lines. `dialogsAreMarked` reads at most 200 neighbors and 50 parts inside each; `hasPause` reads the first 2,000 buttons. Beyond the cap the check answers "holds" or "fails" as if it had read all, where `targetSize` (line 158) says "could not measure".
+- Violates: the scope's hunt list (hardcoded values); it fails on a larger page.
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 11
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-110 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-45
+- Class: FRAGILITY
+- Where: `packages/kit/test/kit.test.ts` lines 318, 344, 437, 443; `apps/studio/e2e/kit.e2e.ts` lines 263 and 930.
+- Trigger: read the lines. 6 assertions compare wall-clock time with a bare number (2,000 to 40,000 ms). They passed here; on a slower or loaded machine they fail with no fault in the code.
+- Violates: the scope's hunt list (hardcoded values); glossary BLOCKER (f) would apply only if a run gave 2 results, which I did not observe.
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 12
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-111 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-46
+- Class: FRAGILITY
+- Where: `scripts/audit.mjs` lines 66 and 71.
+- Trigger: command 12. An exception matches an advisory by ID and package (line 66); the test for a dead exception matches by ID alone (line 71). An exception with the right ID and the wrong package excepts nothing and is never reported as dead.
+- Violates: the file's own comment, lines 15-17 ("An exception whose advisory no longer appears also fails").
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 13
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-112 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-47
+- Class: STYLE
+- Where: `packages/kit/src/logic/judge.ts` line 109 (`?? 'Make this rule hold.'`); `page-checks/behavior.ts` line 166 (`?? measure(el)`).
+- Trigger: read the lines. Both fallbacks cannot run: `plain` is a required field of a record that `record.has` just found, and every element of `targets` is in `boxes`.
+- Violates: the scope's hunt list (dead code).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 14
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-113 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-48
+- Class: STYLE
+- Where: `packages/kit/src/logic/judge.ts` lines 13-18 and line 46.
+- Trigger: read them; command 13. The comment block that explains `sound` sits above the constant `UNKNOWN_STATUS`. The reason "N finding(s) name a rule…" counts rule ids, not findings: 3 findings under 1 unknown id print "1 finding(s)".
+- Violates: the scope's hunt list (names that do not match).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 15
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-114 · 2026-11-25T02:17:52Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-49
+- Class: STYLE
+- Where: `packages/kit/src/page-checks/fit.ts` lines 80, 113, 122, 130; `behavior.ts` line 106; `tells.ts` line 120. Also `brief.ts` line 12 and `placeholders.ts` line 28; `tells.ts` lines 51 and 54; `behavior.ts` lines 100-104.
+- Trigger: `grep -n "oklab|oklch|color)" -r packages/kit/src/page-checks`. The pattern that finds a color in a text is written out 6 times, 4 of them inside `tokenFit`; the cap beside it is 2,000 letters in 5 places and 4,000 in `tells.ts`. The pattern that escapes a phrase is written twice. `tells.ts` works …
+- Violates: the scope's hunt list (copy-paste, hardcoded values).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 16
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-115 · 2026-11-25T02:17:53Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-50
+- Class: STYLE
+- Where: `packages/kit/src/page-checks/behavior.ts` line 316 (`nextTells`); `tells.ts` line 5; `neuro.ts` lines 184-190.
+- Trigger: read them. `nextTells` is also true for the paragraph before the list. The comment of `placeholderCopy` says "The list must equal PLACEHOLDER_PHRASES"; there are now 3 lists, and the test compares all 3. In `unmet`, "Both signs are needed" is followed by "A third sign is needed".
+- Violates: the scope's hunt list (names and comments that do not match).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 17
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-116 · 2026-11-25T02:17:53Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-51
+- Class: STYLE
+- Where: `packages/kit/src/page-checks/behavior.ts` line 90; `apps/studio/e2e/kit.e2e.ts` lines 637-652 and line 869; `craft.ts` lines 126 and 201.
+- Trigger: read them. The comment at `behavior.ts` line 90 starts in column 1 inside a function. 16 lines of the test "automated review, round 9" are indented 4 spaces where the block has 6, and the test at line 869 has no blank line before it. `oneTypeScale` and `layoutShift` write the element-name pattern o…
+- Violates: the scope's hunt list (sloppiness of form). Lint passes, because no formatter runs in `npm run check`.
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 18
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-117 · 2026-11-25T02:17:53Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-52
+- Class: STYLE
+- Where: `apps/studio/e2e/kit.e2e.ts` lines 374, 386, 662 (`gif`, 2 different pictures under 1 name); 528 and 534 (`turn`); 746 and 763 (`track`); the list of the 3 person-only floors written twice in 1 test (lines 94-95); `packages/kit/test/kit.test.ts` line 508.
+- Trigger: read them. The same constant is pasted into neighboring tests. The README test stands inside `describe('walks')`. Test titles name their source in 5 forms ("second review, F-5", "second review F-5", "F-33:", "C14-8, C14-9:", "automated review, round 9"), and a bare "F-24" means the first review in …
+- Violates: the scope's hunt list (copy-paste; names).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 19
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-118 · 2026-11-25T02:17:53Z · FINDING · auditor: FORENSIC 5S
+
+- ID: F-53
+- Class: STYLE
+- Where: `package.json` line 25 (`"audit:deps"`).
+- Trigger: command 10. Nothing calls the script: CI runs `node scripts/audit.mjs` directly, and no record names it.
+- Violates: the scope's hunt list (a thing that nothing references).
+- Raised by: AUDITOR, LAUNCH E-68, `audits/WU1-forensic-5s-E-68.md`, finding 20
+- Lens: forensic 5S
+- Forward work stopped: no
+
+### E-119 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-54
+- Class: BLOCKER
+- Where: `vitest.config.ts` line 2 (commit `f2ef274`).
+- Trigger: `git diff 9e50434..183c166 -- vitest.config.ts vitest.e2e.config.ts | grep -E "^[-+].*(include|exclude)"` prints: ``` -export default defineConfig({ test: { include: ['packages/**/test/**/*.test.ts'], environment: 'node' } }); +export default defineConfig({ test: { include: ['packages/**/test/**/*.…
+- Violates: C3(e).
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 1
+- Lens: best practices
+- Forward work stopped: yes — BLOCKER
+
+### E-120 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-55
+- Class: DEFECT
+- Where: `packages/kit/src/logic/judge.ts` line 50; also the comment at line 25 and the heading at line 170.
+- Trigger: `grade()` with a finding `holds` for each of the 16 floors and no finding for any other rule (probe P1). Output: `grade=Crafted reason=Every floor and rule holds, those that a person checked among them.` 26 rules that a program checks had no finding. At the base the sentence was "Every **measured**…
+- Violates: `CLAUDE.md` hard rule 13 ("Report outcomes faithfully") and the defined term "Honest receipt"; C7 in spirit (a status that describes the kit). No CRITERION names this sentence.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 2
+- Lens: best practices
+- Forward work stopped: no
+
+### E-121 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-56
+- Class: DEFECT
+- Where: `packages/kit/src/shapes.ts` line 2 (added); `packages/kit/README.md` lines 45–50 (changed in this unit); `apps/studio/e2e/kit.e2e.ts` `runAll` and `runAllWithReflow` (lines 29–44).
+- Trigger: probe P5 prints the order of `Object.keys(checks)`: `… unseenParts, keyboardReachable, focusIsVisible, targetSize, controlsHaveNames, dialogsAreMarked, …, tokenFit`. The README loop and both helpers use that order. The README does not hold the word `focusIsVisible` (`grep -n -i focusIsVisible packa…
+- Violates: `CLAUDE.md`, "Writing style for anything the owner reads" (state what can go wrong) and hard rule 13; the README is the document a RECIPIENT follows (C15).
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 3
+- Lens: best practices
+- Forward work stopped: no
+
+### E-122 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-57
+- Class: DEFECT
+- Where: `packages/kit/src/logic/designId.ts` line 16; comment at line 8; test comment "A value that is not text is read as its text, and does not throw" in `packages/kit/test/kit.test.ts`.
+- Trigger: probe P2: `designId({ t: { a: 1n } })` → `TypeError: Do not know how to serialize a BigInt`; a value that holds itself → `TypeError: Converting circular structure to JSON`.
+- Violates: TypeScript practice: a parameter typed `unknown` promises to handle any value; the function's own comment.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 4
+- Lens: best practices
+- Forward work stopped: no
+
+### E-123 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-58
+- Class: FRAGILITY
+- Where: `packages/kit/src/page-checks/behavior.ts` line 67: `(view ?? window).getComputedStyle(at)`; line 68 `view?.scrollY ?? 0`.
+- Trigger: read. Every other check in the 5 files takes the window from `doc.defaultView` and returns `could-not-measure` ("the page has no window") when there is none (e.g. `behavior.ts` line 88). Here a document with no window falls through to a global that need not exist, and the check throws a `ReferenceE…
+- Violates: the convention of the surrounding file; `shapes.ts` line 2 ("works on one page").
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 5
+- Lens: best practices
+- Forward work stopped: no
+
+### E-124 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-59
+- Class: FRAGILITY
+- Where: `behavior.ts` line 114 (content matches `none|normal|""|''`, or `display: none`, or not visible, or opacity 0); `fit.ts` lines 124–126 (`none` or `normal`, `display`, `visibility !== 'visible'`); `neuro.ts` lines 60–62 (`none`, `normal`, `display`, `visibility !== 'hidden'`); `tells.ts` line 112 (`…
+- Trigger: read. All 4 are added in this unit. `tells.ts` alone does not treat `content: normal` as "not drawn". I did not run a browser other than Chromium 1255, so whether another browser reports `normal` there is UNVERIFIED; the fragility named is "another browser".
+- Violates: one concept, one test (the spirit of `CLAUDE.md` "one term per concept"); maintainability.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 6
+- Lens: best practices
+- Forward work stopped: no
+
+### E-125 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-60
+- Class: STYLE
+- Where: `/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi` at `fit.ts` lines 80, 113, 122, 130 (4 times inside the one function `tokenFit`), `behavior.ts` line 106, `tells.ts` line 120.
+- Trigger: `grep -n "oklab|oklch|color)" packages/kit/src/page-checks/*.ts` prints those 6 lines.
+- Violates: common TypeScript practice (name a repeated literal once). Copies across functions are forced by the convention that each check is one self-contained function; the 4 copies inside `tokenFit` are not.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 7
+- Lens: best practices
+- Forward work stopped: no
+
+### E-126 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-61
+- Class: FRAGILITY
+- Where: `packages/kit/test/kit.test.ts` lines 318 (`< 2000` ms, `Date.now()`), 344 (`< 5000`), 437 and 443 (`< 3000`, `performance.now()`); `apps/studio/e2e/kit.e2e.ts` lines 263 (`< 40000`) and 930 (`< 10_000`).
+- Trigger: read; on this machine all pass with a wide margin (the e2e test of line 263 took 1,637 ms; that of line 930 took 531 ms). Change that breaks them: a slower or busier machine (a CI runner under load). The suite has shown one unexplained red run before (KIT-41).
+- Violates: Vitest practice: a test's time limit belongs in the test's timeout, and a speed claim in a benchmark; a clock assertion makes the same check give 2 results on 2 machines.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 8
+- Lens: best practices
+- Forward work stopped: no
+
+### E-127 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-62
+- Class: FRAGILITY
+- Where: `apps/studio/e2e/kit.e2e.ts` lines 264, 525, 531, 553 (`60000`) and 743, 760, 777 (`60_000`); default `testTimeout: 90_000` in `vitest.e2e.config.ts`.
+- Trigger: read, and run 4: "second review F-3: a carousel that a script scrolls…" took 33,212 ms, of which 33 s is fixed waiting (3 pages × 11 s); "F-3: one scroll…" took 22,299 ms. The limit reads like a raise and is in fact a cut of 30 s. The base file did the same in 3 tests, so this follows a habit of th…
+- Violates: nothing in C3(d) (no limit is above 120,000 ms). Vitest practice: pass a per-test timeout only to raise it.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 9
+- Lens: best practices
+- Forward work stopped: no
+
+### E-128 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-63
+- Class: FRAGILITY
+- Where: `packages/kit/src/page-checks/neuro.ts` lines 36 and 315: `.slice(0, 2000)` on the buttons searched for a pause control. Compare `behavior.ts` line 157: `MOST = 3000`, above which `targetSize` returns `could-not-measure`.
+- Trigger: read. On a page with more than 2,000 buttons whose pause button comes later in the page, the motion floor fails with no word that the search stopped. Not run in a browser: UNVERIFIED as a reproduction. The 15 lines that define `hasPause` are also identical in both functions (`diff` of lines 36–50 a…
+- Violates: the kit's own rule that a check which did not look says so (`could-not-measure`; README "What can go wrong").
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 10
+- Lens: best practices
+- Forward work stopped: no
+
+### E-129 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-64
+- Class: FRAGILITY
+- Where: `packages/kit/src/page-checks/neuro.ts` line 388: `animation.constructor.name === 'Animation'`.
+- Trigger: read; passes in Chromium 1255 (run 3). Change that breaks it: a page or tool that subclasses `Animation`, or a bundler that renames classes in the page.
+- Violates: documented platform practice (MDN, Web Animations API): test with `instanceof CSSAnimation` and `instanceof CSSTransition`.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 11
+- Lens: best practices
+- Forward work stopped: no
+
+### E-130 · 2026-11-25T02:17:53Z · FINDING · auditor: BEST PRACTICES
+
+- ID: F-65
+- Class: STYLE
+- Where: see finding 12 of `audits/WU1-best-practices-E-69.md`
+- Trigger: Small matters of form in the added lines - **Class:** STYLE (5 items, 1 finding). - **Where and trigger:** 1. `packages/kit/src/data/brief.ts` lines 50–51: the comment says words longer than the Brief allows are "not searched for"; the filter admits words up to 200 letters, and the schema's limit i…
+- Violates: `CLAUDE.md` "One term per concept"; the conventions of the files around the change.
+- Raised by: AUDITOR, LAUNCH E-69, `audits/WU1-best-practices-E-69.md`, finding 12
+- Lens: best practices
+- Forward work stopped: no
+
+### E-131 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-66
+- Class: BLOCKER
+- Where: `packages/kit/README.md`, section "How to use it", lines 36-60; also line 64.
+- Trigger: `grep -n -i walk packages/kit/README.md` prints lines 17, 34 and 64 only. A builder session that follows the example gets "Not graded" for a sound page (run 3), reads in line 64 that the window walk must run, and finds no name to import and no statement that it must write the runner. The answer exi…
+- Violates: C15 (a), second half.
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 1
+- Lens: recipient experience
+- Forward work stopped: yes — BLOCKER
+
+### E-132 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-67
+- Class: DEFECT
+- Where: `packages/kit/README.md` line 60 ("Playwright's own, Vitest, or `tsx`"), with lines 40 and 48.
+- Trigger: (i) `npx tsx recipient/readme-example.ts`, versions 4.20.6 and 4.23.15: `page.evaluate: ReferenceError: __name is not defined at balancedHeadings` (runs 2 and 2b). My reading of the cause, not tested further: `tsx` rewrites named inner functions to call a helper `__name`; line 48 sends the function…
+- Violates: C15 (the builder session cannot use the example as told); C7 by its sense (a statement about the kit that a command contradicts).
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 2
+- Lens: recipient experience
+- Forward work stopped: no
+
+### E-133 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-68
+- Class: DEFECT
+- Where: `packages/kit/README.md` lines 44 and 48.
+- Trigger: `npx tsc -p recipient/tsconfig.json` (the settings of `tsconfig.e2e.json`): `TS2488: Type 'unknown' must have a '[Symbol.iterator]()' method` and `TS7053: ... expression of type 'string' can't be used to index type 'typeof import(".../page-checks/index")'` (run 4). A builder session that puts the e…
+- Violates: C15 (the builder session).
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 3
+- Lens: recipient experience
+- Forward work stopped: no
+
+### E-134 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-69
+- Class: DEFECT
+- Where: `pr9-text.md` line 10 (table header) and line 12 (34 of 34); `PROGRESS.md` line 44 ("57 are repaired, each with a test"); against `redteam/FINDINGS.md` row R2-F-31.
+- Trigger: `grep "^| R2-F-31 " redteam/FINDINGS.md` ends: "Fixed 2026-11-24: the three bullets of `PROGRESS.md` are marked as history ... No test: these are records." The owner's list from the pull request says 57 repairs with a test; the log holds 56 (`grep "^| R2-" redteam/FINDINGS.md | grep -c "No test"` p…
+- Violates: C15 (b); C7.
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 4
+- Lens: recipient experience
+- Forward work stopped: no
+
+### E-135 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-70
+- Class: DEFECT
+- Where: `PROGRESS.md` line 44 ("the judge confirmed 9 major and 23 minor findings, no blocker"); judge report line 28 ("63 attempts confirmed, merged into 34 findings: 8 major, 24 minor, 2 notes. No blocker.") and line 380 ("F-27 | minor at the pin"); `redteam/FINDINGS.md` line 107 (R2-F-27, severity "mino…
+- Trigger: `grep "^| R2-F-" redteam/FINDINGS.md`, severity cell: 14 rows start with "major", 18 "minor", 2 "note". Of the 14, 8 are plain "major" (R2-F-1 to 6, 8, 9) and 6 say "major (the judge: minor; the review from zero rated ...)" (R2-F-7, 13, 20, 22, 23, 24). R2-F-27 is "minor" with no such note. So no c…
+- Violates: C7 (a number in `PROGRESS.md` that no command prints); it bears on C1, which is decided by class. I did not run C1 or C7 as a whole.
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 5
+- Lens: recipient experience
+- Forward work stopped: no
+
+### E-136 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-71
+- Class: DEFECT
+- Where: `pr9-text.md` lines 16-17; `redteam/FINDINGS.md` lines 33, 37, 74, 76, 77, 78.
+- Trigger: The script's output (`b1-findings-r2-rows.txt`) shows: KIT-01 "Open: the commits stay in the history"; KIT-05 "Open in part: Not repaired in code"; KIT-42 "Decided (D59 ...) Open until then"; KIT-44 "Open: the builder did not record the command"; KIT-45 "Open (notes)"; KIT-46 "Open: a further revie…
+- Violates: C15 (b); C7 (status of the rows `KIT-*`).
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 6
+- Lens: recipient experience
+- Forward work stopped: no
+
+### E-137 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-72
+- Class: BLOCKER
+- Where: judge report, section 7, lines 450-463 (12 bullets, 15 attempt IDs); `redteam/FINDINGS.md`; `PROGRESS.md`; `pr9-text.md`.
+- Trigger: `for b in B-014 B-079 B-113 B-001 B-042 B-092 B-019 B-099 B-006 B-049 B-093 B-120 B-080 B-044 B-013; do grep -c "$b" redteam/FINDINGS.md PROGRESS.md; done` prints 0 for each ID in each file. `grep -n -i "section 7" redteam/FINDINGS.md` prints nothing. The pull request says "For the owner to decide:…
+- Violates: C2; C15 (b) (the owner's list of what the owner decides cannot hold items that no record names).
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 7
+- Lens: recipient experience
+- Forward work stopped: yes — BLOCKER
+
+### E-138 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-73
+- Class: STYLE
+- Where: `packages/kit/README.md` lines 52-64.
+- Trigger: `grep -n "good.html" packages/kit/README.md` prints nothing; the fixture appears only as "one built with care" (line 20). The builder session must combine line 64 with the example to know that "Not graded" is the right answer and not a fault of its setup.
+- Violates: C15 (a) by its wording ("the grade the README states for it"); no result changes.
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 8
+- Lens: recipient experience
+- Forward work stopped: no
+
+### E-139 · 2026-11-25T02:17:53Z · FINDING · auditor: RECIPIENT EXPERIENCE
+
+- ID: F-74
+- Class: STYLE
+- Where: output of `receiptText(receipt(findings, KIT_RULES))`, list "MEASURED BY A PROGRAM", lines 2 and 3 (`a3-vitest-good.log` lines 38-39).
+- Trigger: Run 3. "Anything that moves for more than five seconds has a visible button that pauses it. ..." appears once with "Holds." and once with "Holds (found: ‹no repeated change in 11 s›)." The receipt does not say which check gave which line.
+- Violates: nothing in the CRITERIA; the builder session reads a doubled line.
+- Raised by: AUDITOR, LAUNCH E-70, `audits/WU1-recipient-experience-E-70.md`, finding 9
+- Lens: recipient experience
+- Forward work stopped: no
+
+### E-140 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-75
+- Class: BLOCKER
+- Where: `redteam/FINDINGS.md` (whole file); judge report section 7, lines 450–463.
+- Trigger: `for id in B-014 B-079 B-113 B-001 B-042 B-092 B-019 B-099 B-006 B-049 B-093 B-120 B-080 B-044 B-013; do echo "$id $(grep -c -- "$id" redteam/FINDINGS.md)"; done` prints 0 for all 15 IDs. Searches for the items' words ("section 7", "blindScore", "U+202E", "lazyloading", "59 detector") find no `R2-*…
+- Violates: C2.
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 1
+- Lens: framework drift
+- Forward work stopped: yes — BLOCKER
+
+### E-141 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-76
+- Class: BLOCKER
+- Where: `redteam/FINDINGS.md` line 111 (`R2-F-31`); `PROGRESS.md` line 44; `evidence/pr9-text.md` lines 10–12.
+- Trigger: ``grep -E "^\| *R2-" redteam/FINDINGS.md | grep -vE "commit \`[0-9a-f]{7}\`" | cut -c1-12`` prints `| R2-F-31 |`. The row says "Fixed 2026-11-24 … No test: these are records." and names no commit. `grep -c "with a test"` over the `R2-*` rows prints 56. `PROGRESS.md` says "57 are repaired, each with…
+- Violates: C2 ("repaired with its commit"); C7 (number does not equal the command's output).
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 2
+- Lens: framework drift
+- Forward work stopped: yes — BLOCKER
+
+### E-142 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-77
+- Class: BLOCKER
+- Where: `PROGRESS.md` line 44; `redteam/FINDINGS.md` line 107 (`R2-F-27`).
+- Trigger: (a) `PROGRESS.md` says "the judge confirmed 9 major and 23 minor findings". Judge report line 28: "63 attempts confirmed, merged into 34 findings: 8 major, 24 minor, 2 notes." The 9 comes from the rule in the terms of E-60 (F-27 counts as major), not from the judge; the 2 notes are left out. (b) Th…
+- Violates: C7; rule 14.6 for the row's class.
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 3
+- Lens: framework drift
+- Forward work stopped: yes — BLOCKER
+
+### E-143 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-78
+- Class: BLOCKER
+- Where: `vitest.config.ts` line 1.
+- Trigger: `git diff 9e50434..183c166 -- vitest.config.ts vitest.e2e.config.ts | grep -E "^[-+].*(include|exclude)"` prints 2 lines: the `include` list gains `'scripts/test/**/*.test.mjs'`. C3 (e) says the command "prints nothing". The change adds tests and removes none.
+- Violates: C3 (e).
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 4
+- Lens: framework drift
+- Forward work stopped: yes — BLOCKER
+
+### E-144 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-79
+- Class: DEFECT
+- Where: `FRAMEWORK.md` line 46; `DECISIONS.md` line 75 (D63); `docs/owner-instructions.md` lines 40–43.
+- Trigger: `FRAMEWORK.md` 46 says "the run adds no decision record of the repository" and removes `DECISIONS.md` from the ownership table. WU-1 adds D63, a decision about this run, and my scope names `DECISIONS.md` as part of WU-1. So the file has no owner and no reviewer in the framework. Also: `sed -n 75p D…
+- Violates: rule 14.6 (false statement in `FRAMEWORK.md`); C7 (status of a record row); the repository's hard rule 2 (approval recorded).
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 5
+- Lens: framework drift
+- Forward work stopped: no
+
+### E-145 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-80
+- Class: DEFECT
+- Where: `FRAMEWORK.md` lines 17, 52, 53, 55.
+- Trigger: (a) Lines 52–53 split the work into WU-1 (`packages/kit` and its browser test) and WU-2 (the records), both "pending". My scope and E-64 define 1 WORK UNIT, WU-1, that holds the records too, and it is under audit, not pending. (b) Lines 52–53 name `memos/lens-recipient-experience-WU-1.md` and `memo…
+- Violates: rule 14.6; the form rule in `FRAMEWORK.md` line 3 (a superseded line is marked and stays).
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 6
+- Lens: framework drift
+- Forward work stopped: no
+
+### E-146 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-81
+- Class: DEFECT
+- Where: `FRAMEWORK.md` sections 4 to 6 (lines 28–53); `CONNECTIONS.md` lines 8–48.
+- Trigger: `git diff --stat 9e50434..183c166 -- . ':!hinshitsu'` lists 32 files. These parts of WU-1 appear in no contract, ownership row, node or edge: `.github/workflows/ci.yml`, `package.json`, `scripts/audit.mjs`, `scripts/test/audit.test.mjs`, `vitest.config.ts`, `apps/studio/e2e/studio.e2e.ts` (3 lines)…
+- Violates: the scope's duty "parts of the work that the framework does not record"; rule 14.6.
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 7
+- Lens: framework drift
+- Forward work stopped: no
+
+### E-147 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-82
+- Class: DEFECT
+- Where: `FRAMEWORK.md` line 32; `CONNECTIONS.md` lines 16, 39, 42.
+- Trigger: The framework says `index.ts` provides "the page checks" and draws the edge page-checks → `index.ts` ("an exported check is absent or renamed"). `grep -n "^export" packages/kit/src/index.ts` shows 13 exports, none from `page-checks/`; lines 1–2 of the file say the page checks "are imported from the…
+- Violates: rule 14.6.
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 8
+- Lens: framework drift
+- Forward work stopped: no
+
+### E-148 · 2026-11-25T02:17:53Z · FINDING · auditor: FRAMEWORK DRIFT
+
+- ID: F-83
+- Class: DEFECT
+- Where: `FRAMEWORK.md` line 52 ("1 commit per repair with its test").
+- Trigger: The loop in `commands-and-outputs.md` (commits of `9e50434..183c166` that change `packages/kit/src/` and neither `kit.e2e.ts` nor `packages/kit/test/`) prints 6 of 104 commits: `786f1f7`, `06795d2`, `fe756aa`, `cb8d768`, `d3e409e`, `37b7c53`. 5 of them are repairs after the automated review. I did …
+- Violates: `FRAMEWORK.md` section 6 as written; C3 touches the same point for repairs under C1 (not my duty; UNVERIFIED by me).
+- Raised by: AUDITOR, LAUNCH E-71, `audits/WU1-framework-drift-E-71.md`, finding 9
+- Lens: framework drift
+- Forward work stopped: no
+
+### E-149 · 2026-11-25T02:17:53Z · FINDING · auditor: LANGUAGE
+
+- ID: F-84
+- Class: BLOCKER
+- Where: `PROGRESS.md`, line 44: "the judge confirmed 9 major and 23 minor findings, no blocker".
+- Trigger: `sed -n '28p' hinshitsu/kit-repairs/evidence/second-review/judge-report.md` prints "63 attempts confirmed, merged into 34 findings: 8 major, 24 minor, 2 notes. No blocker." The bullet gives 9 and 23, leaves out the 2 notes, and its sum is 32, while the next sentences and the text of pull request 9 …
+- Violates: C7 (a number that describes the kit in `PROGRESS.md` differs from what a command prints). Adams: conflict between 2 statements.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 1
+- Lens: contract language
+- Forward work stopped: yes — BLOCKER
+
+### E-150 · 2026-11-25T02:17:53Z · FINDING · auditor: LANGUAGE
+
+- ID: F-85
+- Class: BLOCKER
+- Where: `hinshitsu/kit-repairs/evidence/pr9-text.md`, lines 10 and 12 (column "Repaired, each with a test", value 34 for `R2-F-*`); `PROGRESS.md`, line 44: "57 are repaired, each with a test".
+- Trigger: `grep 'R2-' redteam/FINDINGS.md | grep -c 'with a test'` prints 56; `grep 'R2-' redteam/FINDINGS.md | grep -c 'No test'` prints 1. Row R2-F-31 (line 111) says: "No test: these are records." So 33 of the judge's rows have a test, not 34, and 56 of all rows, not 57.
+- Violates: C7; C15(b) (the list a reader draws from the text of the pull request does not equal `redteam/FINDINGS.md`). Adams: conflict between 2 statements.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 2
+- Lens: contract language
+- Forward work stopped: yes — BLOCKER
+
+### E-151 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-86
+- Class: BLOCKER
+- Where: `redteam/FINDINGS.md`, line 111, row R2-F-31, cell "Status": "Fixed 2026-11-24: the three bullets of `PROGRESS.md` are marked as history …".
+- Trigger: ``grep 'R2-' redteam/FINDINGS.md | grep -v 'commit `' | cut -c1-12`` prints `| R2-F-31 |`. It is the 1 row of the 57 repaired rows that names no commit. C2 asks each row to state "repaired with its commit". The file's own head (line 9) defines "Fixed" as "the cell names the commit", and gives anoth…
+- Violates: C2, by its statement. The test that C2 names (0 rows missing) does not catch this; the ORCHESTRATOR rules whether the statement or the test governs. Adams: inconsistency (the word "Fixed" used against its definition).
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 3
+- Lens: contract language
+- Forward work stopped: yes — BLOCKER
+
+### E-152 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-87
+- Class: DEFECT
+- Where: `redteam/FINDINGS.md`, line 107, row R2-F-27, cell "Severity": "minor"; cell "Status": "commit `1115cfd` and `7a345e2`".
+- Trigger: The Terms of E-60 say: "F-27 of the judge report is major by this rule, so the list holds 9 majors". The judge report, record F-27, says at `86287c2`: "I would rate that major at `86287c2`". The row says "minor" with no note. `grep 'R2-' redteam/FINDINGS.md | awk -F'|' '{print $5}' | sort | uniq -c…
+- Violates: The Terms of E-60 ("Confirmed list"); C7 (a status differs from the record). Whether C3 fails on the 2 commits belongs to the adversarial AUDITOR; I did not test it.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 4
+- Lens: contract language
+- Forward work stopped: no
+
+### E-153 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-88
+- Class: DEFECT
+- Where: `DECISIONS.md`, line 75, row D63: "so the minors are repaired and not left open".
+- Trigger: `grep 'R2-' redteam/FINDINGS.md | grep -c '| Open'` prints 4. Rows R2-AR-15 to R2-AR-18 are minors and are "Open, not repaired". The text of pull request 9 (line 16) and `PROGRESS.md` (line 44) say the same 4 are open.
+- Violates: Adams: conflict between 2 statements; undue generality ("the minors"). GLOSSARY, DEFECT: a false statement in a part of the DELIVERABLE.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 5
+- Lens: contract language
+- Forward work stopped: no
+
+### E-154 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-89
+- Class: DEFECT
+- Where: `DECISIONS.md`, line 75, row D63: "approves starting M5 to M7 while M4 stays open. This changes the milestone order (hard rules 1 and 2)."
+- Trigger: Read D63 beside D62 (line 74: "Hard rule 1 stays: a milestone starts only when the exit test of the one before it passes") and beside hard rule 1 of `CLAUDE.md` ("Do not start the next milestone until the current exit test passes"). D63 lets M5 start while the exit test of M4 is open. It does not s…
+- Violates: Adams: conflict between 2 statements; lexical ambiguity. `CLAUDE.md`, hard rule 2 (a change to the milestone order is recorded in `DECISIONS.md`): the record does not say what the rule now is.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 6
+- Lens: contract language
+- Forward work stopped: no
+
+### E-155 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-90
+- Class: DEFECT
+- Where: `hinshitsu/kit-repairs/evidence/pr9-text.md`, line 13 ("The independent review from zero of the lines changed after that review") against line 29 ("No independent reviewer has yet checked the repairs made after the second review"); the same 2 statements in `PROGRESS.md`, line 44.
+- Trigger: Read the 2 lines one after the other. "After the second review" names 2 different spans: (a) the lines changed between the commit the second review saw (`83eced7`) and `86287c2`, which an independent session did review; (b) the repairs of the 61 rows, made after that session, which nobody independe…
+- Violates: Adams: lexical ambiguity (1 phrase for 2 things); it reads as a conflict between 2 statements. C15(b) rests on the text of the pull request alone.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 7
+- Lens: contract language
+- Forward work stopped: no
+
+### E-156 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-91
+- Class: DEFECT
+- Where: `redteam/FINDINGS.md`, lines 81-123, cell "Finding" of 42 rows (R2-F-1 to R2-F-30, R2-F-32 to R2-F-34, R2-C14-1 to R2-C14-9).
+- Trigger: `grep 'R2-' redteam/FINDINGS.md | grep -c 'The fault is described in the report named in the next column'` prints 42. The column is headed "Finding", and these 42 cells do not state the finding; they state the repair. 1 repair sentence serves several different faults: 5 rows share "the placeholder …
+- Violates: `CLAUDE.md`, "Writing style for anything the owner reads" ("state what a thing is, why it exists, and what can go wrong with it"). Adams: vagueness; inconsistency. I cannot see the numbered rules of the skills, so I name no rule number.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 8
+- Lens: contract language
+- Forward work stopped: no
+
+### E-157 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-92
+- Class: DEFECT
+- Where: `packages/kit/README.md`, added line 70: "or says what it does in its name ("Pause", "Pause the moving text", "Stop animation")".
+- Trigger: `sed -n 49p packages/kit/src/page-checks/neuro.ts` shows a closed list: the name must be "pause", "play/pause" or "pause/play", or start with "pause", "stop", "turn off", "switch off", "disable" or "reduce" and, within 40 letters, hold 1 of 13 words ("motion", "movement", "moving", "animation", "sl…
+- Violates: Adams: vagueness; a rule that a third party cannot test. The scope of this role.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 9
+- Lens: contract language
+- Forward work stopped: no
+
+### E-158 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-93
+- Class: FRAGILITY
+- Where: `redteam/FINDINGS.md`, lines 124-141, cell "Evidence" of the 18 rows `R2-AR-*`: "The review's comments on pull request #9"; cell "Reviewer": "Automated review of commit `…`"; `pr9-text.md`, line 14.
+- Trigger: Take row R2-AR-5 and look for its evidence. The cell gives no link, no comment number and no saved file, and pull request 9 holds the comments of 3 rounds. "Automated review" names no actor: the reader cannot tell which program reviewed. The 43 other rows cite a file in the repository with an ID. T…
+- Violates: Adams: vagueness; a rule that a third party cannot test. GLOSSARY, EVIDENCE ("a file in the RUN FOLDER that a third party can open").
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 10
+- Lens: contract language
+- Forward work stopped: no
+
+### E-159 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-94
+- Class: STYLE
+- Where: `pr9-text.md`, lines 10-16 ("Repaired", "Open"); `PROGRESS.md`, line 44 ("repaired", "open with a reason"); `redteam/FINDINGS.md`, lines 81-141 ("Fixed", "Open, not repaired"), line 112 and line 107 ("commit `f2ef274` and `3ccf966`").
+- Trigger: Read the table of the pull request, then the rows. 1 state has 2 names: "Repaired" in the pull request, `PROGRESS.md` and C2; "Fixed" in the rows and in the status words at the head of `FINDINGS.md`. The 4 open rows say "Open, not repaired", and the head defines "Open" as "not yet addressed"; these…
+- Violates: Adams: inconsistency (1 thing with 2 names; 1 name for 2 things). `CLAUDE.md`: "One term per concept".
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 11
+- Lens: contract language
+- Forward work stopped: no
+
+### E-160 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-95
+- Class: STYLE
+- Where: `PROGRESS.md`, line 44: "The owner approved 16 acceptance tests and up to 40 helper sessions"; `DECISIONS.md`, line 75: "its 16 acceptance tests", "the 16 tests", "The exact wording of the 16 tests is entry E-60".
+- Trigger: Read line 44 from its start. "Tests" means the 257 unit tests and the 420 browser tests in 1 sentence, and the 16 CRITERIA of E-60 a few sentences later. E-60 and the Hinshitsu record call the 16 "CRITERIA", and each CRITERION holds a "Test:" of its own. 1 name serves 3 things.
+- Violates: Adams: inconsistency (1 name for 2 things). `CLAUDE.md`: "One term per concept".
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 12
+- Lens: contract language
+- Forward work stopped: no
+
+### E-161 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-96
+- Class: STYLE
+- Where: `pr9-text.md`, line 16: "(a click-taking `::before` under a click-through wrapper; an SVG animation that waits for a script; a field in a `dialog` opened with `showModal()` under an inert part; a sentence that holds "n't" before an empty list)".
+- Trigger: Read the line as the owner, who is not a programmer (this scope; `VOC` O4). `::before`, "click-through wrapper", "SVG animation", `dialog`, `showModal()` and "inert part" are used with no meaning given. The same line is where the owner learns what stays open.
+- Violates: `CLAUDE.md`, writing style: "explain each technical term at first use". The duty of this scope ("The owner is not a programmer").
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 13
+- Lens: contract language
+- Forward work stopped: no
+
+### E-162 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-97
+- Class: STYLE
+- Where: `pr9-text.md`, line 7: "a page can't be "Crafted" until a person has checked the three person-only floors".
+- Trigger: Read it beside the README's added line 65: "A person's answer enters as a finding … The kit takes the person's word: it cannot tell whether anyone looked." The pull request says "has checked"; the kit can only know that an answer was entered. "Person-only floors" is a third name for what the README…
+- Violates: Adams: vagueness; inconsistency (1 thing with 3 names).
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 14
+- Lens: contract language
+- Forward work stopped: no
+
+### E-163 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-98
+- Class: STYLE
+- Where: `packages/kit/README.md`, added line 76: "A record that cites no source the builder read (its judgment, this tool's plan, or a page it did not open) carries the grade "expert-opinion"; a unit test holds this." Added line 67: "the check then holds". Added line 65: "`status: 'holds'`".
+- Trigger: Read line 76: "its judgment" can point to the record or to the builder (the builder is meant); "a page it did not open" has the same doubt. "Holds" has 3 senses in the added lines: a status value of a finding (line 65), "the check passes" (line 67), and "a unit test enforces this" (line 76).
+- Violates: Adams: syntactic ambiguity (the antecedent of a pronoun); inconsistency (1 name for 3 things).
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 15
+- Lens: contract language
+- Forward work stopped: no
+
+### E-164 · 2026-11-25T02:17:54Z · FINDING · auditor: LANGUAGE
+
+- ID: F-99
+- Class: STYLE
+- Where: `PROGRESS.md`, line 44: "Three earlier full runs were started on older commits and stopped by the builder before they ended, because new repairs followed; they count for nothing."
+- Trigger: Read it beside C5: "Every run started is counted; a red run is a FINDING and no later run erases it." C5 speaks of the AUDITOR's runs at the audited commit and the bullet of the builder's runs on older commits, so the 2 do not conflict; a reader who knows C5 still meets "started … count for nothing…
+- Violates: Adams: it reads as a conflict between 2 statements. `CLAUDE.md`, writing style: active voice.
+- Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 16
+- Lens: contract language
+- Forward work stopped: no
