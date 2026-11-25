@@ -368,7 +368,7 @@ function DirectionCard({ direction }: { direction: Direction }): React.JSX.Eleme
           <div><dt>Best for</dt><dd>{direction.bestFor}</dd></div>
           <div><dt>Watch for</dt><dd>{direction.risk}</dd></div>
         </dl>
-        <button type="button" className="btn primary" onClick={() => request(skin ? { ...direction, params } : direction, skin)}>Start from {direction.name}</button>
+        <button type="button" className="btn primary" onClick={() => request(direction, skin)}>Start from {direction.name}</button>
       </div>
     </article>
   );

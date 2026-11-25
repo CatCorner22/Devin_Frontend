@@ -20,6 +20,7 @@ export function SkinControl(): React.JSX.Element {
         </select>
       </div>
       <p className="hint" id="project-skin-meaning">{project.skin ? findSkin(project.skin)?.what : retained ? 'This file kept colors from a Skin that is no longer offered. Choose No Skin to remove that color layer.' : 'The saved colors beneath the Skin are showing. In older projects, a starting Skin is already part of those saved colors.'}</p>
+      {project.skin && !project.skinLayer && <p className="hint">This older file already saved its starting Skin into its colors. No Skin removes the name, but cannot remove those saved colors. Choose another Skin to change them.</p>}
       {skins.length === 0 && <p className="hint">This Direction offers no Skins. Choose another Direction to see its Skins.</p>}
       {project.skin && (!project.skinLayer || project.skinLayer.overrides.length > 0) && <button type="button" className="btn" onClick={() => change(project.skin!)}>Apply this Skin again</button>}
       <p className="hint">No Skin shows the saved colors beneath the layer again. Each change is one Undo step.</p>

@@ -201,11 +201,9 @@ export function applyDirection(project: Project, direction: Direction | string, 
   if (!found) throw new Error('Unknown Direction.');
   assertKnownParams(found.params);
   const next: Project = { ...project, direction: found.id, base: { ...found.params }, params: { ...found.params }, decisions: {} };
-  // The name of the Skin is recorded only for a Skin that this Direction offers; the caller passes the Skin's colors in `direction.params`.
-  if (skinId !== undefined && offersSkin(found.id, skinId)) next.skin = skinId;
-  else delete next.skin;
+  delete next.skin;
   delete next.skinLayer;
-  return next;
+  return skinId !== undefined && offersSkin(found.id, skinId) ? setSkin(next, skinId) : next;
 }
 
 /** True when the curated Direction with this identifier offers the Skin. */

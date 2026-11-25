@@ -1991,11 +1991,12 @@ describe('Studio: skins, the same look in other colors (decision D52)', () => {
     await page.reload();
     await page.waitForSelector('.cards');
     expect(await page.locator('.rail-direction strong').innerText()).toBe('Midnight Aurora in the Skin “Sunset fade”');
-    expect(project.params).toEqual(expected);
-    expect(project.base).toEqual(expected);
+    expect(effectiveParams(project)).toEqual(expected);
+    expect(project.params).toEqual(aurora.params);
+    expect(project.base).toEqual(aurora.params);
     expect(project.decisions).toEqual({});
     // Colors changed; a value of layout, of letters, and of shape did not.
-    expect(project.params.accentHue).not.toBe(aurora.params.accentHue);
+    expect(effectiveParams(project).accentHue).not.toBe(aurora.params.accentHue);
     expect([project.params.hero, project.params.fontHeading, project.params.radius, project.params.accentLightness]).toEqual([aurora.params.hero, aurora.params.fontHeading, aurora.params.radius, aurora.params.accentLightness]);
     await context.close();
   });

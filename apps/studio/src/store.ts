@@ -932,8 +932,9 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     changeSkin(skinId) {
+      const legacy = skinId === null && get().project.skin && !get().project.skinLayer;
       commit(setSkin(get().project, skinId));
-      set({ variations: null, shownId: appliedCardId(get().project, stepOf(get().stepId)), notice: { text: skinId === null ? 'The Skin is off. The saved colors beneath it are showing again.' : `The Skin “${findSkin(skinId)!.name}” covers earlier color choices. Those choices and your words are still saved. A later color choice takes priority for its own Step.`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
+      set({ variations: null, cardTouched: false, shownId: appliedCardId(get().project, stepOf(get().stepId)), notice: { text: legacy ? 'This older file already saved its starting Skin into its colors. No Skin removed the name, but cannot remove those saved colors. You can choose another Skin to change them.' : skinId === null ? 'The Skin is off. The saved colors beneath it are showing again.' : `The Skin “${findSkin(skinId)!.name}” covers earlier color choices. Those choices and your words are still saved. A later color choice takes priority for its own Step.`, actions: [{ label: 'Undo', run: () => get().undo() }] } });
     },
 
     toggleOverlay(overlayId, on) {
