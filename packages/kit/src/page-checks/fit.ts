@@ -123,6 +123,15 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
       colors.push(['text fill', style.getPropertyValue('-webkit-text-fill-color')]);
       for (const color of style.textShadow.slice(0, 2000).match(colorsIn) ?? []) colors.push(['text shadow', color]);
     }
+    // Six more places (Hinshitsu audit of WU-1, correctness finding 10): the line of the text's letters, the rule between
+    // columns, a fade used as the border's picture, the shadow of a drop-shadow filter, the color a page gives a native
+    // control, and the bullet or number of a list item. Each is read only where the browser draws it.
+    if (hasText && parseFloat(style.getPropertyValue('-webkit-text-stroke-width')) > 0) colors.push(['text stroke', style.getPropertyValue('-webkit-text-stroke-color')]);
+    if (parseFloat(style.columnRuleWidth) > 0 && style.columnRuleStyle !== 'none' && style.columnCount !== 'auto' && style.columnCount !== '1') colors.push(['column rule', style.columnRuleColor]);
+    if (style.borderImageSource.includes('gradient')) for (const color of withoutUrls(style.borderImageSource).slice(0, 2000).match(colorsIn) ?? []) colors.push(['border fade', color]);
+    if (style.filter.includes('drop-shadow')) for (const color of withoutUrls(style.filter).slice(0, 2000).match(colorsIn) ?? []) colors.push(['drop shadow', color]);
+    if (style.accentColor !== 'auto' && /^(input|progress|meter)$/i.test(el.tagName) && (el.tagName !== 'INPUT' || /^(checkbox|radio|range)$/i.test(el.getAttribute('type') ?? ''))) colors.push(['accent', style.accentColor]);
+    if (style.display === 'list-item' && (style.listStyleType !== 'none' || style.listStyleImage !== 'none')) colors.push(['list marker', view.getComputedStyle(el, '::marker').color]);
     for (const pseudo of ['::before', '::after']) {
       const extra = view.getComputedStyle(el, pseudo);
       if (extra.content === 'none' || extra.content === 'normal' || extra.display === 'none' || extra.visibility !== 'visible') continue;

@@ -329,6 +329,25 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await page.context().close();
     });
 
+    it('Hinshitsu audit of WU-1, correctness finding 10: an off-design color on a text stroke, a column rule, a border fade, a drop shadow, a native control or a list marker fails', async () => {
+      const fails = async (body: string, style: string): Promise<(string | undefined)[]> => { const page = await pageOf(body, `body{color:#1a1a1a;background:#ffffff;font-family:serif} ${style}`); const out = (await run(page, 'tokenFit')).filter((f) => f.ruleId === 'fit-colors' && f.status === 'fails').map((f) => f.measured); await page.context().close(); return out; };
+      const pink = 'rgb(255, 0, 170)';
+      expect(await fails('<p class="a">Bread</p>', '.a{-webkit-text-stroke:1px #ff00aa}')).toEqual([`text stroke color ${pink}`]);
+      expect(await fails('<p class="a">Bread and rolls, baked each morning.</p>', '.a{column-count:2;column-rule:2px solid #ff00aa}')).toEqual([`column rule color ${pink}`]);
+      expect(await fails('<p class="a">Bread</p>', '.a{border:4px solid #1a1a1a;border-image:linear-gradient(#ff00aa, #1a1a1a) 1}')).toEqual([`border fade color ${pink}`]);
+      expect(await fails('<p class="a">Bread</p>', '.a{filter:drop-shadow(0 2px 2px #ff00aa)}')).toEqual([`drop shadow color ${pink}`]);
+      expect(await fails('<label><input type="checkbox" class="a"> Bread</label>', '.a{accent-color:#ff00aa}')).toEqual([`accent color ${pink}`]);
+      expect(await fails('<ul><li class="a">Bread</li></ul>', '.a::marker{color:#ff00aa}')).toEqual([`list marker color ${pink}`]);
+      // Second inputs: a numbered list whose item holds no text of its own, and a range control.
+      expect(await fails('<ol><li class="a"><span>Bread</span></li></ol>', '.a::marker{color:#ff00aa}')).toEqual([`list marker color ${pink}`]);
+      expect(await fails('<label>Loaves <input type="range" class="a"></label>', '.a{accent-color:#ff00aa}')).toEqual([`accent color ${pink}`]);
+      // The same parts in the colors of the design hold. So do the parts that the browser does not draw: a stroke of no
+      // width, a column rule on text in one column, an accent on a text field, and a marker on a list with no bullets.
+      const sound = '<p class="a">Bread and rolls, baked each morning.</p><ul><li class="b">Rolls</li></ul><ul class="bare"><li class="c">Buns</li></ul><label><input type="checkbox" class="d"> Bread</label><label>Name <input type="text" class="e"></label><p class="f">Loaves</p>';
+      const style = '.a{-webkit-text-stroke:1px #0b5fff;column-count:2;column-rule:2px solid #d0d5dd;border:4px solid #1a1a1a;border-image:linear-gradient(#0b5fff, #1a1a1a) 1;filter:drop-shadow(0 2px 2px #d0d5dd)} .b::marker{color:#0b5fff} .bare{list-style:none} .c::marker{color:#ff00aa} .d{accent-color:#0b5fff} .e{accent-color:#ff00aa;color:#1a1a1a;background:#ffffff;border:1px solid #d0d5dd;font-family:serif} .f{-webkit-text-stroke:0 #ff00aa;column-rule:2px solid #ff00aa}';
+      expect(await fails(sound, style)).toEqual([]);
+    });
+
     it('second review, F-20: an off-design color on an outline, a text line, a text shadow, a text fill, a ::before, or a shape of a drawing fails; so does one odd corner', async () => {
       const fails = async (body: string, style: string, rule = 'fit-colors'): Promise<(string | undefined)[]> => { const page = await pageOf(body, `body{color:#1a1a1a;background:#ffffff;font-family:serif} ${style}`); const out = (await run(page, 'tokenFit')).filter((f) => f.ruleId === rule && f.status === 'fails').map((f) => f.measured); await page.context().close(); return out; };
       const pink = 'rgb(255, 0, 170)';
