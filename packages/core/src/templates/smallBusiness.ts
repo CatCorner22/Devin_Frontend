@@ -1,7 +1,7 @@
 // Template 1: small-business website (home page with services, facts, about, and a contact form).
 // The Mockup is plain semantic HTML and CSS. It contains no script. Every visual value comes from a token.
 
-import { assertKnownParams, type DesignParams } from '../params.js';
+import { assertKnownParams, type DesignParams, type Voice } from '../params.js';
 import { tokensToCss } from '../tokens.js';
 
 export interface ServiceItem {
@@ -89,7 +89,7 @@ export const SAMPLE_CONTENT: SiteContent = {
 };
 
 /** The region of the page that a preview opens at. A sandboxed preview cannot be scrolled from outside, so the page itself starts there. */
-export const MOCKUP_FOCUSES = ['top', 'facts', 'services', 'fees', 'about', 'contact', 'overlays', 'buttons', 'box'] as const;
+export const MOCKUP_FOCUSES = ['top', 'facts', 'services', 'fees', 'about', 'contact', 'overlays', 'buttons', 'box', 'timing', 'focus', 'empty', 'error', 'voice'] as const;
 /**
  * The Overlays that the Mockup can draw, by identifier. The list is fixed here, so that only these words can reach the page's
  * markup; a unit test holds it equal to the Catalog's Overlays.
@@ -104,6 +104,7 @@ export interface MockupInput {
   /** Derived CSS custom properties. */
   tokens: Record<string, string>;
   content: SiteContent;
+  voice?: Voice;
   focus?: MockupFocus;
   /** A still preview skips entrance animation (used for small thumbnails). */
   still?: boolean;
@@ -161,7 +162,7 @@ a { color: var(--accent-text); text-underline-offset: 0.22em; text-decoration-th
 .wrap { width: 100%; max-width: var(--page-max); margin-inline: auto; padding-inline: var(--space-6); }
 .skip { position: absolute; left: var(--space-4); top: -100px; background: var(--surface); color: var(--text); padding: var(--space-2) var(--space-4); border-radius: var(--radius-small); z-index: 60; }
 .skip:focus { top: var(--space-4); }
-:focus-visible { outline: var(--focus-w) solid var(--focus); outline-offset: 2px; }
+:focus-visible { outline: var(--focus-w) var(--focus-style, solid) var(--focus); outline-offset: 2px; }
 /* On the first screen the ring takes a color that stands out from that screen, which may be painted in the accent. */
 .hero :focus-visible { outline-color: var(--focus-hero); }
 mark { background: none; color: inherit; }
@@ -414,6 +415,25 @@ body[data-focus]:not([data-focus="top"]) { display: block; min-height: 0; }
 body[data-focus]:not([data-focus="top"]) .site-header, body[data-focus]:not([data-focus="top"]):not([data-focus="buttons"]) .hero { display: none; }
 body[data-focus="services"] .facts, body[data-focus="fees"] .facts, body[data-focus="about"] .facts, body[data-focus="contact"] .facts { display: none; }
 body[data-focus="about"] .services, body[data-focus="contact"] .services, body[data-focus="contact"] .about { display: none; }
+body:is([data-focus="timing"], [data-focus="empty"]) main > :not(.behavior-demo),
+body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) main > :not(.contact) { display: none; }
+body:is([data-focus="timing"], [data-focus="empty"], [data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .site-footer { display: none; }
+body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .contact { padding-block: var(--space-2); }
+body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .contact-grid { grid-template-columns: minmax(0, 1fr); }
+body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .contact-grid > :not(form) { display: none; }
+body[data-focus="error"] .form { gap: var(--space-2); padding: var(--space-2); }
+body[data-focus="error"] .form > .field:not(:has(#m-phone)), body[data-focus="error"] .form > button,
+body[data-focus="error"] .form .hint, body[data-focus="error"] .form > .voice-help { display: none; }
+body[data-focus="error"] .form > p, body[data-focus="error"] .error-summary, body[data-focus="error"] .field-error { font-size: var(--text-sm); }
+body[data-focus="error"] .error-summary h3 { font-size: inherit; }
+.focus-example { outline: var(--focus-w) var(--focus-style, solid) var(--focus); outline-offset: 2px; }
+.error-summary, .field-error { border-left: 4px solid var(--text); padding: var(--space-3); }
+.timing-track { position: relative; height: 3rem; border-bottom: 2px solid var(--border); margin-block: var(--space-6); }
+.timing-track span { position: absolute; color: var(--text); }
+@media (prefers-reduced-motion: no-preference) {
+  body:not([data-motion="none"]):not([data-still]) .timing-moving { animation: timing-move var(--dur-slow) var(--ease-out) 2 alternate; }
+}
+@keyframes timing-move { from { left: 0; } to { left: 90%; } }
 
 /* Overlays: small helpers over the page. The region "overlays" shows each one that is switched on, open, as a picture with a
    caption. Everywhere else they stay out of the page, except the main button that stays in view on a phone, which plain CSS
@@ -557,6 +577,16 @@ export function renderSmallBusiness(input: MockupInput): string {
     )
     .join('');
   const fees = c.fees.map((f) => `<tr><th scope="row">${e(f.item)}</th><td>${e(f.price)}</td></tr>`).join('');
+  const v = input.voice;
+  const nameLabel = v?.tone === 'formal' ? 'Full name' : 'Your name';
+  const sendLabel = v?.tone === 'formal' ? 'Submit enquiry' : v?.stance === 'confident' ? 'Send your request now' : 'Send my request';
+  const phoneHelp = v?.length === 'detailed' ? 'Leave a phone number where we can reach you. We call on working days between 8 and 5; you do not need to wait on this page.' : v?.tone === 'formal' ? 'Calls are returned on working days, 8 to 5.' : 'We call on working days between 8 and 5.';
+  const behavior = focus === 'timing' ? `<section class="block behavior-demo"><div class="wrap"><h1>Motion timing example</h1><p>${e(p.motionTiming ?? 'settle')}: ${e(tokens['--dur'] ?? '')}. The dot shows roughly how far a change travels in the first quarter of its time.</p><div class="timing-track"><span style="left:${p.motionTiming === 'steady' ? '25%' : p.motionTiming === 'gentle' ? '13%' : '78%'}">●</span></div><p>The moving dot below plays only when motion is on and the device allows it.</p><div class="timing-track"><span class="timing-moving">●</span></div></div></section>`
+    : focus === 'empty' ? `<section class="block behavior-demo"><div class="wrap"><h1>Empty list example</h1><p>This is a demonstration, not your service list.</p><div class="card empty-example"><h2>${p.emptyState === 'example' ? 'What could go here?' : p.emptyState === 'explain' ? 'Why is this list empty?' : 'Nothing here yet'}</h2><p>${p.emptyState === 'example' ? 'Example only: a request for a repair. No real request has been added.' : p.emptyState === 'explain' ? 'There are no requests to display. Nothing has been deleted; the list starts empty until you make a request.' : 'Make your first request to begin.'}</p><a class="btn btn-primary" ${link('#contact')}>Make a request</a></div></div></section>` : '';
+  const showError = focus === 'error';
+  const errorStyle = p.errorState ?? 'inline';
+  const summaryError = showError && errorStyle !== 'inline';
+  const inlineError = showError && errorStyle !== 'summary';
   const nav = c.nav.map((n, i) => `<li><a ${link('#main')}${i === 0 ? ' aria-current="page"' : ''}>${e(n)}</a></li>`).join('');
 
   return `<!doctype html>
@@ -583,6 +613,7 @@ ${SMALL_BUSINESS_CSS}
   </div>
 </header>
 <main id="main">
+${behavior}
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
@@ -623,10 +654,14 @@ ${SMALL_BUSINESS_CSS}
         <address><strong>${e(c.business)}</strong><span>${e(c.address)}</span><span>${e(c.hours)}</span><a class="phone" ${link('#contact')}>${e(c.phone)}</a></address>
       </div>
       <form class="form card"${inert ? '' : ' action="#contact" method="post"'}>
-        <div class="field"><label for="m-name">Your name</label><input id="m-name" name="name" type="text" autocomplete="name"></div>
-        <div class="field"><label for="m-phone">Phone number</label><input id="m-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" aria-describedby="m-phone-hint"><span class="hint" id="m-phone-hint">We call on working days between 8 and 5.</span></div>
+        ${showError ? '<p>Form error example. These field values are made up; no request is sent.</p>' : ''}
+        ${v && (v.tone !== 'friendly' || v.length !== 'brief' || v.stance !== 'modest') ? `<p class="voice-help">${v.tone === 'formal' ? v.stance === 'confident' ? 'Complete the fields below.' : 'You may complete the fields below.' : v.stance === 'confident' ? 'Tell us what you need. We are ready.' : 'Tell us a little about what you need.'}</p>` : ''}
+        ${summaryError ? `<div class="error-summary" id="error-summary" tabindex="-1"><h3>Check the phone number</h3><p><a ${link('#m-phone')}>Phone number: enter the full number, including its area code.</a></p></div>` : ''}
+        ${focus === 'focus' ? '<p>Keyboard focus example: the first field has the mark. Try Tab on the built page to check every control.</p>' : ''}
+        <div class="field"><label for="m-name">${nameLabel}</label>${focus === 'focus' ? '<div class="focus-example">' : ''}<input id="m-name" name="name" type="text" autocomplete="name"${showError ? ' value="Alex"' : ''}>${focus === 'focus' ? '</div>' : ''}</div>
+        <div class="field"><label for="m-phone">Phone number</label><input id="m-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" aria-describedby="m-phone-hint${showError ? inlineError ? ' m-phone-error' : ' error-summary' : ''}"${showError ? ' aria-invalid="true" value="12"' : ''}><span class="hint" id="m-phone-hint">${phoneHelp}</span>${inlineError ? '<span class="field-error" id="m-phone-error">Phone number: enter the full number, including its area code.</span>' : ''}</div>
         <div class="field"><label for="m-note">What do you need?</label><textarea id="m-note" name="note"></textarea></div>
-        <button class="btn btn-primary" type="${inert ? 'button' : 'submit'}">Send my request</button>
+        <button class="btn btn-primary" type="${inert ? 'button' : 'submit'}">${sendLabel}</button>
       </form>
     </div>
   </section>

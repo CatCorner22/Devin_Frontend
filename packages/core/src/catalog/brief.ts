@@ -1,5 +1,6 @@
 import type { SiteContent } from '../templates/smallBusiness.js';
 import { SAMPLE_CONTENT } from '../templates/smallBusiness.js';
+import type { Voice } from '../params.js';
 
 export const BRIEF_STAGE = {
   id: 'brief',
@@ -14,7 +15,7 @@ export interface BriefNotes {
   whatItDoes: string;
   audience: string;
   mainJob: string;
-  voice: { tone: 'formal' | 'friendly'; length: 'brief' | 'detailed'; stance: 'modest' | 'confident' };
+  voice: Voice;
   wordsToAvoid: string[];
 }
 

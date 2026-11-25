@@ -149,7 +149,7 @@ describe('Mockup: structure that the checks rely on', () => {
   });
 
   it('gives the focus ring its own color on the first screen', () => {
-    expect(SMALL_BUSINESS_CSS).toMatch(/:focus-visible \{ outline: var\(--focus-w\) solid var\(--focus\)/);
+    expect(SMALL_BUSINESS_CSS).toContain(':focus-visible { outline: var(--focus-w) var(--focus-style, solid) var(--focus);');
     expect(SMALL_BUSINESS_CSS).toMatch(/\.hero :focus-visible \{ outline-color: var\(--focus-hero\); \}/);
   });
 

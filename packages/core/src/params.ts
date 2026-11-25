@@ -16,6 +16,7 @@ export const ATMOSPHERES = ['plain', 'horizon', 'dot-grid', 'line-grid', 'spotli
 export const BUTTON_FINISHES = ['flat', 'gloss', 'glow', 'outline', 'soft'] as const;
 export const DISPLAY_TREATMENTS = ['solid', 'ink-gradient', 'accent-gradient'] as const;
 export const MOTION_LEVELS = ['none', 'subtle', 'expressive'] as const;
+export const BEHAVIOR_DEFAULTS = { motionTiming: 'settle', focusStyle: 'outline', emptyState: 'guide', errorState: 'inline' } as const;
 export const SIGNATURES = ['none', 'marker', 'big-numerals', 'color-band', 'outline-type', 'corner-tag'] as const;
 export const A11Y_PROFILES = ['off', 'advise', 'enforce'] as const;
 export const FONT_IDS = [
@@ -37,6 +38,7 @@ export type Atmosphere = (typeof ATMOSPHERES)[number];
 export type ButtonFinish = (typeof BUTTON_FINISHES)[number];
 export type DisplayTreatment = (typeof DISPLAY_TREATMENTS)[number];
 export type MotionLevel = (typeof MOTION_LEVELS)[number];
+export interface Voice { tone: 'formal' | 'friendly'; length: 'brief' | 'detailed'; stance: 'modest' | 'confident' }
 export type Signature = (typeof SIGNATURES)[number];
 export type A11yProfile = (typeof A11Y_PROFILES)[number];
 export type FontId = (typeof FONT_IDS)[number];
@@ -93,6 +95,10 @@ export interface DesignParams {
   /** How the largest headline is filled. */
   displayTreatment: DisplayTreatment;
   motion: MotionLevel;
+  motionTiming?: 'settle' | 'steady' | 'gentle';
+  focusStyle?: 'outline' | 'dashed' | 'double';
+  emptyState?: 'guide' | 'example' | 'explain';
+  errorState?: 'inline' | 'summary' | 'both';
 }
 
 /** The allowed values of every parameter that takes one of a fixed list of names. */
@@ -101,6 +107,8 @@ export const PARAM_VALUES = {
   fontHeading: FONT_IDS, fontBody: FONT_IDS, headingCase: HEADING_CASES, numerals: NUMERAL_STYLES,
   colorStrategy: COLOR_STRATEGIES, theme: THEMES, elevation: ELEVATIONS, signature: SIGNATURES,
   atmosphere: ATMOSPHERES, buttonFinish: BUTTON_FINISHES, displayTreatment: DISPLAY_TREATMENTS, motion: MOTION_LEVELS,
+  motionTiming: ['settle', 'steady', 'gentle'], focusStyle: ['outline', 'dashed', 'double'],
+  emptyState: ['guide', 'example', 'explain'], errorState: ['inline', 'summary', 'both'],
 } as const satisfies { [K in keyof DesignParams]?: readonly DesignParams[K][] };
 
 /** The allowed range (lowest, highest) of every numeric parameter. */
@@ -119,6 +127,7 @@ export const PARAM_KEYS = [...Object.keys(PARAM_VALUES), ...Object.keys(PARAM_RA
  */
 export function assertKnownParams(p: DesignParams): void {
   for (const [key, allowed] of Object.entries(PARAM_VALUES) as [keyof DesignParams, readonly string[]][]) {
+    if (p[key] === undefined && key in BEHAVIOR_DEFAULTS) continue;
     if (typeof p[key] !== 'string' || !allowed.includes(p[key] as string)) throw new Error(`The design parameter "${key}" holds a value that is not in its list.`);
   }
   for (const [key, [min, max]] of Object.entries(PARAM_RANGES) as [keyof DesignParams, readonly [number, number]][]) {
@@ -163,6 +172,7 @@ export const DEFAULT_PARAMS: DesignParams = {
   buttonFinish: 'flat',
   displayTreatment: 'solid',
   motion: 'subtle',
+  ...BEHAVIOR_DEFAULTS,
 };
 
 export interface FontInfo {

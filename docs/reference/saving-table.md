@@ -90,6 +90,16 @@ The Brief changes the same project as a design choice. Content and the optional 
 | Saved: another tab saves | This tab stops saving, keeps its words on screen, and offers the existing two choices | "Brief: another tab stops saving" |
 | Replacing content: restore the sample | Ask first; say what changed and offer Undo; Undo restores content and builder notes | "Brief: warnings never block and the sample has a way back" |
 
+## Behavior Steps (M5, unit 3)
+
+Motion timing, keyboard focus, empty-list help, and form-error placement use the existing `params` and `base` objects and Decisions. Their fields are optional on import; missing fields keep the old rendering and do not appear in the saved copy until the owner picks or keeps that new Step. Keeping an implied default writes that Step's value so the saved result matches its card; the starting values stay unchanged. Voice uses only `brief.voice`; its Decision names an Option but carries no copied voice values.
+
+| Situation and event | What must happen | Test |
+|---|---|---|
+| Saved: pick a behavior Option and reload | The choice, card picture, and Summary agree; the saved choice survives reload | "behavior: picks every Motion timing Option, including its card picture and saved Summary"; the equivalent tests for Keyboard focus, Empty list, Form errors, and Voice and tone |
+| Replacing a voice Decision through the Brief | Say that the earlier Decision and reason were removed; Undo restores the earlier voice and Decision | "behavior: Brief voice stays in sync, keeps owner text, and offers Undo after replacing a Decision" |
+| Opening an old file | Do not insert behavior Decisions or optional fields; keep the old tokens | Unit test "opens old parameters without adding behavior fields or Decisions" |
+
 ## What no test covers (stated plainly)
 
 - The browser's own "leave this page?" question. The Studio can only ask the browser to put it; the test browser answers it by itself.

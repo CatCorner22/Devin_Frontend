@@ -279,7 +279,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Elements.** Each page text field accepts up to 600 characters. Builder notes use the same limit. The avoid list allows 30 lines of 40 characters; extra lines and characters on a line are left out as typed. Existing saving failures, stopped saving, and closing-page limits still apply. [S12]
 - **Exceptions.** The fixed helper words of the Template and the Overlay examples are not editable page content. A warning cannot determine whether text is true, and the filler list cannot find every generic phrase. No tool has checked whether the owner's claims about the business are true.
 - **Test.** "Brief: words reach every preview and survive reload and a file"; "Brief: warnings never block and the sample has a way back"; the eight saving cases in `saving-table.md`; unit tests in `packages/core/test/project-file.test.ts`. [S2; S3]
-- **Policy.** Restoring the sample asks first, leaves design choices alone, and offers Undo within the existing 100-step, current-page limit.
+- **Policy.** Restoring the sample asks first, clears the Brief and its voice Decision, leaves other design choices alone, and offers Undo within the existing 100-step, current-page limit.
 - **Open.** Chromium only; no screen reader or real private-page database check. No independent review yet.
 - Last verified: 2026-11-25
 

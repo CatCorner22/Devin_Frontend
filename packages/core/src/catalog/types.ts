@@ -1,7 +1,8 @@
 import type { DesignParams } from '../params.js';
 import type { MockupFocus } from '../templates/smallBusiness.js';
+import type { BriefNotes } from './brief.js';
 
-export type Stage = 'structure' | 'feel';
+export type Stage = 'structure' | 'feel' | 'behavior';
 
 /** How strong the support for a record's guidance is. */
 export type Evidence = 'measured' | 'convention' | 'expert-opinion';
@@ -66,6 +67,10 @@ export interface Option {
   derive?: DerivedHue;
   /** The region of the Mockup where this Option's change shows, when it differs from the Step's region. */
   focus?: MockupFocus;
+  voice?: BriefNotes['voice'];
+  sources?: SourceRef[];
+  evidence?: Evidence;
+  reviewed?: string;
 }
 
 /** A parameter that the owner can adjust by hand after picking ("fine-tune"). */
@@ -103,6 +108,7 @@ export interface Step {
   variable: string;
   /** The design parameters this Step owns. No other Step sets them. */
   owns: (keyof DesignParams)[];
+  briefVoice?: true;
   /** The region of the Mockup where the change shows; previews open there. */
   focus: MockupFocus;
   /**

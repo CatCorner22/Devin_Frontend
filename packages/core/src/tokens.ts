@@ -145,7 +145,7 @@ function basePalette(p: DesignParams): Palette {
 
   // Decision D24: the accent, used as text (links, small labels) or as the focus ring, keeps its hue but stands
   // at least 3:1 from every surface it is drawn on, in every contrast profile. The picked accent, as used for fills, never changes.
-  const surfaces = [bg, cardBg, ...(p.nav === 'side-rail' ? [surface2] : [])];
+  const surfaces = [bg, cardBg, ...(p.focusStyle !== undefined ? [surface, surface2] : p.nav === 'side-rail' ? [surface2] : [])];
   const accentText = ensureContrastAll(accent, [bg, cardBg], 3 * MARGIN);
   const focus = ensureContrastAll(p.colorStrategy === 'duo' ? accent2 : accent, surfaces, 3 * MARGIN);
   // On a painted first screen the accent cannot ring itself; the ring takes the ink of that screen.
@@ -502,12 +502,13 @@ function displayTokens(p: DesignParams, pal: Palette, profile: A11yProfile): Rec
 
 function motionTokens(p: DesignParams): Record<string, string> {
   const off = p.motion === 'none';
+  const timing = p.motionTiming ?? 'settle';
+  const pace = timing === 'steady' ? ['100ms', '160ms', '320ms', 'linear'] : timing === 'gentle' ? ['180ms', '280ms', '560ms', 'cubic-bezier(0.45, 0, 0.55, 1)'] : ['120ms', '200ms', '480ms', 'cubic-bezier(0.23, 1, 0.32, 1)'];
   return {
-    '--dur-fast': off ? '0ms' : '120ms',
-    '--dur': off ? '0ms' : '200ms',
-    '--dur-slow': off ? '0ms' : '480ms',
-    // Things that enter or respond use a strong ease-out: quick to start, gentle to settle.
-    '--ease-out': 'cubic-bezier(0.23, 1, 0.32, 1)',
+    '--dur-fast': off ? '0ms' : pace[0]!,
+    '--dur': off ? '0ms' : pace[1]!,
+    '--dur-slow': off ? '0ms' : pace[2]!,
+    '--ease-out': pace[3]!,
     '--ease-in-out': 'cubic-bezier(0.77, 0, 0.175, 1)',
     '--press-scale': off ? '1' : '0.97',
     '--hover-lift': p.motion === 'expressive' ? '-3px' : '0px',
@@ -583,7 +584,8 @@ function shapeTokens(p: DesignParams): Record<string, string> {
     '--radius-small': pill ? '999px' : `${Math.round(p.radius * 0.5)}px`,
     '--border-w': `${p.borderWeight}px`,
     '--control-border-w': `${Math.max(p.borderWeight, 1)}px`,
-    '--focus-w': '3px',
+    '--focus-w': p.focusStyle === 'double' ? '6px' : p.focusStyle === 'dashed' ? '4px' : '3px',
+    '--focus-style': p.focusStyle === 'dashed' ? 'dashed' : p.focusStyle === 'double' ? 'double' : 'solid',
     '--target-min': '2.75rem',
   };
 }

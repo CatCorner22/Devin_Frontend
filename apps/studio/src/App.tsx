@@ -13,7 +13,7 @@ import { STUDIO_PARAMS, applyStudioTheme, installSpecimenFonts } from './theme';
 
 // ───────── Words. One word for one thing, everywhere on screen. ─────────
 
-const STAGE_NAME: Record<Step['stage'], string> = { structure: 'Layout', feel: 'Look and feel' };
+const STAGE_NAME: Record<Step['stage'], string> = { structure: 'Layout', feel: 'Look and feel', behavior: 'Behavior' };
 const EVIDENCE_LABEL: Record<Step['evidence'], string> = { measured: 'measured in studies that were read', convention: 'long-standing convention', 'expert-opinion': 'expert opinion' };
 const BASIS_LABEL: Record<SourceRef['basis'], string> = {
   read: 'read in full',
@@ -30,6 +30,11 @@ const REGIONS: { id: MockupFocus | 'auto'; label: string }[] = [
   { id: 'fees', label: 'Price list' },
   { id: 'about', label: 'The “about” section' },
   { id: 'contact', label: 'Contact form' },
+  { id: 'timing', label: 'Motion timing example' },
+  { id: 'focus', label: 'Keyboard focus example' },
+  { id: 'empty', label: 'Empty list example' },
+  { id: 'error', label: 'Form error example' },
+  { id: 'voice', label: 'Voice example' },
 ];
 const DEVICES: { id: Device; label: string }[] = [
   { id: 'phone', label: 'Phone' },
@@ -113,8 +118,9 @@ function movedFrom(t: Tunable, value: number, optionValue: unknown): string | nu
 
 /** The current value of a Step, in words: the matching Option's name, or the hand-set values. */
 function valueLabel(project: Project, step: Step): string {
-  const match = matchingOptionId(project.params, step);
+  const match = matchingOptionId(project.params, step, project.brief?.voice);
   if (match) return step.options.find((o) => o.id === match)!.label;
+  if (step.briefVoice) return Object.values(project.brief!.voice).join(', ');
   if (step.tunables?.length) {
     // Words first, figures second: a hand-set design is named by the standard Option it lies nearest to, and each slider
     // that differs says in which direction and how far (findings U2-04, U3-03, U3-04).
@@ -461,7 +467,7 @@ function Rail(): React.JSX.Element {
       </a>
       <p className="rail-count">{decided} of {STEPS.length} Steps decided</p>
       <section><h2>Brief</h2><a href="#brief" aria-current={s.view === 'brief' ? 'page' : undefined} tabIndex={tab(s.view === 'brief')}>Your words</a></section>
-      {(['structure', 'feel'] as const).map((stage) => (
+      {(['structure', 'feel', 'behavior'] as const).map((stage) => (
         <section key={stage}>
           <h2>{STAGE_NAME[stage]}</h2>
           <ol>
@@ -563,15 +569,15 @@ function StepsView(): React.JSX.Element {
   const lookingAtApplied = !s.variations && shown.id === applied;
   const sliders = activeTunables(step, s.project.params);
 
-  const stateKey = JSON.stringify([s.project.params, s.project.content, s.project.a11y, step.id, s.variations?.round ?? -1, s.variations?.origin ?? null, wire, s.region]);
+  const stateKey = JSON.stringify([s.project.params, s.project.content, s.project.brief?.voice, s.project.a11y, step.id, s.variations?.round ?? -1, s.variations?.origin ?? null, wire, s.region]);
   const thumbs = useMemo(() => {
     const out: Record<string, string> = {};
     // A Step may give its small pictures a close-up of their own (the buttons, one box), so that the change can be seen at card size.
-    for (const card of cards) out[card.id] = mockupHtml(s.project, paramsForCard(s, card.id), { wireframe: wire, focus: s.region === 'auto' ? (step.thumb?.focus ?? card.focus ?? step.focus) : s.region, still: true }).html;
+    for (const card of cards) out[card.id] = mockupHtml(s.project, paramsForCard(s, card.id), { wireframe: wire, focus: s.region === 'auto' ? (step.thumb?.focus ?? card.focus ?? step.focus) : s.region, still: true, voice: step.options.find((o) => o.id === card.id)?.voice }).html;
     return out;
   }, [stateKey, cards.length]);
-  // Only the Motion Step plays the entrance; on every other Step the page stands still, so that a comparison is not blurred by a fade.
-  const large = useMemo(() => mockupHtml(s.project, shownParams, { wireframe: wire, focus, still: step.id !== 'motion' }), [stateKey, shown.id, focus]);
+  // The two motion Steps play their examples; other comparisons stand still.
+  const large = useMemo(() => mockupHtml(s.project, shownParams, { wireframe: wire, focus, still: step.id !== 'motion' && step.id !== 'motion-timing', voice: step.options.find((o) => o.id === shown.id)?.voice }), [stateKey, shown.id, focus]);
   // The pictures follow at lower priority. A slider step first moves the knob and its number; the browser then draws the
   // pictures when it is free, and skips the steps in between while a key is held or the knob is dragged.
   const shownThumbs = useDeferredValue(thumbs);
@@ -621,7 +627,7 @@ function StepsView(): React.JSX.Element {
     : lookingAtApplied
       ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
-  const canPutBack = Boolean(decision) || step.owns.some((key) => s.project.params[key] !== s.project.base[key]);
+  const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => s.project.params[key] !== s.project.base[key]);
 
   return (
     <div className="work">
@@ -658,7 +664,7 @@ function StepsView(): React.JSX.Element {
               <span>Show the layout only, in gray</span>
             </label>
           )}
-          {step.id === 'motion' && <button type="button" className="btn small" onClick={() => setReplay((n) => n + 1)}>Play the entrance again</button>}
+          {(step.id === 'motion' || step.id === 'motion-timing') && <button type="button" className="btn small" onClick={() => setReplay((n) => n + 1)}>{step.id === 'motion' ? 'Play the entrance again' : 'Play the timing again'}</button>}
           <span className="showing" aria-live="polite">Large preview shows: <strong>{shown.label}</strong>{lookingAtApplied ? ' (in use)' : ' (not picked yet)'}</span>
         </div>
         <div className="preview-wrap">
@@ -765,7 +771,7 @@ function StepsView(): React.JSX.Element {
               {sliders.length > 0 && <button type="button" className="btn" onClick={s.startVariations}>Show small variations of “{shown.label}”</button>}
               {!decision && <button type="button" className="btn quiet" onClick={s.decideLater}>Decide later</button>}
               <button type="button" className="btn quiet" onClick={s.previousStep}>{index === 0 ? 'Back to the Directions' : 'Previous Step'}</button>
-              {canPutBack && <button type="button" className="btn quiet" onClick={s.putBack}>Put this Step back to how the project started</button>}
+              {canPutBack && <button type="button" className="btn quiet" onClick={s.putBack}>{step.briefVoice ? 'Put voice back to Friendly and brief' : 'Put this Step back to how the project started'}</button>}
             </>
           )}
         </div>
