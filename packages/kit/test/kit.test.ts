@@ -536,6 +536,8 @@ describe('walks', () => {
     expect(readme).not.toMatch(/Playwright's own, Vitest, or `tsx`/);
     expect(readme).toContain('const findings: Finding[] = [];');
     expect(readme).toContain('four lists');
+    // The limits that the judge of the second review left for a person (its section 7) are stated.
+    for (const limit of ['in plain markup, with no script', '`z-index: -1`', 'named `lazyloading`', 'What a script does later', 'A typeface that the checking machine lacks', 'A part that the page renames', '(↗, ☎, ▶)']) expect(readme).toContain(limit);
   });
   it('second review, F-28 and F-34: the README advises no check with JavaScript switched off, and states the limit of the typeface check', () => {
     const readme = readFileSync(join(root, '..', 'README.md'), 'utf8');
