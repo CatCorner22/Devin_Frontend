@@ -757,3 +757,73 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Report: `audits/WU1-seed-E-65.md`
 
 13 of 40 SUB-AGENT runs used (12 LAUNCH entries before this one and the probe E-1 are counted as the log counts them).
+
+### E-66 · 2026-11-25T00:05:19Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, correctness, WU-1
+- Scope: `prompts/WU1-correctness.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: c09608166fa742f79da7b6ae7a16a70e https://app.devin.ai/sessions/c09608166fa742f79da7b6ae7a16a70e
+- Report: `audits/WU1-correctness-E-66.md`
+
+15 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
+
+### E-67 · 2026-11-25T00:05:19Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, adversarial, WU-1
+- Scope: `prompts/WU1-adversarial.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: ba7d0e50924d40d7a6d486d90aec3d8b https://app.devin.ai/sessions/ba7d0e50924d40d7a6d486d90aec3d8b
+- Report: `audits/WU1-adversarial-E-67.md`
+
+16 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
+
+### E-68 · 2026-11-25T00:05:19Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, forensic-5s, WU-1
+- Scope: `prompts/WU1-forensic-5s.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: fd36457d64de4504b9a70791c0c882e5 https://app.devin.ai/sessions/fd36457d64de4504b9a70791c0c882e5
+- Report: `audits/WU1-forensic-5s-E-68.md`
+
+17 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
+
+### E-69 · 2026-11-25T00:05:19Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, best-practices, WU-1
+- Scope: `prompts/WU1-best-practices.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: a885399ca5e241db9ad3f27ade416eb0 https://app.devin.ai/sessions/a885399ca5e241db9ad3f27ade416eb0
+- Report: `audits/WU1-best-practices-E-69.md`
+
+18 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
+
+### E-70 · 2026-11-25T00:05:19Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, recipient-experience, WU-1
+- Scope: `prompts/WU1-recipient-experience.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: 8e874c44caaf49a4a01175433408feab https://app.devin.ai/sessions/8e874c44caaf49a4a01175433408feab
+- Report: `audits/WU1-recipient-experience-E-70.md`
+
+19 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
+
+### E-71 · 2026-11-25T00:05:19Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, framework-drift, WU-1
+- Scope: `prompts/WU1-framework-drift.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: f677367614f449a5a07c9c1819075c47 https://app.devin.ai/sessions/f677367614f449a5a07c9c1819075c47
+- Report: `audits/WU1-framework-drift-E-71.md`
+
+20 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
+
+### E-72 · 2026-11-25T00:05:19Z · LAUNCH · ORCHESTRATOR
+
+- Role: AUDITOR, language, WU-1
+- Scope: `prompts/WU1-language.md`
+- Commit under review: 183c1660d0e39f719262064aed5a1481c747553c
+- SUB-AGENT identifier: ddf1ecce7aae4f04a5d8053feb265a4d https://app.devin.ai/sessions/ddf1ecce7aae4f04a5d8053feb265a4d
+- Report: `audits/WU1-language-E-72.md`
+
+21 of 40 SUB-AGENT runs used. The correctness and adversarial AUDITORS receive 2 versions (branches `audit/wu1-k3` and `audit/wu1-p7`, rule 16.7); the other roles receive the commit.
