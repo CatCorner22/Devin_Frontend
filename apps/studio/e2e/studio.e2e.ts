@@ -2450,6 +2450,16 @@ describe('Studio: addresses and the browser’s Back button', () => {
 });
 
 describe('Studio: Brief', () => {
+  it('Brief review: editing a menu label after About brings the header back', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    await page.getByLabel('About text', { exact: true }).fill('Careful repairs for old houses.');
+    await page.getByLabel('Menu label 1', { exact: true }).fill('Our repair work');
+    const header = page.frameLocator('.brief-preview iframe').locator('.site-header');
+    await expect.poll(() => header.isVisible()).toBe(true);
+    expect(await header.innerText()).toContain('Our repair work');
+    await context.close();
+  });
+
   it('Brief review: editing a lower section keeps that section in view', async () => {
     const { context, page } = await open({ hash: '#brief' });
     const frame = page.frameLocator('.brief-preview iframe');

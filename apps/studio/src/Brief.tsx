@@ -91,7 +91,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
         {items('services', 'Service', [['title', 'Name'], ['body', 'Description']], 12, { title: '', body: '' })}
         {items('facts', 'Fact', [['value', 'Value'], ['label', 'Label']], 8, { value: '', label: '' })}
         {items('fees', 'Fee', [['item', 'Item'], ['price', 'Price']], 12, { item: '', price: '' })}
-        <fieldset><legend>Menu labels</legend>{c.nav.map((value, index) => <TextField key={index} label={`Menu label ${index + 1}`} value={value} sample={SAMPLE_CONTENT.nav[index]} words={words} change={(text) => s.setContent({ ...c, nav: c.nav.map((old, at) => at === index ? text : old) }, `nav:${index}`)} />)}</fieldset>
+        <fieldset><legend>Menu labels</legend>{c.nav.map((value, index) => <TextField key={index} label={`Menu label ${index + 1}`} value={value} sample={SAMPLE_CONTENT.nav[index]} words={words} change={(text) => { setPreviewFocus('top'); s.setContent({ ...c, nav: c.nav.map((old, at) => at === index ? text : old) }, `nav:${index}`); }} />)}</fieldset>
         <button type="button" onClick={() => s.requestSample()}>Restore sample content</button>
         <p>You will be asked first. Undo can bring your words back until you close or reload this page, within the last 100 Undo steps.</p>
         <a className="btn primary" href="#directions">Continue to Directions</a>
