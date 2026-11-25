@@ -556,6 +556,8 @@ describe('the Brief', () => {
     for (const real of ['Unleash your dog in our fenced field', 'The parcel goes here, by the side door.', 'Call 0113 555-0142', 'Call +44 1632 555-0142', 'Call +44 113 555-0142', 'Call (0113) 555-0142']) expect(placeholderIn(real), real).toBeNull();
     // Audit after the second re-audit, N2: a big integer as a token's own value goes through String; inside an object it is written with n.
     expect(designId({ t: 1n } as never)).toBe(designId({ t: '1' }));
+    expect(designId({ t: 10n ** 21n } as never)).toBe(designId({ t: '1000000000000000000000' }));
+    expect(designId({ t: 10n ** 21n } as never)).not.toBe(designId({ t: 1e21 } as never));
     expect(designId({ t: { a: 1n } } as never)).toBe(designId({ t: { a: '1n' } } as never));
     // Re-audit of WU-1, finding 4: a number of another country, or digits before a hyphen, do not excuse a made-up number beside them.
     for (const filler of ['Leeds office 0113 555-0142. New York office (212) 555-0199.', 'Invoice 2024-555-0142 is paid. Call us on 555-0100.']) expect(placeholderIn(filler), filler).toBe('555-0');
