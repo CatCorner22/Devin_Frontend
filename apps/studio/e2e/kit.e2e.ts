@@ -790,6 +790,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(field, 'noEndlessMotion', 'input::placeholder { animation: nothing 1s infinite; }')).toEqual(['holds']);
       expect(await statuses(field, 'noEndlessMotion', '@keyframes same { from { opacity: 1 } to { opacity: 1 } } input::placeholder { animation: same 1s infinite; }')).toEqual(['holds']);
       expect(await statuses(field, 'noEndlessMotion', '@media all { @keyframes blink { 50% { opacity: 0.3; } } } input::placeholder { animation: blink 1s infinite; }')).toEqual(['fails']);
+      // Second re-audit of WU-1, findings 1 and 2: a name that CSS writes escaped still moves; the last rule of a name counts; a block for print does not.
+      for (const named of ['a\\.b', '"q n"', '\\31 up']) expect(await statuses(field, 'noEndlessMotion', `@keyframes ${named} { 50% { opacity: 0.3 } } input::placeholder { animation: ${named} 1s infinite; }`), named).toEqual(['fails']);
+      expect(await statuses(`<style>@import url("data:text/css,${encodeURIComponent('@keyframes far { 50% { opacity: 0.3 } }')}"); input::placeholder { animation: far 1s infinite; }</style>${field}`, 'noEndlessMotion')).toEqual(['fails']);
+      expect(await statuses(field, 'noEndlessMotion', '@keyframes dup { from { opacity: 1 } to { opacity: 0.2 } } @keyframes dup { from { opacity: 1 } to { opacity: 1 } } input::placeholder { animation: dup 1s infinite; }')).toEqual(['holds']);
+      expect(await statuses(field, 'noEndlessMotion', '@media print { @keyframes pr { 50% { opacity: 0.3 } } } input::placeholder { animation: pr 1s infinite; }')).toEqual(['holds']);
     });
 
     it('Hinshitsu audit of WU-1, adversarial findings 3 and 13: endless movement on body, on a marker and a placeholder, in a shadow root, and in drawings that time themselves in other ways fails; an animation that stands still holds', async () => {
