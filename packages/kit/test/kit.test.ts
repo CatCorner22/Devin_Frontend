@@ -124,7 +124,9 @@ describe('grade', () => {
   it('a finding under a rule id that no record holds gives "Not graded", and the receipt names it (review of 2026-11-18, F-19)', () => {
     const slip = grade([...allHold, holds('person-a'), fails('floor-a ')], RULES);
     expect(slip).toMatchObject({ grade: 'Not graded', unknownRules: ['floor-a '] });
-    expect(slip.reason).toMatch(/1 finding\(s\) name a rule that this set of rules does not hold/);
+    expect(slip.reason).toMatch(/Findings name 1 rule id\(s\) that this set of rules does not hold/);
+    // Hinshitsu audit of WU-1: the number counts rule ids, and the sentence says so. Three findings under one unknown id are 1 id.
+    expect(grade([...allHold, fails('floor-a '), fails('floor-a '), holds('floor-a ')], RULES).reason).toMatch(/Findings name 1 rule id\(s\)/);
     expect(receipt([fails('made-up-floor')], RULES).notMeasured.find((line) => line.ruleId === '‹made-up-floor›')?.result).toMatch(/status "fails"/);
   });
   it('a status outside the four counts as "could not measure", never as an answer (review of 2026-11-24, F-1)', () => {

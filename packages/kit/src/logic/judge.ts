@@ -10,12 +10,12 @@ export type Grade = 'Not graded' | 'Below floor' | 'Meets floor' | 'Crafted';
 export interface GradeResult { grade: Grade; reason: string; failedFloors: string[]; failedRules: string[]; unmeasuredFloors: string[]; floorsForAPerson: string[]; /** Rule ids that findings name and no record holds. Text from outside: print it only through `fromPage`. */ unknownRules: string[] }
 
 const unique = (list: string[]): string[] => [...new Set(list)];
+const UNKNOWN_STATUS = 'the finding carries a status that the kit does not know';
 /**
  * Findings arrive as data: a person types an answer, or a builder's program writes a list. A status outside the four of
  * `FINDING_STATUSES` ("failed", "broken", a slip of the keyboard) says nothing the kit can rely on, so the finding counts as
  * "could not measure" and never as an answer (finding F-1 of the review of 2026-11-24).
  */
-const UNKNOWN_STATUS = 'the finding carries a status that the kit does not know';
 const sound = (findings: readonly Finding[]): Finding[] =>
   findings.map((f) => ((FINDING_STATUSES as readonly string[]).includes(f.status) ? f : { ...f, status: 'could-not-measure' as const, measured: UNKNOWN_STATUS }));
 const byId = (rules: readonly RuleRecord[]): Map<string, RuleRecord> => new Map(rules.map((rule) => [rule.id, rule]));
@@ -43,7 +43,7 @@ export function grade(given: readonly Finding[], rules: readonly RuleRecord[]): 
   const unknownRules = unique(findings.filter((f) => !record.has(f.ruleId)).map((f) => f.ruleId));
   const result = (grade: Grade, reason: string): GradeResult => ({ grade, reason: reason + open, failedFloors, failedRules, unmeasuredFloors, floorsForAPerson, unknownRules });
   if (failedFloors.length > 0) return result('Below floor', `${failedFloors.length} floor(s) fail.`);
-  if (unknownRules.length > 0) return result('Not graded', `${unknownRules.length} finding(s) name a rule that this set of rules does not hold.`);
+  if (unknownRules.length > 0) return result('Not graded', `Findings name ${unknownRules.length} rule id(s) that this set of rules does not hold.`);
   if (unmeasuredFloors.length > 0) return result('Not graded', `${unmeasuredFloors.length} floor(s) were not measured.`);
   if (failedRules.length > 0) return result('Meets floor', `Every measured floor holds; ${failedRules.length} rule(s) fail.`);
   if (floorsForAPerson.length > 0) return result('Meets floor', 'Every measured floor and rule holds. The grade "Crafted" waits for a person.');
