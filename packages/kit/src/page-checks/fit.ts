@@ -3,6 +3,8 @@
 import type { Finding } from '../shapes.js';
 
 export function tokenFit(doc: Document, tokens: Record<string, string>): Finding[] {
+  // A color as CSS writes it. A color function that holds another bracket (color-mix) is not matched.
+  const colorsIn = /#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi;
   const view = doc.defaultView;
   const ids = ['fit-colors', 'fit-fonts', 'fit-radii', 'fit-unused-color'] as const;
   if (!view) return ids.map((ruleId) => ({ ruleId, status: 'could-not-measure' as const, measured: 'the page has no window' }));
@@ -77,7 +79,7 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     // design too (finding F-19 of the review of 2026-11-24). A token for a typeface is not read: "Tan" names a face there.
     else if (!/font|family/i.test(token) && /[\s,]/.test(value.trim())) {
       const text = withoutUrls(value.slice(0, 2000));
-      const parts = [...(text.match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []), ...(text.replace(/[a-z-]+\([^()]*\)/gi, ' ').match(/\b[a-z]{3,20}\b/gi) ?? []).filter((word) => !/^(inherit|initial|unset|revert|currentcolor)$/i.test(word))];
+      const parts = [...(text.match(colorsIn) ?? []), ...(text.replace(/[a-z-]+\([^()]*\)/gi, ' ').match(/\b[a-z]{3,20}\b/gi) ?? []).filter((word) => !/^(inherit|initial|unset|revert|currentcolor)$/i.test(word))];
       for (const part of parts) { const inner = paint(part); if (inner && inner !== 'clear' && !tokenColors.has(inner)) tokenColors.set(inner, token); }
     }
     else if (/^-?[\d.]+(px|rem)$/.test(value.trim())) tokenLengths.add(parseFloat(value) * (value.trim().endsWith('rem') ? parseFloat(view.getComputedStyle(doc.documentElement).fontSize) : 1));
@@ -110,7 +112,7 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     for (const side of ['Top', 'Right', 'Bottom', 'Left'] as const) if (parseFloat(style[`border${side}Width`]) > 0 && style[`border${side}Style`] !== 'none') colors.push(['border', style[`border${side}Color`]]);
     // The colors inside a shadow and inside a fade, however the style sheet writes them (F-32). Only the first 2,000 letters are read.
     for (const [part, text] of [['shadow', style.boxShadow], ['background fade', style.backgroundImage.includes('gradient') ? withoutUrls(style.backgroundImage) : '']] as const) {
-      for (const color of text.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push([part, color]);
+      for (const color of text.slice(0, 2000).match(colorsIn) ?? []) colors.push([part, color]);
     }
     // More places where a page carries a color (finding F-20 of 2026-11-24): the outline, the line under or through text, the
     // shadow of text, the fill of text, and the ::before and ::after of the element. The ring that the browser itself draws
@@ -119,7 +121,7 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
     if (hasText) {
       if (style.textDecorationLine !== 'none') colors.push(['text line', style.textDecorationColor]);
       colors.push(['text fill', style.getPropertyValue('-webkit-text-fill-color')]);
-      for (const color of style.textShadow.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push(['text shadow', color]);
+      for (const color of style.textShadow.slice(0, 2000).match(colorsIn) ?? []) colors.push(['text shadow', color]);
     }
     for (const pseudo of ['::before', '::after']) {
       const extra = view.getComputedStyle(el, pseudo);
@@ -127,7 +129,7 @@ export function tokenFit(doc: Document, tokens: Record<string, string>): Finding
       colors.push([`${pseudo} background`, extra.backgroundColor]);
       if (/^"[^"]/.test(extra.content)) colors.push([`${pseudo} text`, extra.color]);
       for (const edge of ['Top', 'Right', 'Bottom', 'Left'] as const) if (parseFloat(extra[`border${edge}Width`]) > 0 && extra[`border${edge}Style`] !== 'none') colors.push([`${pseudo} border`, extra[`border${edge}Color`]]);
-      for (const text of [extra.boxShadow, extra.backgroundImage.includes('gradient') ? withoutUrls(extra.backgroundImage) : '']) for (const color of text.slice(0, 2000).match(/#[0-9a-f]{3,8}\b|\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\([^()]*\)/gi) ?? []) colors.push([`${pseudo} background`, color]);
+      for (const text of [extra.boxShadow, extra.backgroundImage.includes('gradient') ? withoutUrls(extra.backgroundImage) : '']) for (const color of text.slice(0, 2000).match(colorsIn) ?? []) colors.push([`${pseudo} background`, color]);
     }
     for (const [part, value] of colors) {
       const color = paint(value);

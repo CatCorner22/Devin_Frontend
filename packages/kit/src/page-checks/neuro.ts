@@ -57,7 +57,7 @@ export function noEndlessMotion(doc: Document): Finding[] {
     const styles: [string, CSSStyleDeclaration][] = [['', own]];
     for (const pseudo of ['::before', '::after']) {
       const style = view.getComputedStyle(el, pseudo);
-      if (style.content !== 'none' && style.content !== 'normal' && style.display !== 'none' && style.visibility !== 'hidden') styles.push([pseudo, style]);
+      if (style.content !== 'none' && style.content !== 'normal' && style.display !== 'none' && style.visibility === 'visible') styles.push([pseudo, style]);
     }
     for (const [pseudo, style] of styles) {
       if (style.animationName === 'none') continue;

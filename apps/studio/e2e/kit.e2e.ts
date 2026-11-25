@@ -293,6 +293,8 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await where(`<div class="hero">${text}</div>`, `.hero{position:relative;height:400px} .hero::after{content:"";display:block;width:600px;height:300px;background-image:${fade}}`)).toEqual(['div.hero::after']);
       // A fade on a ::before that is not drawn, a small one, and one in the colors of a design all hold.
       expect(await statuses(`<div class="hero">${text}</div>`, 'purpleGradient', `.hero::before{position:absolute;inset:0;background:${fade}}`)).toEqual(['holds']);
+      // Hinshitsu audit of WU-1: a ::before that is not drawn (visibility: hidden) shows no fade, in this check as in the three others that read ::before.
+      expect(await statuses(`<div class="hero">${text}</div>`, 'purpleGradient', `.hero{position:relative}.hero::before{content:"";visibility:hidden;position:absolute;inset:0;background:${fade}}`)).toEqual(['holds']);
       expect(await statuses(`<div class="hero">${text}</div>`, 'purpleGradient', `.hero::before{content:"";display:inline-block;width:40px;height:4px;background:${fade}}`)).toEqual(['holds']);
       expect(await statuses(text, 'purpleGradient', 'html{min-height:100%;background:linear-gradient(#fff7ed,#fed7aa)}')).toEqual(['holds']);
     });

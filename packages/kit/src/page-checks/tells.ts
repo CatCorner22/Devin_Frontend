@@ -109,7 +109,7 @@ export function purpleGradient(doc: Document): Finding[] {
       const computed = view.getComputedStyle(el, pseudo === '' ? null : pseudo);
       const image = computed.backgroundImage;
       if (!image.includes('gradient')) continue;
-      if (pseudo !== '' && (computed.content === 'none' || computed.display === 'none')) continue;
+      if (pseudo !== '' && (computed.content === 'none' || computed.content === 'normal' || computed.display === 'none' || computed.visibility !== 'visible')) continue;
       if (computed.visibility !== 'visible') continue;
       const box = el.getBoundingClientRect();
       // The root paints the whole window. A ::before or ::after has no box that a script can ask for; its computed size is read.
