@@ -222,18 +222,12 @@ export function survivesTextSpacing(doc: Document): Finding[] {
     const computed = view.getComputedStyle(el);
     return box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath);
   };
-  const style = doc.createElement('style');
-  style.textContent = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
-  doc.head.appendChild(style);
-  const out: Finding[] = [];
-  const seen = new Set<HTMLElement>();
-  for (const el of doc.querySelectorAll<HTMLElement>('body *')) {
-    // Every element that holds text of its own, also beside a line break or another element.
-    if (el.getClientRects().length === 0 || ![...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '')) continue;
-    const hides = (value: string): boolean => value === 'hidden' || value === 'clip';
-    // The box that cuts the text off is the text's own box or one around it. What counts is where the letters themselves lie:
-    // a box that hides an ornament which reaches over its edge, while every word stays inside, cuts no text
-    // (finding F-6 of the review of 2026-11-24).
+  const hides = (value: string): boolean => value === 'hidden' || value === 'clip';
+  // The box that cuts the text off is the text's own box or one around it. What counts is where the letters themselves lie:
+  // a box that hides an ornament which reaches over its edge, while every word stays inside, cuts no text
+  // (finding F-6 of the review of 2026-11-24).
+  type Cut = { box: HTMLElement; across: boolean; beside: boolean };
+  const cutOf = (el: HTMLElement): Cut | null => {
     const letters: DOMRect[] = [];
     for (const node of el.childNodes) {
       if (node.nodeType !== 3 || (node.textContent ?? '').trim() === '') continue;
@@ -241,21 +235,36 @@ export function survivesTextSpacing(doc: Document): Finding[] {
       range.selectNodeContents(node);
       letters.push(...range.getClientRects());
     }
-    let box: HTMLElement | null = el;
-    let cutAcross = false;
-    let cutDown = false;
-    for (; box && box !== doc.body && !cutAcross && !cutDown; box = cutAcross || cutDown ? box : box.parentElement) {
-      const computed: CSSStyleDeclaration = view.getComputedStyle(box);
+    for (let box: HTMLElement | null = el; box && box !== doc.body; box = box.parentElement) {
+      const computed = view.getComputedStyle(box);
       if (!hides(computed.overflowX) && !hides(computed.overflowY)) continue;
-      const outer: DOMRect = box.getBoundingClientRect();
-      const left: number = outer.left + box.clientLeft;
-      const top: number = outer.top + box.clientTop;
-      const right: number = left + box.clientWidth;
-      const bottom: number = top + box.clientHeight;
-      cutAcross = hides(computed.overflowX) && letters.some((r): boolean => r.width > 0 && (r.right > right + 1 || r.left < left - 1));
-      cutDown = hides(computed.overflowY) && letters.some((r): boolean => r.height > 0 && (r.bottom > bottom + 1 || r.top < top - 1));
+      const outer = box.getBoundingClientRect();
+      const left = outer.left + box.clientLeft;
+      const top = outer.top + box.clientTop;
+      const right = left + box.clientWidth;
+      const bottom = top + box.clientHeight;
+      const across = hides(computed.overflowX) && letters.some((r) => r.width > 0 && (r.right > right + 1 || r.left < left - 1));
+      const down = hides(computed.overflowY) && letters.some((r) => r.height > 0 && (r.bottom > bottom + 1 || r.top < top - 1));
+      if (across || down) return { box, across, beside: letters.every((r) => r.left >= right || r.right <= left) };
     }
-    if (box && box !== doc.body && (cutAcross || cutDown) && !tiny(box) && !tiny(el) && !seen.has(box) && seen.add(box)) out.push({ ruleId, status: 'fails', where: name(box), measured: `text cut off ${cutAcross ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
+    return null;
+  };
+  // Every element that holds text of its own, also beside a line break or another element.
+  const texts = [...doc.querySelectorAll<HTMLElement>('body *')].filter((el) => el.getClientRects().length > 0 && [...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== ''));
+  // Text that lay wholly to the left or right of the same box before the spacing grew is not this floor's fault: a slide that
+  // waits beside the one in view (Hinshitsu audit of WU-1, adversarial finding 7). Text that was cut in part, or that lay
+  // below the box, still fails: a box of fixed height that loses its last lines is the fault this floor names.
+  const before = new Map<HTMLElement, Cut | null>(texts.map((el) => [el, cutOf(el)]));
+  const style = doc.createElement('style');
+  style.textContent = '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; } p { margin-bottom: 2em !important; }';
+  doc.head.appendChild(style);
+  const out: Finding[] = [];
+  const seen = new Set<HTMLElement>();
+  for (const el of texts) {
+    const cut = cutOf(el);
+    const was = before.get(el);
+    if (!cut || (was && was.box === cut.box && was.beside)) continue;
+    if (!tiny(cut.box) && !tiny(el) && !seen.has(cut.box) && seen.add(cut.box)) out.push({ ruleId, status: 'fails', where: name(cut.box), measured: `text cut off ${cut.across ? 'at the side' : 'at the bottom'} with wider spacing`, required: 'all text stays visible', fix: 'Remove the fixed height or width, or let the box grow with its text.' });
   }
   style.remove();
   return out.length > 0 ? out : [{ ruleId, status: 'holds' }];
@@ -273,7 +282,8 @@ export function noSidewaysScroll(doc: Document): Finding[] {
   const view = doc.defaultView;
   // A page that hides its sideways overflow does not scroll, and what lies beyond the edge is lost instead (finding F-11).
   // Only parts in the ordinary flow count: a drawer or a slide that waits beside the page is placed there on purpose.
-  const clips = (el: Element): boolean => ['hidden', 'clip'].includes(view?.getComputedStyle(el).overflowX ?? '');
+  // A box cuts its content off when it hides its overflow, or when `contain` tells the browser to paint nothing past its edge.
+  const clips = (el: Element): boolean => { const computed = view?.getComputedStyle(el); return ['hidden', 'clip'].includes(computed?.overflowX ?? '') || /\b(paint|strict|content)\b/.test(computed?.contain ?? ''); };
   // The part that hides it may be the page itself or any box around the content: a wrapper `div` with `overflow: hidden` is as
   // common as the rule on `body` (finding F-2 of the review of 2026-11-24). A box that cuts its own text with an ellipsis on
   // purpose is not counted.
@@ -289,9 +299,18 @@ export function noSidewaysScroll(doc: Document): Finding[] {
       }
       return true;
     };
-    const holdsContent = (el: Element): boolean => ['IMG', 'INPUT', 'BUTTON', 'SELECT', 'TEXTAREA', 'VIDEO'].includes(el.tagName) || [...el.childNodes].some((node) => node.nodeType === 3 && (node.textContent ?? '').trim() !== '');
-    const lost = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5 && holdsContent(el) && inFlow(el) && cutBy(el)).slice(0, 3);
-    if (lost.length > 0) return [{ ruleId, status: 'fails', where: lost.map(name).join(', '), measured: `content lies beyond the right edge of a window of ${limit} px, and the page hides it instead of scrolling`, required: 'all content within the width of the window', fix: 'Let the named parts wrap or shrink. Do not hide the overflow of the page: it cuts content off.' }];
+    // Content is a control, a picture that says something (an empty alt marks an ornament), a drawing, a frame, or text. Text
+    // is measured by its letters and not by its box: a line that will not wrap runs out of a box that is itself narrow enough,
+    // and a box pulled to the left loses its first words there (Hinshitsu audit of WU-1, adversarial findings 2 and 7).
+    const holdsContent = (el: Element): boolean => ['input', 'button', 'select', 'textarea', 'video', 'canvas', 'svg', 'iframe', 'object'].includes(el.tagName.toLowerCase()) || (el.tagName === 'IMG' && el.getAttribute('alt') !== '');
+    const lettersLost = (el: Element): boolean => [...el.childNodes].some((node) => {
+      if (node.nodeType !== 3 || (node.textContent ?? '').trim() === '') return false;
+      const range = doc.createRange();
+      range.selectNodeContents(node);
+      return [...range.getClientRects()].some((r) => r.width > 0 && (r.right > limit + 0.5 || (r.left < -0.5 && r.right > 0.5)));
+    });
+    const lost = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && ((holdsContent(el) && el.getBoundingClientRect().right > limit + 0.5) || lettersLost(el)) && inFlow(el) && cutBy(el)).slice(0, 3);
+    if (lost.length > 0) return [{ ruleId, status: 'fails', where: lost.map(name).join(', '), measured: `content lies beyond the edge of a window of ${limit} px, and the page hides it instead of scrolling`, required: 'all content within the width of the window', fix: 'Let the named parts wrap or shrink. Do not hide the overflow of the page: it cuts content off.' }];
   }
   if (root.scrollWidth <= limit) return [{ ruleId, status: 'holds', measured: `${limit} px wide` }];
   const culprits = [...doc.querySelectorAll('body *')].filter((el) => el.getClientRects().length > 0 && el.getBoundingClientRect().right > limit + 0.5).slice(0, 3);

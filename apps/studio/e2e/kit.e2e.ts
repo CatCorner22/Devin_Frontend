@@ -857,6 +857,31 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await narrow('<p>Text.</p><nav style="position: fixed; top: 0; right: 0; width: 240px; transform: translateX(100%)"><a href="#a">About</a></nav>', 'html, body { overflow-x: hidden; }')).toEqual(['holds']);
     });
 
+    it('Hinshitsu audit of WU-1, adversarial findings 2 and 7: at 320 pixels a line that will not wrap, a drawing, a box that paints nothing past its edge, and words pulled off the left all fail; an ornament and a waiting slide are not blamed for wider spacing', async () => {
+      const narrow = async (body: string, fn = 'noSidewaysScroll'): Promise<string[]> => {
+        const page = await pageOf(body);
+        await page.setViewportSize({ width: 320, height: 800 });
+        const out = (await run(page, fn)).map((f) => f.status);
+        await page.context().close();
+        return out;
+      };
+      expect(await narrow('<h1>Shop</h1><article style="overflow:hidden"><div><pre>npm install --save-exact some-very-long-package-name@1.2.3 another-long-package-name@4.5.6 third@7</pre></div></article>')).toEqual(['fails']);
+      expect(await narrow('<h1>Shop</h1><div style="overflow:hidden"><canvas width="900" height="100" aria-label="Chart"></canvas></div>')).toEqual(['fails']);
+      expect(await narrow('<h1>Shop</h1><section style="contain:paint"><p style="width:900px">A line of text that is set wider than the window and that nobody can reach by scrolling.</p></section>')).toEqual(['fails']);
+      expect(await narrow('<h1>Shop</h1><div style="overflow:hidden"><p style="margin-left:-200px;white-space:nowrap">Phone 0113 496 0000 for orders today</p></div>')).toEqual(['fails']);
+      // A picture with an empty alt is an ornament: a wide one that its box crops loses nothing a person must read.
+      const dot = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+      expect(await narrow(`<h1>Shop</h1><div style="overflow:hidden;height:120px"><img alt="" src="${dot}" style="width:900px;height:120px;max-width:none"></div><p>Bread, baked each morning.</p>`)).toEqual(['holds']);
+      expect(await narrow(`<h1>Shop</h1><div style="overflow:hidden;height:120px"><img alt="Our opening hours" src="${dot}" style="width:900px;height:120px;max-width:none"></div>`)).toEqual(['fails']);
+      // Slides in a row: the two that wait lie wholly beside the box before the spacing grows, so the spacing floor
+      // does not blame them. The reflow floor still does (README, "Overflow that the page hides").
+      const slides = '<h1>Shop</h1><div style="overflow:hidden;width:100%"><div style="display:flex;width:900px"><p style="width:300px;margin:0">Slide one</p><p style="width:300px;margin:0">Slide two</p><p style="width:300px;margin:0">Slide three</p></div></div><button>Next slide</button>';
+      expect(await narrow(slides, 'survivesTextSpacing')).toEqual(['holds']);
+      expect(await narrow(slides)).toEqual(['fails']);
+      // Text that the wider spacing itself pushes out of a fixed box still fails.
+      expect(await narrow('<h1>Shop</h1><p style="width:170px;overflow:hidden;white-space:nowrap">Free delivery on orders</p>', 'survivesTextSpacing')).toEqual(['fails']);
+    });
+
     it('second review F-2: at 320 pixels, columns cut off by a wrapper that hides its overflow fail; an ellipsis and a scrolling box hold', async () => {
       const narrow = async (body: string, style = ''): Promise<string[]> => {
         const page = await pageOf(body, style);
