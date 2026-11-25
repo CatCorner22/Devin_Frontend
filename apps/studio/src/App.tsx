@@ -4,6 +4,7 @@ import {
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { BriefView } from './Brief';
+import { CraftFloors } from './CraftFloors';
 import { LICENSE_TEXTS, MIT_COPYRIGHT_PLACEHOLDER, NOTICES } from './notices.generated';
 import { copyText, fileNameFor, probePreviews, readBackups, removeBackup, saveFile, storedProjectText, type KeptCopy } from './platform';
 import { LargePreview, Thumbnail, mockupHtml, tokensFor } from './preview';
@@ -1058,6 +1059,7 @@ function SummaryView(): React.JSX.Element {
             </>
           )}
         </section>
+        <CraftFloors project={s.project} />
         <section aria-labelledby="research-heading">
           <h2 id="research-heading">Research rules</h2>
           <p className="hint">A research rule turns a finding from research into a number that the Studio measures on your design. “Holds” means that your design meets the rule. Each rule is advice, with its strength stated; none of them changes your design. Open a rule to read why it exists and what you must still check yourself.</p>

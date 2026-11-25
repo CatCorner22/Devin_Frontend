@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { KIT_RULES } from '@refraction/kit';
+import { CATALOG_ENTRIES, CRAFT_LAYER, FLOORS, catalogEntrySchema, craftFor, pick } from '../src/index.js';
 import {
   CONFLICT_RULES, CONFLICT_TESTS, DEFAULT_PARAMS, DIRECTION_GROUPS, DIRECTIONS, EVIDENCE_GRADES, FONTS, HARMONY_FIXES, HARMONY_RULES, NOT_CHECKED, PAIRS, PARAM_KEYS, RULES, SOURCE_BASES, STEPS,
   MOCKUP_OVERLAYS, OVERLAYS, RESEARCH_RULES, SKINS, SMALL_BUSINESS_CSS, assertKnownParams, skinFits, findOverlay, researchReport, closerOptions, conflicts, createProject, deriveTokens, findSkin, skinParams, skinsOf, describeDesign, designDistance, findDirection, findStep, generateDirections, harmonize, resolvePatch,
@@ -9,6 +11,48 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { allStrings, repoFileExists, repoPath } from './helpers.js';
 
 const isDate = (s: unknown): boolean => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !Number.isNaN(Date.parse(s)) && new Date(s).toISOString().slice(0, 10) === s;
+
+describe('Catalog craft layer and floors', () => {
+  it('validates every record, its provenance and its human-check limit', () => {
+    for (const entry of CATALOG_ENTRIES) {
+      expect(catalogEntrySchema.safeParse(entry).error?.issues ?? [], entry.rule.id).toEqual([]);
+      expect(isDate(entry.rule.reviewed), entry.rule.id).toBe(true);
+      for (const source of entry.rule.sources) {
+        if (source.title.startsWith('Repository research record: ')) expect(repoFileExists(source.title.slice('Repository research record: '.length)), source.title).toBe(true);
+      }
+    }
+  });
+  it('refuses malformed entries, empty provenance, and floors controlled by Decisions', () => {
+    const floor = FLOORS[0]!;
+    for (const bad of [null, {}, { ...floor, floorKind: undefined }, { ...floor, notChecked: '' }, { ...floor, setBy: [{ stepId: 'theme' }] }, { ...floor, rule: { ...floor.rule, sources: [] } }, { ...floor, rule: { ...floor.rule, reviewed: 'not-a-date' } }]) expect(catalogEntrySchema.safeParse(bad).success).toBe(false);
+  });
+  it('uses the kit records themselves, with no repeated or missing rule', () => {
+    const expected = KIT_RULES.filter((rule) => rule.group === 'craft' || rule.level === 'floor');
+    expect(CATALOG_ENTRIES.map((entry) => entry.rule.id).sort()).toEqual(expected.map((rule) => rule.id).sort());
+    expect(new Set(CATALOG_ENTRIES.map((entry) => entry.rule.id)).size).toBe(CATALOG_ENTRIES.length);
+    for (const entry of CATALOG_ENTRIES) expect(entry.rule).toBe(KIT_RULES.find((rule) => rule.id === entry.rule.id));
+    expect(CRAFT_LAYER).toHaveLength(10);
+    expect(FLOORS).toHaveLength(21);
+    expect(new Set(FLOORS.map((entry) => entry.floorKind))).toEqual(new Set(['accessibility', 'security', 'search', 'performance']));
+  });
+  it('names only existing Steps and Options for Decision-dependent rules', () => {
+    for (const entry of CATALOG_ENTRIES) for (const ref of entry.setBy ?? []) {
+      const step = findStep(ref.stepId);
+      expect(step, entry.rule.id).toBeDefined();
+      for (const option of ref.optionIds ?? []) expect(step?.options.some((o) => o.id === option), `${entry.rule.id}: ${option}`).toBe(true);
+    }
+  });
+  it('follows the current values including starting values and tuned corners', () => {
+    const initial = createProject();
+    const dark = pick(pick(initial, 'theme', 'dark'), 'numerals', 'tabular');
+    expect(craftFor(dark).map((e) => e.rule.id)).toContain('craft-dark-theme-designed');
+    expect(craftFor(pick(dark, 'theme', 'light')).map((e) => e.rule.id)).not.toContain('craft-dark-theme-designed');
+    expect(craftFor(pick(dark, 'numerals', 'proportional')).map((e) => e.rule.id)).not.toContain('craft-tabular-numerals');
+    expect(craftFor({ ...initial, params: { ...initial.params, radius: 10 } }).map((e) => e.rule.id)).toContain('craft-nested-radii');
+    expect(craftFor(initial).length).toBeGreaterThan(0);
+    expect(FLOORS.every((e) => e.setBy === undefined)).toBe(true);
+  });
+});
 
 function checkSource(source: SourceRef, where: string): void {
   expect(source.text.trim().length, `${where}: source text`).toBeGreaterThanOrEqual(20);
