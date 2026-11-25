@@ -767,6 +767,10 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses('<span id="n"><span hidden>&#x2800;</span></span><button aria-labelledby="n">Save</button>', 'controlsHaveNames')).toEqual(['holds']);
       expect(await statuses('<span id="n"><span style="visibility:hidden">&#x2800;</span></span><button aria-labelledby="n">Save</button>', 'controlsHaveNames')).toEqual(['holds']);
       expect(await statuses('<span id="n">&#x2800;</span><button aria-labelledby="n">Save</button>', 'controlsHaveNames')).toEqual(['fails']);
+      // A label that is itself hidden, with a box or inside a part hidden from screen readers, still names the button that points at it.
+      const icon = '<svg width="20" height="20"><path d="M2 2 L18 18"/></svg>';
+      expect(await statuses(`<span id="n" style="visibility:hidden">Close</span><button aria-labelledby="n">${icon}</button>`, 'controlsHaveNames')).toEqual(['holds']);
+      expect(await statuses(`<div aria-hidden="true"><span id="n">Close</span></div><button aria-labelledby="n">${icon}</button>`, 'controlsHaveNames')).toEqual(['holds']);
     });
 
     it('automated review of 2026-11-25: of several animations on a placeholder, each is read with its own duration, count and state', async () => {

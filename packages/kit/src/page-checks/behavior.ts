@@ -230,10 +230,10 @@ export function controlsHaveNames(doc: Document): Finding[] {
   const unseen = /[\p{Default_Ignorable_Code_Point}\p{Bidi_Control}\p{Private_Use}\u2800]/gu;
   for (const el of controls) {
     // A style sheet or a script that `aria-labelledby` points at holds code, never a name.
-    // A target that is itself not drawn lends all its text. Of a target that is drawn, only the text that is drawn counts:
-    // the browser leaves out a hidden part inside it.
+    // A target that is itself hidden lends all its text: a name may point at a hidden label. Of a target that is shown,
+    // only the text that is shown counts: the browser leaves out a hidden part inside it.
     const lent = (target: Element): string => {
-      if (target.getClientRects().length === 0) return target.textContent ?? '';
+      if (target.getClientRects().length === 0 || target.closest('[aria-hidden="true"]') || doc.defaultView?.getComputedStyle(target).visibility !== 'visible') return target.textContent ?? '';
       let drawn = '';
       const within = doc.createTreeWalker(target, 4);
       const span = doc.createRange();
