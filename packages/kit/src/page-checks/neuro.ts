@@ -90,7 +90,8 @@ export function noEndlessMotion(doc: Document): Finding[] {
       const t = durations[i % durations.length] ?? '0s';
       const d = t.endsWith('ms') ? parseFloat(t) / 1000 : parseFloat(t);
       const count = counts[i % counts.length] ?? '1';
-      return d > 0 && count === 'infinite' ? Infinity : d * parseFloat(count);
+      if (!(d > 0)) return 0;
+      return count === 'infinite' ? Infinity : d * parseFloat(count);
     }));
     if (total > 5 && !hasPause) out.push({ ruleId, status: 'fails', where: name(el) + '::placeholder', measured: total === Infinity ? 'moves without end' : `moves for ${total.toFixed(1)} s`, required, fix });
   }

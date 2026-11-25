@@ -777,6 +777,9 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: none, blink; animation-duration: 20s, 1s; animation-iteration-count: infinite, 1; }`)).toEqual(['holds']);
       // Two animations share one duration and one count: the list is read again from its start, and the movement has no end.
       expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: none, blink; animation-duration: 1s; animation-iteration-count: infinite; }`)).toEqual(['fails']);
+      // An animation of no length that repeats without end moves nothing, and does not hide the long one beside it.
+      expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: slide, blink; animation-duration: 0s, 2s; animation-iteration-count: infinite, 4; }`)).toEqual(['fails']);
+      expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: slide; animation-duration: 0s; animation-iteration-count: infinite; }`)).toEqual(['holds']);
     });
 
     it('Hinshitsu audit of WU-1, adversarial findings 3 and 13: endless movement on body, on a marker and a placeholder, in a shadow root, and in drawings that time themselves in other ways fails; an animation that stands still holds', async () => {
