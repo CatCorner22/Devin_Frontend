@@ -7,7 +7,7 @@ import { BriefView } from './Brief';
 import { CraftFloors } from './CraftFloors';
 import { LICENSE_TEXTS, MIT_COPYRIGHT_PLACEHOLDER, NOTICES } from './notices.generated';
 import { copyText, fileNameFor, probePreviews, readBackups, removeBackup, saveFile, storedProjectText, type KeptCopy } from './platform';
-import { LargePreview, Thumbnail, mockupHtml, tokensFor } from './preview';
+import { LargePreview, PreviewPageControl, Thumbnail, mockupHtml, tokensFor } from './preview';
 import { CURRENT, DEVICE_WIDTH, appliedCardId, directionName, paramsForCard, stepOf, useStudio, type Device, type StudioState } from './store';
 import { STUDIO_PARAMS, applyStudioTheme, installSpecimenFonts } from './theme';
 
@@ -577,7 +577,7 @@ function StepsView(): React.JSX.Element {
     return out;
   }, [stateKey, cards.length]);
   // The two motion Steps play their examples; other comparisons stand still.
-  const large = useMemo(() => mockupHtml(s.project, shownParams, { wireframe: wire, focus, still: step.id !== 'motion' && step.id !== 'motion-timing', voice: step.options.find((o) => o.id === shown.id)?.voice }), [stateKey, shown.id, focus]);
+  const large = useMemo(() => mockupHtml(s.project, shownParams, { page: s.previewPage, wireframe: wire, focus, still: step.id !== 'motion' && step.id !== 'motion-timing', voice: step.options.find((o) => o.id === shown.id)?.voice }), [stateKey, shown.id, focus, s.previewPage]);
   // The pictures follow at lower priority. A slider step first moves the knob and its number; the browser then draws the
   // pictures when it is free, and skips the steps in between while a key is held or the knob is dragged.
   const shownThumbs = useDeferredValue(thumbs);
@@ -649,6 +649,7 @@ function StepsView(): React.JSX.Element {
           {step.stage === 'structure' && s.wireframe && <p className="hint">Layout Steps show the page in gray, so that color does not distract you. Your colors return at Step {firstFeel}.</p>}
         </div>
         <div className="preview-bar">
+          <PreviewPageControl />
           <div className="segmented" role="group" aria-label="Width of the large preview">
             {DEVICES.map((d) => <button key={d.id} type="button" aria-pressed={s.device === d.id} onClick={() => s.setDevice(d.id)}>{d.label}</button>)}
           </div>
@@ -837,7 +838,7 @@ function OverlaysView(): React.JSX.Element {
   const s = useStudio();
   const heading = useHeadingFocus();
   const on = useMemo(() => overlaysOf(s.project), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on]);
+  const html = useMemo(() => mockupHtml(s.project, s.project.params, { page: s.previewPage, wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on, s.previewPage]);
   return (
     <div className="work">
       <Rail />
@@ -852,6 +853,7 @@ function OverlaysView(): React.JSX.Element {
             {DEVICES.map((d) => <button key={d.id} type="button" aria-pressed={s.device === d.id} onClick={() => s.setDevice(d.id)}>{d.label}</button>)}
           </div>
           <span className="showing" aria-live="polite">{on.length === 0 ? 'No Overlay is switched on.' : on.length === 1 ? '1 Overlay is switched on. The preview shows it open.' : `${on.length} Overlays are switched on. The preview shows each one open.`}</span>
+          <PreviewPageControl />
         </div>
         <div className="preview-wrap">
           <button type="button" className="skip-preview" onClick={() => document.querySelector<HTMLElement>('.overlay-list input')?.focus()}>
@@ -925,7 +927,7 @@ function SummaryView(): React.JSX.Element {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const text = useMemo(() => JSON.stringify(s.project, null, 2), [s.project]);
   const overlaysOn = useMemo(() => overlaysOf(s.project), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'top', still: true, overlays: overlaysOn }), [s.project, overlaysOn]);
+  const html = useMemo(() => mockupHtml(s.project, s.project.params, { page: s.previewPage, wireframe: false, focus: 'top', still: true, overlays: overlaysOn }), [s.project, overlaysOn, s.previewPage]);
   const clashes = useMemo(() => conflicts(s.project), [s.project]);
   const research = useMemo(() => researchReport(s.project.params, tokensFor(s.project.params, s.project.a11y).css), [s.project.params, s.project.a11y]);
   const decided = STEPS.filter((st) => s.project.decisions[st.id]).length;
@@ -1120,6 +1122,7 @@ function SummaryView(): React.JSX.Element {
       </div>
       <aside className="summary-side" aria-label="Your design as a picture">
         <div className="preview-bar">
+          <PreviewPageControl />
           <div className="segmented" role="group" aria-label="Width of the large preview">
             {DEVICES.map((d) => <button key={d.id} type="button" aria-pressed={s.device === d.id} onClick={() => s.setDevice(d.id)}>{d.label}</button>)}
           </div>

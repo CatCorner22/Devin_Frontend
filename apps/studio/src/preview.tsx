@@ -1,9 +1,11 @@
 // Mockup previews. Each preview is a sandboxed frame: no scripts, no forms, no access to the Studio.
-import { deriveTokens, renderSmallBusiness, wireframeParams, type A11yProfile, type BriefNotes, type DesignParams, type FontId, type MeasuredPair, type MockupFocus, type Project, type TokenIssue } from '@refraction/core';
+import { deriveTokens, renderSmallBusiness, wireframeParams, type A11yProfile, type BriefNotes, type DesignParams, type FontId, type MeasuredPair, type MockupFocus, type MockupPage, type Project, type TokenIssue } from '@refraction/core';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { fontFaceCss } from './fonts';
+import { useStudio } from './store';
 
 export interface MockupOptions {
+  page?: MockupPage;
   /** Show the layout only, in gray (for Structure Steps). */
   wireframe: boolean;
   focus: MockupFocus;
@@ -48,7 +50,7 @@ export function mockupHtml(project: Project, params: DesignParams, options: Mock
   const shown = options.wireframe ? wireframeParams(params) : params;
   const overlays = options.overlays ?? [];
   const voice = options.voice ?? project.brief?.voice;
-  const key = JSON.stringify([shown, project.a11y, project.content, voice, options.focus, options.still, overlays]);
+  const key = JSON.stringify([shown, project.a11y, project.content, voice, options.page, options.focus, options.still, overlays]);
   const known = built.get(key);
   if (known) {
     // Used again: move it to the young end.
@@ -59,11 +61,17 @@ export function mockupHtml(project: Project, params: DesignParams, options: Mock
   const tokens = tokensFor(shown, project.a11y);
   const fonts: FontId[] = [shown.fontHeading, shown.fontBody];
   if (shown.numerals === 'mono') fonts.push('jetbrains-mono');
-  const html = renderSmallBusiness({ params: shown, tokens: tokens.css, content: project.content, voice, focus: options.focus, still: options.still, overlays, fontFaceCss: fontFaceCss(fonts), links: 'inert' });
+  const html = renderSmallBusiness({ params: shown, tokens: tokens.css, content: project.content, voice, page: options.page, focus: options.focus, still: options.still, overlays, fontFaceCss: fontFaceCss(fonts), links: 'inert' });
   const result: MockupResult = { html, issues: tokens.issues, pairs: tokens.pairs };
   built.set(key, result);
   if (built.size > BUILT_MAX) built.delete(built.keys().next().value as string);
   return result;
+}
+
+export function PreviewPageControl(): React.JSX.Element {
+  const page = useStudio((s) => s.previewPage);
+  const change = useStudio((s) => s.setPreviewPage);
+  return <label className="inline-field"><span>Preview page</span><select value={page} onChange={(e) => change(e.target.value as MockupPage)}><option value="home">Home page</option><option value="contact">Contact page</option></select></label>;
 }
 
 function useSize(): [React.RefObject<HTMLDivElement | null>, { width: number; height: number }] {

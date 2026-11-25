@@ -1,6 +1,6 @@
 # [00] Studio guarantees: living reference
 
-Version 1.6. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
+Version 1.7. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
 
 Stale-after: 90
 
@@ -276,9 +276,9 @@ The lines used most often. Each line ends with the ID of the section that suppor
 > **Changed 2026-11-25.** The Brief is the first Stage, before Layout.
 
 - **Rule.** The Brief edits the project's page text and optional notes for the builder. Every Mockup uses that text. Warnings about sample words, known filler, the avoid list, or a missing highlighted phrase never stop saving. The status line alone reports whether saving worked. [S1 at D64; S3]
-- **Elements.** Each page text field accepts up to 600 characters. Builder notes use the same limit. The avoid list allows 30 lines of 40 characters; extra lines and characters on a line are left out as typed. Existing saving failures, stopped saving, and closing-page limits still apply. [S12]
+- **Elements.** Each page text field accepts up to 600 characters. Builder notes use the same limit. The avoid list allows 30 lines of 40 characters; extra lines and characters on a line are left out as typed. Existing saving failures, stopped saving, and closing-page limits still apply. [S12] Home and contact share the design and contact details. The contact page's optional heading, introduction and visit directions use existing contact words until first edited. The page selector changes the main picture, not a Decision; it stays across screens in this tab and returns to Home on reload. Step-card pictures stay on home. [S1 at D69]
 - **Exceptions.** The fixed helper words of the Template and the Overlay examples are not editable page content. A warning cannot determine whether text is true, and the filler list cannot find every generic phrase. No tool has checked whether the owner's claims about the business are true.
-- **Test.** "Brief: words reach every preview and survive reload and a file"; "Brief: warnings never block and the sample has a way back"; the eight saving cases in `saving-table.md`; unit tests in `packages/core/test/project-file.test.ts`. [S2; S3]
+- **Test.** "Brief: words reach every preview and survive reload and a file"; "Brief: warnings never block and the sample has a way back"; the eight Brief saving cases in `saving-table.md`; unit tests in `packages/core/test/project-file.test.ts`. Contact page: "inner page: owner words survive reload and a file"; "inner page: switch pages without changing the project"; `packages/core/test/inner-page.test.ts`. [S2; S3]
 - **Policy.** Restoring the sample asks first, clears the Brief and its voice Decision, leaves other design choices alone, and offers Undo within the existing 100-step, current-page limit.
 - **Open.** Chromium only; no screen reader or real private-page database check. No independent review yet.
 - Last verified: 2026-11-25
