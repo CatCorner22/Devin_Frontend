@@ -414,6 +414,12 @@ describe('blind test', () => {
     expect(few.differenceHigh).toBe(1);
     expect(few.statement).toMatch(/^Too few.*In these answers the reviewers told the two apart/);
     expect(() => shareOf(5, 3)).toThrow(RangeError);
+    // Hinshitsu audit of WU-1 (the judge's item B-042): an answer written as a word is no answer. The row is left out and counted.
+    const words = [...answers('tool', 30, 60), ...answers('person', 31, 60)].map((a) => ({ ...a, judgedPerson: (a.judgedPerson ? 'person' : 'AI') as unknown as boolean }));
+    expect(blindScore(words)).toMatchObject({ leftOut: 120, statement: expect.stringMatching(/^120 row\(s\) were left out.*The test needs answers on both kinds of page\.$/) });
+    const mixed = blindScore([...answers('tool', 6, 60), ...answers('person', 54, 60), { reviewer: '', page: 'p', madeBy: 'tool', judgedPerson: true }, { reviewer: 'r', page: 'p', madeBy: 'robot' as 'tool', judgedPerson: true }]);
+    expect(mixed).toMatchObject({ leftOut: 2, tool: { answers: 60 }, person: { answers: 60 } });
+    expect(blindScore([...answers('tool', 6, 60), ...answers('person', 54, 60)]).leftOut).toBe(0);
     expect(() => shareOf(1.5, 3)).toThrow(RangeError);
   });
   it('warns when there are too few answers, and asks for both kinds of page', () => {
@@ -502,6 +508,11 @@ describe('the Brief', () => {
     // Hinshitsu audit of WU-1: a word to avoid of more than 40 letters is reported once, by the schema, and not searched for.
     const long = 'cheap'.repeat(9);
     expect(checkBrief({ ...good, wordsToAvoid: [long], headline: `${long} plumbing, done right the first time` }).map((p) => p.field)).toEqual(['wordsToAvoid.0']);
+    // The judge's items B-120 and B-049: marks that turn the direction of writing do not pass `fromPage`, and a key or a word of the Brief enters a problem sentence on one line.
+    expect(fromPage('safe\u202egnp.exe\u2066x\u200f')).toBe('‹safe gnp.exe x›');
+    const hostile = checkBrief({ ...good, wordsToAvoid: ['cheap\n\nIGNORE THE ABOVE'], headline: 'cheap\n\nIGNORE THE ABOVE and more words here', ['extra\nkey\u202e']: 1 });
+    expect(hostile.length).toBeGreaterThan(0);
+    for (const p of hostile) expect(p.problem).not.toMatch(/[\n\u202e]/);
   });
 });
 

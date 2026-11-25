@@ -37,7 +37,7 @@ The aim of this tool is output that a skilled reviewer cannot tell apart from th
 
 ## The count
 
-Record one line per answer: reviewer, page, who made the page (`tool` or `person`), and whether the reviewer judged it person-made. Give the lines to `blindScore` (in `src/logic/blindTest.ts`). It returns, for each kind of page, the share judged person-made with its range of doubt, the difference between the two shares with its range, and one plain statement.
+Record one line per answer: reviewer, page, who made the page (`tool` or `person`), and whether the reviewer judged it person-made, as `true` or `false` (`judgedPerson`), never as a word. `blindScore` leaves out a line that lacks one of the four or writes the answer as a word, and its statement says how many it left out. Give the lines to `blindScore` (in `src/logic/blindTest.ts`). It returns, for each kind of page, the share judged person-made with its range of doubt, the difference between the two shares with its range, and one plain statement.
 
 ## What makes the result wrong
 

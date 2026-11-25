@@ -2,7 +2,7 @@
 // and say for each "made by a person" or "made by AI". This file counts the answers. See blind-test/PROTOCOL.md.
 export interface BlindAnswer { reviewer: string; page: string; madeBy: 'tool' | 'person'; judgedPerson: boolean }
 export interface Share { answers: number; judgedPerson: number; share: number; low: number; high: number }
-export interface BlindScore { tool: Share; person: Share; difference: number; differenceLow: number; differenceHigh: number; reviewers: number; pages: number; statement: string }
+export interface BlindScore { tool: Share; person: Share; difference: number; differenceLow: number; differenceHigh: number; reviewers: number; pages: number; leftOut: number; statement: string }
 
 const Z = 1.96; // 95 in 100
 
@@ -22,7 +22,14 @@ export function shareOf(judgedPerson: number, answers: number): Share {
  * difference it could have missed. The range treats each answer as independent, which overstates certainty when few reviewers
  * give many answers each; the statement says so.
  */
-export function blindScore(answers: readonly BlindAnswer[]): BlindScore {
+export function blindScore(given: readonly BlindAnswer[]): BlindScore {
+  // A row counts only when it is whole: who answered, on which page, who made the page, and the answer as true or false.
+  // A row with the answer written as a word ("person", "AI") would otherwise count as "judged made by a person" (the word is truthy)
+  // or drop out without a trace. Rows that are not whole are counted in `leftOut`, and the statement names their number.
+  const text = (value: unknown): boolean => typeof value === 'string' && value.trim().length > 0;
+  const answers = (Array.isArray(given) ? given : []).filter((a: unknown): a is BlindAnswer => typeof a === 'object' && a !== null && text((a as BlindAnswer).reviewer) && text((a as BlindAnswer).page) && ((a as BlindAnswer).madeBy === 'tool' || (a as BlindAnswer).madeBy === 'person') && typeof (a as BlindAnswer).judgedPerson === 'boolean');
+  const leftOut = (Array.isArray(given) ? given.length : 0) - answers.length;
+  const dropped = leftOut > 0 ? `${leftOut} row(s) were left out, because each row needs a reviewer, a page, madeBy "tool" or "person", and judgedPerson true or false. ` : '';
   const group = (madeBy: 'tool' | 'person'): Share => { const own = answers.filter((a) => a.madeBy === madeBy); return shareOf(own.filter((a) => a.judgedPerson).length, own.length); };
   const tool = group('tool');
   const person = group('person');
@@ -37,7 +44,7 @@ export function blindScore(answers: readonly BlindAnswer[]): BlindScore {
   const pct = (n: number): string => `${Math.round(n * 100)}%`;
   const tooFew = tool.answers < 30 || person.answers < 30 || reviewers < 5;
   const statement = tool.answers === 0 || person.answers === 0
-    ? 'The test needs answers on both kinds of page.'
-    : `${tooFew ? 'Too few answers or reviewers for a firm result (at least 5 reviewers and 30 answers on each kind of page). ' : ''}Reviewers judged ${pct(tool.share)} of the tool-built pages and ${pct(person.share)} of the person-made pages to be made by a person. ${differenceLow > 0 ? `${tooFew ? 'In these answers the reviewers' : 'They'} told the two apart: the difference is between ${pct(differenceLow)} and ${pct(differenceHigh)}.` : differenceHigh < 0 ? 'They judged the tool-built pages to be person-made more often than the person-made ones.' : `The test found no clear difference; the true difference could be as large as ${Math.max(1, Math.ceil(Math.max(Math.abs(differenceLow), Math.abs(differenceHigh)) * 100))}%. This does not show that the two kinds are the same.`} The range treats every answer as independent, so it is too narrow when few reviewers give many answers.`;
-  return { tool, person, difference, differenceLow, differenceHigh, reviewers, pages, statement };
+    ? `${dropped}The test needs answers on both kinds of page.`
+    : `${dropped}${tooFew ? 'Too few answers or reviewers for a firm result (at least 5 reviewers and 30 answers on each kind of page). ' : ''}Reviewers judged ${pct(tool.share)} of the tool-built pages and ${pct(person.share)} of the person-made pages to be made by a person. ${differenceLow > 0 ? `${tooFew ? 'In these answers the reviewers' : 'They'} told the two apart: the difference is between ${pct(differenceLow)} and ${pct(differenceHigh)}.` : differenceHigh < 0 ? 'They judged the tool-built pages to be person-made more often than the person-made ones.' : `The test found no clear difference; the true difference could be as large as ${Math.max(1, Math.ceil(Math.max(Math.abs(differenceLow), Math.abs(differenceHigh)) * 100))}%. This does not show that the two kinds are the same.`} The range treats every answer as independent, so it is too narrow when few reviewers give many answers.`;
+  return { tool, person, difference, differenceLow, differenceHigh, reviewers, pages, leftOut, statement };
 }

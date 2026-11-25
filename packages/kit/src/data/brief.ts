@@ -25,6 +25,8 @@ export type Brief = z.infer<typeof briefSchema>;
 export interface BriefProblem { field: string; problem: string }
 
 const at = (input: unknown, path: readonly PropertyKey[]): unknown => path.reduce<unknown>((value, key) => (typeof value === 'object' && value !== null ? (value as Record<PropertyKey, unknown>)[key] : undefined), input);
+/** Text of the Brief that a problem sentence repeats (a key, a word to avoid): on one line, without control characters, at most 60 letters. */
+const flat = (text: string): string => { const one = text.replace(/[\u0000-\u001f\u007f\u2028\u2029\u200e\u200f\u202a-\u202e\u2066-\u2069]+/g, ' ').replace(/\s+/g, ' ').trim(); return one.length > 60 ? `${one.slice(0, 60)}…` : one; };
 const wholeWord = (text: string, word: string): boolean => new RegExp(`(^|[^\\p{L}\\p{N}])${word.trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^\\p{L}\\p{N}])`, 'u').test(text.toLowerCase());
 
 /** One problem of the schema in plain words. */
@@ -32,7 +34,7 @@ function plain(issue: z.core.$ZodIssue, input: unknown): string {
   if (issue.code === 'invalid_type') return at(input, issue.path) === undefined ? 'This is missing.' : `This must be ${issue.expected === 'string' ? 'text' : issue.expected === 'array' ? 'a list' : issue.expected === 'object' ? 'a group of fields' : `of the kind "${issue.expected}"`}.`;
   if (issue.code === 'too_small') return issue.origin === 'array' ? `Give at least ${String(issue.minimum)} of these.` : `This is too short: write at least ${String(issue.minimum)} letters.`;
   if (issue.code === 'too_big') return issue.origin === 'array' ? `Give at most ${String(issue.maximum)} of these.` : `This is too long: write at most ${String(issue.maximum)} letters.`;
-  if (issue.code === 'unrecognized_keys') return `The Brief has no field named ${issue.keys.map((key) => `"${key}"`).join(', ')} here.`;
+  if (issue.code === 'unrecognized_keys') return `The Brief has no field named ${issue.keys.map((key) => `"${flat(key)}"`).join(', ')} here.`;
   if (issue.code === 'invalid_format') return 'This is not an email address.';
   if (issue.code === 'invalid_value') return `This must be one of: ${issue.values.map(String).join(', ')}.`;
   return issue.message;
@@ -61,7 +63,7 @@ export function checkBrief(input: unknown): BriefProblem[] {
       const hit = placeholderIn(value);
       if (hit) problems.push({ field, problem: `This still holds placeholder or stock wording ("${hit}"). Write your own words.` });
       const word = banned.find((candidate) => wholeWord(value, candidate));
-      if (word) problems.push({ field, problem: `This uses "${word}", which is on your list of words to avoid.` });
+      if (word) problems.push({ field, problem: `This uses "${flat(word)}", which is on your list of words to avoid.` });
     } else if (Array.isArray(value)) { for (let i = 0; i < value.length && !tooMuch; i++) look(`${field}.${i}`, value[i], depth + 1); }
     else if (typeof value === 'object' && value !== null) { for (const [key, item] of Object.entries(value)) { if (tooMuch) break; look(`${field}.${key}`, item, depth + 1); } }
   };
