@@ -1,4 +1,4 @@
-import { DIRECTIONS, STEPS, activeTunables, applyDirection, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, matchingOptionId, pick, setReason, setSkin, skinCoversStep, skinParams, skinsOf, type Project } from '@refraction/core';
+import { DIRECTIONS, STEPS, activeTunables, applyDirection, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, matchingOptionId, pick, setReason, setSkin, skinCoversStep, skinParams, skinsOf, tune, type Project } from '@refraction/core';
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
@@ -178,6 +178,22 @@ it('Skin review: a slider changes only its raw value and leaves unmoved Skin con
     expect(effectiveParams(changed).accentLightness).toBe(before.accentLightness);
     expect(changed.params.accentChroma).toBe(started.params.accentChroma);
     expect(changed.skinLayer?.keys).toContain('accentHue');
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: choosing one color after a second-color adjustment removes the earlier reason with a recovery action', async () => {
+  const raw = pick(applyDirection(createProject(), 'midnight-aurora'), 'color-strategy', 'single-accent');
+  const edited = setReason(tune(setSkin(raw, 'lagoon'), 'color-strategy', 'accent2Hue', 42), 'color-strategy', 'This second hue contrasts with the first.');
+  const { context, page, faults } = await open(edited, '#color-strategy');
+  try {
+    await page.locator('[id="option-single-accent"]').press('Space');
+    await page.locator('[id="option-single-accent"]').press('Enter');
+    await expect.poll(async () => (await stored(page))?.decisions['color-strategy']?.kind).toBe('picked');
+    expect((await stored(page))!.decisions['color-strategy']!.reason).toBeUndefined();
+    const recover = page.getByRole('button', { name: 'Keep that reason for the new choice', exact: true });
+    await recover.click();
+    await expect.poll(async () => (await stored(page))?.decisions['color-strategy']?.reason).toBe('This second hue contrasts with the first.');
     expect(faults).toEqual([]);
   } finally { await context.close(); }
 });

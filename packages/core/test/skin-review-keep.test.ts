@@ -1,7 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { applyDirection, createProject, effectiveParams, findDirection, keep, parseProject, pick, setReason, setSkin, skinCoversStep } from '../src/index.js';
+import { applyDirection, createProject, effectiveParams, findDirection, findStep, keep, parseProject, pick, setReason, setSkin, skinCoversStep, tune } from '../src/index.js';
 
 describe('PR 14 Skin review', () => {
+  it('does not carry a Skin-added second-color adjustment reason into a one-color pick', () => {
+    const single = findStep('color-strategy')!.options.find((option) => option.id === 'single-accent')!;
+    const raw = pick(applyDirection(createProject(), 'midnight-aurora'), 'color-strategy', single.id);
+    const edited = setReason(tune(setSkin(raw, 'lagoon'), 'color-strategy', 'accent2Hue', 42), 'color-strategy', 'This second hue contrasts with the first.');
+    expect(edited.params.colorStrategy).toBe(single.patch.colorStrategy);
+    expect(effectiveParams(edited).colorStrategy).toBe('duo');
+    const loaded = parseProject(JSON.parse(JSON.stringify(edited)));
+    expect(loaded.ok).toBe(true);
+    for (const project of loaded.ok ? [edited, loaded.project] : [edited]) {
+      const picked = pick(project, 'color-strategy', single.id);
+      expect(picked.decisions['color-strategy']!.reason).toBeUndefined();
+      expect(effectiveParams(picked).colorStrategy).toBe(single.patch.colorStrategy);
+    }
+  });
   it('review 1: continuing a covered color Step preserves its saved values and reason', () => {
     const before = setReason(pick(applyDirection(createProject(), 'soft-daylight'), 'accent', 'ink-blue'), 'accent', 'The owner chose blue');
     const covered = setSkin(before, 'ember');

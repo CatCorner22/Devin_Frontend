@@ -341,7 +341,7 @@ export function pick(project: Project, stepId: string, optionId: string, now = i
   // goes when the owner picks another Option: "friendly" is no reason for square corners. The Studio says so when it removes
   // a reason this way, and offers to put it back (campaign 4, round 3: it used to go without a word).
   const previous = project.decisions[stepId];
-  const reason = previous?.reason && previous.optionId === option.id ? previous.reason : undefined;
+  const reason = previous?.kind !== 'tuned' && previous?.reason && previous.optionId === option.id ? previous.reason : undefined;
   return withDecision(project, step, params, { kind: 'picked', rejected: step.options.filter((o) => o.id !== option.id).map((o) => o.id), at: now, ...(reason ? { reason } : {}) });
 }
 
