@@ -254,6 +254,11 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     it('second review, F-27: a page of 20,000 buttons, and a text of 600,000 letters, get an answer and no crash', async () => {
       const started = Date.now();
       expect(await statuses('<button>x</button>'.repeat(20000), 'targetSize')).toEqual(['could-not-measure']);
+      // Hinshitsu audit of WU-1, adversarial finding 5: the focus check has a limit of its own, and says so within seconds.
+      const began = Date.now();
+      expect(await statuses('<p>' + '<a href="/x">x</a> '.repeat(20000) + '</p>', 'focusIsVisible')).toEqual(['could-not-measure']);
+      expect(await statuses('<input>'.repeat(1001), 'focusIsVisible')).toEqual(['could-not-measure']);
+      expect(Date.now() - began).toBeLessThan(20000);
       // 2,500 small buttons are under the limit, and each one is still found.
       const small = await statuses('<button style="font-size:6px;padding:0;border:0;margin:0">x</button>'.repeat(2500), 'targetSize');
       expect(small).toHaveLength(2500);
@@ -729,6 +734,23 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await names(`<button><svg width="24" height="24"><title>Close</title><style>.a{fill:#1a1a1a}</style>${path}</svg></button>`)).toEqual([['holds', undefined]]);
       expect(await names(`<button><svg width="24" height="24"><text x="0" y="16">OK</text></svg></button>`)).toEqual([['holds', undefined]]);
       expect(await names(`<button><svg width="24" height="24" aria-hidden="true"><style>.a{fill:#1a1a1a}</style>${path}</svg> Close</button>`)).toEqual([['holds', undefined]]);
+      // Hinshitsu audit of WU-1, adversarial finding 4: what a drawing program leaves in a drawing, text that is not drawn,
+      // letters that draw nothing or belong to one icon font, and a style sheet as the target of aria-labelledby are no name.
+      const none = [
+        '<button><svg width="20" height="20"><metadata><rdf:RDF><cc:Work><dc:format>image/svg+xml</dc:format></cc:Work></rdf:RDF></metadata><path d="M2 2 L18 18"/></svg></button>',
+        '<button><svg width="20" height="20"><text display="none">icon-close-24</text><path d="M2 2 L18 18"/></svg></button>',
+        '<button><svg width="20" height="20"><sodipodi:namedview>layer1</sodipodi:namedview><path d="M2 2 L18 18"/></svg></button>',
+        '<button aria-label="&#x180E;&#x034F;&#x17B5;&#x2065;&#x061C;&#xFE0F;&#xE0020;"><svg width="20" height="20"><path d="M2 2 L18 18"/></svg></button>',
+        '<button><i class="icon">&#xE5CD;</i></button>',
+        '<style id="s">.a{color:red}</style><button aria-labelledby="s"><svg width="20" height="20"><path d="M2 2 L18 18"/></svg></button>',
+      ];
+      for (const body of none) expect(await statuses(body, 'controlsHaveNames'), body).toEqual(['fails']);
+      const named = [
+        '<button><svg width="20" height="20"><desc>Close the window</desc><path d="M2 2 L18 18"/></svg></button>',
+        '<button><svg width="60" height="20"><foreignObject width="60" height="20"><span>Close</span></foreignObject></svg></button>',
+        '<span id="n" hidden>Close</span><button aria-labelledby="n"><svg width="20" height="20"><path d="M2 2 L18 18"/></svg></button>',
+      ];
+      for (const body of named) expect(await statuses(body, 'controlsHaveNames'), body).toEqual(['holds']);
     });
 
     it('second review F-4: endless movement drawn by ::before or ::after, or written into an SVG drawing, fails; short movement holds', async () => {

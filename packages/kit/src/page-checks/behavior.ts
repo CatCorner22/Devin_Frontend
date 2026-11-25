@@ -126,6 +126,11 @@ export function focusIsVisible(doc: Document): Finding[] {
   const same = (one: Look, other: Look): boolean => one.outline === other.outline && one.shape === other.shape && one.colors.length === other.colors.length && one.colors.every((color, i) => !far(color, other.colors[i] ?? []));
   const controls = [...doc.querySelectorAll<HTMLElement>('a[href], button, input, select, textarea, summary, [tabindex]')].filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0 && !(el as HTMLButtonElement).disabled && el.getAttribute('type') !== 'hidden');
   if (controls.length === 0) return [{ ruleId, status: 'not-applicable' }];
+  // Each control is focused and read twice, which takes about 6 thousandths of a second: 5,000 links held this check for half a
+  // minute and 20,000 for longer than anyone waits (Hinshitsu audit of WU-1, adversarial finding 5). Above the limit the check
+  // says that it did not measure, and the floor stays open.
+  const MOST = 1000;
+  if (controls.length > MOST) return [{ ruleId, status: 'could-not-measure', measured: `the page has ${controls.length} controls that take the focus, and this check measures at most ${MOST}` }];
   const before = doc.activeElement as HTMLElement | null;
   // The look at rest is taken without the focus, also for the control that holds the focus when the check starts.
   before?.blur();
@@ -216,10 +221,13 @@ export function controlsHaveNames(doc: Document): Finding[] {
   const out: Finding[] = [];
   // Letters that draw nothing (zero-width spaces and joiners, the soft hyphen, the byte-order mark) are no name.
   // So are the blank letters that take up room and draw nothing: the braille blank and the Hangul fillers
-  // (finding F-8 of the review of 2026-11-24).
-  const unseen = new RegExp('[\\u200b-\\u200f\\u2060-\\u2064\\u00ad\\ufeff\\u2800\\u3164\\u115f\\u1160\\uffa0]', 'g');
+  // (finding F-8 of the review of 2026-11-24). Unicode keeps the list: every letter it marks "ignorable by default", the
+  // marks that turn the direction of writing, and the letters of private use, which mean something only in one icon font
+  // (Hinshitsu audit of WU-1, adversarial finding 4). The braille blank is on neither list and is named here.
+  const unseen = /[\p{Default_Ignorable_Code_Point}\p{Bidi_Control}\p{Private_Use}\u2800]/gu;
   for (const el of controls) {
-    const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)?.textContent ?? '').join('');
+    // A style sheet or a script that `aria-labelledby` points at holds code, never a name.
+    const byId = (el.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean).map((id) => doc.getElementById(id)).map((target) => (target && !target.matches('style, script, template, noscript') ? target.textContent ?? '' : '')).join('');
     // Only what a screen reader is given counts: nothing inside a part marked aria-hidden, and nothing that is not drawn.
     // The text itself is asked whether it is drawn, because a wrapper with "display: contents" has no box of its own.
     const open = (node: Element): boolean => !node.closest('[aria-hidden="true"]');
@@ -232,7 +240,10 @@ export function controlsHaveNames(doc: Document): Finding[] {
       // Text that is code or a store of parts, never a name: a style sheet or a script inside a drawing, and its `defs`.
       if (node.parentElement.closest('style, script, defs, template, noscript')) continue;
       range.selectNodeContents(node);
-      if (node.parentElement.closest('svg') !== null || range.getClientRects().length > 0) text += node.textContent ?? '';
+      // Inside a drawing only its title, its description, and text that is drawn are a name. What a drawing program leaves
+      // behind (`metadata`, the notes of Inkscape) and text that is not drawn are none.
+      const inDrawing = node.parentElement.closest('svg') !== null && node.parentElement.closest('foreignObject') === null;
+      if (inDrawing ? node.parentElement.closest('title, desc') !== null || (node.parentElement.closest('text') !== null && range.getClientRects().length > 0) : range.getClientRects().length > 0) text += node.textContent ?? '';
     }
     // A button made with `input`: its name is its `value` (Submit and Reset have a name from the browser); a picture button needs `alt`.
     const type = el.tagName === 'INPUT' ? (el.getAttribute('type') ?? '').toLowerCase() : '';
