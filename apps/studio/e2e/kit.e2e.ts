@@ -786,6 +786,10 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       // An animation of no length that repeats without end moves nothing, and does not hide the long one beside it.
       expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: slide, blink; animation-duration: 0s, 2s; animation-iteration-count: infinite, 4; }`)).toEqual(['fails']);
       expect(await statuses(field, 'noEndlessMotion', `${frames} input::placeholder { animation-name: slide; animation-duration: 0s; animation-iteration-count: infinite; }`)).toEqual(['holds']);
+      // Re-audit of WU-1, finding 2: a name with no keyframes, and keyframes that all say the same, move nothing; inside @media they still count.
+      expect(await statuses(field, 'noEndlessMotion', 'input::placeholder { animation: nothing 1s infinite; }')).toEqual(['holds']);
+      expect(await statuses(field, 'noEndlessMotion', '@keyframes same { from { opacity: 1 } to { opacity: 1 } } input::placeholder { animation: same 1s infinite; }')).toEqual(['holds']);
+      expect(await statuses(field, 'noEndlessMotion', '@media all { @keyframes blink { 50% { opacity: 0.3; } } } input::placeholder { animation: blink 1s infinite; }')).toEqual(['fails']);
     });
 
     it('Hinshitsu audit of WU-1, adversarial findings 3 and 13: endless movement on body, on a marker and a placeholder, in a shadow root, and in drawings that time themselves in other ways fails; an animation that stands still holds', async () => {
