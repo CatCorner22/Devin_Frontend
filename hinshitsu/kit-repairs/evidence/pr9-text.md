@@ -11,7 +11,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 |---|---|---|---|---|---|
 | The judge of the second review (`R2-F-*`) | 34 | 34 | 33 | 0 | 0 |
 | The independent review from zero, 2026-11-24, of the lines changed after the judge saw the code (`R2-C14-*`) | 9 | 9 | 9 | 0 | 0 |
-| The automated review of this pull request, four rounds (`R2-AR-*`) | 21 | 17 | 17 | 4 | 0 |
+| The automated review of this pull request, five rounds (`R2-AR-*`) | 23 | 19 | 19 | 4 | 0 |
 | Items the judge left for a person (`R2-P-*`) | 12 | 4 | 3 | 8 | 0 |
 | The seven auditors of the Hinshitsu run (`H-*`) | 92 | 85 | 45 | 4 | 3 |
 
@@ -29,7 +29,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
 - Decisions D59 to D63 in `DECISIONS.md`. The repository uses neither Neon nor Vercel (D60).
 - `hinshitsu/kit-repairs/` is a record of the owner's Hinshitsu run (log, scopes, reports, saved outputs) and no code.
 
-**What the tests show** (the builder's machine, commit `a91c5be`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
+**What the tests show** (the builder's machine, commit `5fd8c60`, the last commit that changes code; Chromium revision 1255 through `PW_CHROMIUM`)
 
 - `npm run check`: 8 test files, 264 tests passed.
 - The kit's browser tests (`apps/studio/e2e/kit.e2e.ts`): 124 passed.
