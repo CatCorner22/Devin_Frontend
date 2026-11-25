@@ -1,19 +1,19 @@
 # SESSION-STATE — kit repairs (pull request 9)
 
-Last rewritten: 2026-11-24 — log entry E-38
+Last rewritten: 2026-11-25 — log entry E-205
 
 <!-- from the log: start -->
 Rebuilt by `scripts/hinshitsu_log.py state`. Do not edit between the marks.
 - Newest CRITERIA entry: E-60 (FROZEN)
 - STAGE now running: S7
-- Open FINDINGS: none
+- Open FINDINGS: F-8 (BLOCKER), F-9 (BLOCKER), F-10 (FRAGILITY), F-11 (DEFECT), F-12 (DEFECT), F-13 (DEFECT), F-14 (DEFECT), F-15 (DEFECT), F-16 (DEFECT), F-17 (DEFECT), F-18 (FRAGILITY), F-19 (BLOCKER), F-20 (BLOCKER), F-21 (BLOCKER), F-22 (BLOCKER), F-23 (BLOCKER), F-24 (BLOCKER), F-25 (DEFECT), F-26 (DEFECT), F-27 (DEFECT), F-28 (DEFECT), F-29 (BLOCKER), F-30 (FRAGILITY), F-31 (DEFECT), F-32 (FRAGILITY), F-33 (STYLE), F-34 (BLOCKER), F-35 (BLOCKER), F-36 (DEFECT), F-37 (DEFECT), F-38 (DEFECT), F-39 (DEFECT), F-40 (DEFECT), F-41 (DEFECT), F-42 (DEFECT), F-43 (FRAGILITY), F-44 (FRAGILITY), F-45 (FRAGILITY), F-46 (FRAGILITY), F-47 (STYLE), F-48 (STYLE), F-49 (STYLE), F-50 (STYLE), F-51 (STYLE), F-52 (STYLE), F-53 (STYLE), F-54 (BLOCKER), F-55 (DEFECT), F-56 (DEFECT), F-57 (DEFECT), F-58 (FRAGILITY), F-59 (FRAGILITY), F-60 (STYLE), F-61 (FRAGILITY), F-62 (FRAGILITY), F-63 (FRAGILITY), F-64 (FRAGILITY), F-65 (STYLE), F-66 (BLOCKER), F-67 (DEFECT), F-68 (DEFECT), F-69 (DEFECT), F-70 (DEFECT), F-71 (DEFECT), F-72 (BLOCKER), F-73 (STYLE), F-74 (STYLE), F-75 (BLOCKER), F-76 (BLOCKER), F-77 (BLOCKER), F-78 (BLOCKER), F-79 (DEFECT), F-80 (DEFECT), F-81 (DEFECT), F-82 (DEFECT), F-83 (DEFECT), F-84 (BLOCKER), F-85 (BLOCKER), F-86 (BLOCKER), F-87 (DEFECT), F-88 (DEFECT), F-89 (DEFECT), F-90 (DEFECT), F-91 (DEFECT), F-92 (DEFECT), F-93 (FRAGILITY), F-94 (STYLE), F-95 (STYLE), F-96 (STYLE), F-97 (STYLE), F-98 (STYLE), F-99 (STYLE), F-100 (BLOCKER), F-101 (BLOCKER), F-102 (BLOCKER), F-103 (DEFECT), F-104 (DEFECT), F-105 (STYLE), F-106 (DEFECT), F-107 (DEFECT), F-108 (DEFECT), F-109 (DEFECT), F-110 (DEFECT), F-111 (DEFECT), F-112 (DEFECT), F-113 (DEFECT), F-114 (FRAGILITY), F-115 (DEFECT), F-116 (DEFECT), F-117 (DEFECT), F-118 (DEFECT), F-119 (STYLE), F-120 (DEFECT), F-121 (DEFECT), F-122 (STYLE), F-123 (DEFECT), F-124 (STYLE), F-125 (DEFECT), F-126 (DEFECT), F-127 (DEFECT), F-128 (DEFECT), F-129 (DEFECT), F-130 (STYLE), F-131 (DEFECT)
 <!-- from the log: end -->
 
 1. **Objective:** "First, please use Hinshitsu." (2026-11-24 14:58 EST), on the work in progress: "Please complete all milestones." and "Please also edit and audit your code as you work." (2026-11-24)
-2. **CRITERIA:** C1 to C16, `PROPOSED` in E-35; none audited yet
-3. **Constraints and approvals in force:** no Neon and no Vercel ("continue. Also, I do not want to use Neon or Vercel."); pull request 9 is not merged without the USER's word; the repository CatCorner22/Frontend is not touched; D-002 (E-7)
-4. **Current STAGE and WORK UNIT:** S5; no WORK UNIT started
-5. **Open FINDINGS:** F-1 to F-7, BLOCKER, on the text of the CRITERIA (E-28 to E-34)
-6. **Artifacts that exist:** AUDIT-LOG.md, FRAMEWORK.md, CONNECTIONS.md, COVERAGE-LEDGER.md, MINDMAP.md, SESSION-STATE.md, GAUGE.svg, reference/GLOSSARY.md, prompts/ (7 scopes), memos/ (5), audits/redcell-plan.md, evidence/ (5 files and second-review/)
-7. **Checks actually run:** evidence/capability-probe.md; the 4 LENS memos; audits/redcell-plan.md; memos/lens-structural-integrity-redcell-counts.md
-8. **Single next action:** wait for the reply of the USER to the S6 card (E-55); on approval, write the `ANSWER` entry and the `FROZEN` CRITERIA entry, then launch the AUDITOR of C14
+2. **CRITERIA:** C1 to C16, `FROZEN` in E-60 by the USER's approval (E-59)
+3. **Constraints and approvals in force:** no Neon and no Vercel; pull request 9 is not merged without the USER's word; the repository CatCorner22/Frontend is not touched; up to 40 SUB-AGENT runs (E-59); 1 last independent review, and no repair after it (E-205)
+4. **Current STAGE and WORK UNIT:** S7; WU-1, after 5 rounds of audit and repair
+5. **Open FINDINGS:** the list between the marks above comes from the log, which holds 7 `RESOLUTION` entries. It names as open many FINDINGS that are repaired: their state is in `redteam/FINDINGS.md` (rows `H-*`: 72 repaired, 44 corrected, 5 open, 3 for the USER), and the log holds no closing entry for them. Open for the USER: the question on C3(e) (E-204)
+6. **Artifacts that exist:** AUDIT-LOG.md, FRAMEWORK.md, CONNECTIONS.md, COVERAGE-LEDGER.md, MINDMAP.md, SESSION-STATE.md, GAUGE.svg, reference/GLOSSARY.md, prompts/, memos/, audits/ (the reports of every AUDITOR), evidence/ (with second-review/ and final-runs/)
+7. **Checks actually run:** the reports in audits/; `npm run check` and the kit's browser tests at the last code commit (counts in `PROGRESS.md`); the full browser suite 3 times at the older commit `a973e47` only
+8. **Single next action:** launch the last independent review of the commits after `4f7aae9`, save its report, and report its findings to the USER without a repair (E-205)

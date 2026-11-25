@@ -136,3 +136,10 @@ C14 The lines of `packages/kit/src` that changed after the commit the second rev
 C15 Each RECIPIENT can use what is delivered. Test: the recipient-experience AUDITOR (a) runs the example of `packages/kit/README.md` word for word on `packages/kit/fixtures/good.html` and gets the grade the README states for it, and finds in the README the exported way to run the keyboard walks or the statement that none exists; (b) from the text of pull request 9 alone, lists what is repaired, what is open and what the owner decides, and the list equals `redteam/FINDINGS.md`.
 C16 The delivery message to the USER holds at most 250 words, asks the USER for no command, and links each claim to the pull request, a session or a file. In it, each word in code formatting, each abbreviation in capitals and each term of the Hinshitsu glossary has its meaning in the same sentence at first use. Test: the language AUDITOR counts the words and lists each such term with its meaning, 0 without.
 
+
+
+## Added to this file on 2026-11-25, after the re-audit (row R2-AR-24 of `redteam/FINDINGS.md`)
+
+The ORCHESTRATOR sent the re-auditor one more message after the launch (E-165). The scope above did not hold it; the report quotes it at line 242. Its words:
+
+> Addition to your scope. After the commit under review (78bf314), two commits changed kit code on the same branch, in answer to an automated review: 47aab6086aa3c4bb1faff61b8930a8cf551ecd80 (packages/kit/src/page-checks/neuro.ts, placeholder animations of no length) and 5fd8c6056e14f9c0d82b17f649ae84787a84b1a3 (packages/kit/src/page-checks/behavior.ts, hidden targets of aria-labelledby). The branch head is now d101d49. Please fetch, and (a) re-run your checks of the findings on motion and on control names at d101d49 as well, (b) review those two commits from zero for a new fault, and (c) state in the report which commit each of your results was taken at. Everything else in the scope stands.

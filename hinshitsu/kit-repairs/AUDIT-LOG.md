@@ -2197,3 +2197,73 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Raised by: AUDITOR, LAUNCH E-194, `audits/WU1-audit-4.md`, finding A3
 - Lens: re-audit
 - Forward work stopped: no
+
+### E-198 · 2026-11-25T11:50:04Z · LAUNCH · orchestrator
+
+- Role: AUDITOR, check of the repairs that followed the fourth audit, WU-1
+- Scope: the first message of the session (`prompts/WU1-audit-5.md`); it names findings A1 to A3 of `audits/WU1-audit-4.md` and the diff 0144deb..4f7aae9
+- Commit under review: 4f7aae993df23e7b0e037531f983eef849ce655b
+- SUB-AGENT identifier: bac886d5b68e4703bdce68abc981cf3d https://app.devin.ai/sessions/bac886d5b68e4703bdce68abc981cf3d
+- Report: `audits/WU1-audit-5.md`
+
+27 of 40 SUB-AGENT runs used. This entry was written after the session had reported (it started at 2026-11-25T05:26Z): the orchestrator was stopped between the start and this entry. Criterion C13 allows no change of code after the last independent check, so the 3 code commits after E-194 needed this check.
+
+### E-199 · 2026-11-25T11:50:04Z · FINDING · auditor: AUDIT 5
+
+- ID: F-128
+- Class: DEFECT
+- Where: `packages/kit/src/data/placeholders.ts` (commit `8b5ccb3`)
+- Trigger: `Tel+44 1632 555-0142` is blamed, where `0144deb` passed it. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the fifth audit (the entry before these findings), `audits/WU1-audit-5.md`, finding B1
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-200 · 2026-11-25T11:50:04Z · FINDING · auditor: AUDIT 5
+
+- ID: F-129
+- Class: DEFECT
+- Where: `packages/kit/src/data/placeholders.ts`, `packages/kit/README.md` line 84, `kit.test.ts` (commit `8b5ccb3`)
+- Trigger: `Total 5 +3 2024 555-0100` is not read as filler, and two added lines say otherwise. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the fifth audit (the entry before these findings), `audits/WU1-audit-5.md`, finding B2
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-201 · 2026-11-25T11:50:04Z · FINDING · auditor: AUDIT 5
+
+- ID: F-130
+- Class: STYLE
+- Where: `packages/kit/src/logic/designId.ts`, the comment (commit `7f86d4c`)
+- Trigger: The sentence does not hold for a whole number above 2^53 that a number cannot keep. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the fifth audit (the entry before these findings), `audits/WU1-audit-5.md`, finding B3
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-202 · 2026-11-25T11:50:04Z · FINDING · auditor: AUDIT 5
+
+- ID: F-131
+- Class: DEFECT
+- Where: the description of pull request 9
+- Trigger: The live text is the text of `0144deb`, not of `4f7aae9`. The complete trigger is in the report.
+- Violates: as the report states
+- Raised by: AUDITOR, LAUNCH of the fifth audit (the entry before these findings), `audits/WU1-audit-5.md`, finding B4
+- Lens: re-audit
+- Forward work stopped: no
+
+### E-203 · 2026-11-25T12:02:05Z · CORRECTION · ORCHESTRATOR
+
+- Corrects: E-165
+- What was wrong: the entry names the scope file prompts/WU1-reaudit-code.md, which excludes the hidden-label and placeholder-animation repairs (commits 5fd8c60 and 47aab60); the automated review of pull request 9 pointed this out (row R2-AR-24).
+- What is true: the ORCHESTRATOR sent the re-auditor an addition to the scope by message after the launch; the report audits/WU1-reaudit-code-E-165.md quotes it at line 242 and examined both commits at d101d49. The scope file now ends with that addition, marked as added on 2026-11-25.
+
+### E-204 · 2026-11-25T12:02:05Z · CARD · ORCHESTRATOR
+
+Recorded late, on 2026-11-25 (finding F-107, row H-reaudit-records-8): the question on C3(e) was put to the USER in chat and no entry held it. First sent 2026-11-24 (evening, EST), with the report of the first four auditors, and repeated in each later report up to 2026-11-25. The words sent: "Test 3 of the 16 you approved says the list of test files in the test settings must be unchanged since the pull request began. I added one line to that list, so that the tests of the dependency-audit script run. It adds tests and removes none, but as worded the test fails, and I can't reword an approved test myself. Reply \"accept\" to accept that one added line. If you'd prefer the test reworded to forbid only removing or narrowing, say \"reword\". Until you answer I'll report test 3 as failed on that point." No answer by 2026-11-25 07:00 EST; C3(e) is reported as failed on that point.
+
+### E-205 · 2026-11-25T12:02:06Z · ANSWER · ORCHESTRATOR
+
+- Card: E-204
+- The USER's reply, word for word: "I changed my mind.   Please two only this one last review, and report back to me." (2026-11-25 06:53 EST); "Please  also fix the two bugs you found" (06:57 EST, with the two findings of the automated review quoted: "Two page checks outside re-audit scope" and "Broken references in blinded evidence"); "And the auditors'" (06:58 EST); "Sure, why not open the old ones?" (06:58 EST)
+- Effect: These replies do not answer the question on C3(e), which stays open. They set the rest of the run: the BUILDER repairs the 4 findings of the fifth AUDITOR (F-128 to F-131), the 2 findings of the automated review (rows R2-AR-24 and R2-AR-25) and what can be repaired of the 10 rows H-* that stood open; then 1 last independent review runs, and the BUILDER repairs nothing after it and reports its findings to the USER. This replaces the USER's earlier choice of 2026-11-25 ("Keep going: repair whatever the fifth auditor and the automated review find, however many rounds it takes").
