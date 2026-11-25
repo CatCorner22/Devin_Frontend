@@ -528,6 +528,10 @@ describe('the Brief', () => {
   });
   it('counts a phrase as whole words, and a word of ordinary sentences only in a short text (review of 2026-11-18, F-27)', () => {
     expect(placeholderIn('Our dogs run unleashed in the yard')).toBeNull();
+    // Hinshitsu audit of WU-1, adversarial finding 6.
+    expect(placeholderIn('Bus service 1 runs to the centre every ten minutes.')).toBeNull();
+    expect(placeholderIn('Our address line 1 is 4 Mill Lane.')).toBeNull();
+    expect(placeholderIn('Service 1')).toBe('service 1');
     expect(placeholderIn('Unleash your team')).toBe('unleash');
     expect(placeholderIn('We keep the books of your company in order every month.')).toBeNull();
     expect(placeholderIn('Your Company')).toBe('your company');

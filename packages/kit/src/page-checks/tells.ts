@@ -11,7 +11,7 @@ export function placeholderCopy(doc: Document): Finding[] {
   const slots = ['your company', 'company name', 'business name', 'customer name', 'placeholder', 'example.com'];
   // Others are also real names and real words ("Acme Plumbing"): they count only as the whole text. "TODO" counts only in capitals,
   // as the whole text or as "TODO:"; "todo" is the Spanish word for "all".
-  const whole = ['acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation'];
+  const whole = ['acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation', 'service 1', 'address line 1'];
   const edge = '[^a-z0-9]';
   const found = (text: string, phrase: string): boolean => new RegExp(`(^|${edge})${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : `($|${edge})`}`).test(text);
   const described = new Set([...doc.querySelectorAll('[aria-describedby]')].flatMap((el) => (el.getAttribute('aria-describedby') ?? '').split(/\s+/)));
@@ -43,16 +43,20 @@ export function placeholderCopy(doc: Document): Finding[] {
     read(block);
     return text.slice(0, 2000).replace(/\s+/g, ' ').trim();
   };
+  // "Service 1" alone can be a real name (a bus line). Beside "Service 2" it is a row of slots that nobody filled
+  // (Hinshitsu audit of WU-1, adversarial finding 6).
+  const numbered = [...blocks].some((block) => /^[^a-z0-9]*service 2[^a-z0-9]*$/i.test(textOf(block)));
   const out: Finding[] = [];
   for (const block of blocks) {
     const given = textOf(block);
     if (given === '') continue;
     const text = given.toLowerCase().replace(/’/g, '\'');
-    // The words of a form's own label name the field ("Address line 1" over a real address field); they are no filler.
-    const names = block.closest(formText) !== null || (block.id !== '' && described.has(block.id));
+    // The words of a form's own label, of a table's heading cell, and of a term in a list name what stands beside them
+    // ("Address line 1" over a real address field); they are no filler.
+    const names = block.closest(formText) !== null || (block.id !== '' && described.has(block.id)) || block.matches('th, dt');
     const short = text.split(' ').length <= 4 && !names;
     const all = text.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
-    const hit = /(^|[^A-Za-z0-9])TODO:|^[^A-Za-z0-9]*TODO[^A-Za-z0-9]*$/.test(given) ? 'todo' : phrases.find((phrase) => !(names && /^address line/.test(phrase)) && (whole.includes(phrase) ? all === phrase : found(text, phrase) && (short || !slots.includes(phrase))));
+    const hit = /(^|[^A-Za-z0-9])TODO:|^[^A-Za-z0-9]*TODO[^A-Za-z0-9]*$/.test(given) ? 'todo' : phrases.find((phrase) => !(names && /^address line/.test(phrase)) && !(phrase === 'service 1' && !numbered) && (whole.includes(phrase) ? all === phrase : found(text, phrase) && (short || !slots.includes(phrase))));
     if (hit) out.push({ ruleId, status: 'fails', where: `${block.tagName.toLowerCase()}: "${given.slice(0, 40)}"`, measured: `the phrase "${hit}"`, required: 'the owner\'s own words', fix: 'Replace the phrase with the real content from the Brief.' });
   }
   return out.length > 0 ? out.slice(0, 8) : [{ ruleId, status: 'holds' }];

@@ -436,6 +436,13 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
     it('automated review of 2026-11-24, round 1: the label "Address line 1" over a real field is no filler; the same words as a line of text are', async () => {
       expect(await statuses('<form><label for="a">Address line 1</label><input id="a" autocomplete="address-line1"><label for="b">Address line 2</label><input id="b"></form>', 'placeholderCopy')).toEqual(['holds']);
       expect(await statuses('<footer><p>Business Name</p><p>Address line 1</p></footer>', 'placeholderCopy')).toContain('fails');
+      // Hinshitsu audit of WU-1, adversarial finding 6: the same words as the heading of a table's row, and "service 1" as plain words or as a lone name, are no filler.
+      expect(await statuses('<table><tr><th scope="row">Address line 1</th><td>4 Mill Lane</td></tr></table>', 'placeholderCopy')).toEqual(['holds']);
+      expect(await statuses('<dl><dt>Address line 1</dt><dd>4 Mill Lane</dd></dl>', 'placeholderCopy')).toEqual(['holds']);
+      expect(await statuses('<p>Bus service 1 runs to the centre every ten minutes.</p><h2>Service 1</h2>', 'placeholderCopy')).toEqual(['holds']);
+      expect(await statuses('<p>Our address line 1 is 4 Mill Lane.</p>', 'placeholderCopy')).toEqual(['holds']);
+      // A row of slots that nobody filled still fails.
+      expect(await statuses('<h3>Service 1</h3><p>Fast.</p><h3>Service 2</h3><p>Good.</p>', 'placeholderCopy')).toContain('fails');
     });
 
     it('automated review of 2026-11-24, round 1: a paragraph that only introduces an empty list does not explain it', async () => {

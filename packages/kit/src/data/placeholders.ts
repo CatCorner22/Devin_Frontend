@@ -11,9 +11,11 @@ export const SHORT_PHRASES: readonly string[] = ['your company', 'company name',
 /**
  * Phrases that are also real names and real words ("Acme Plumbing" is a business; "todo" is Spanish for "all"). The names count only
  * when they are the whole text. "TODO" counts only in capitals, a note of the builder to itself: as the whole text, or as "TODO:" anywhere.
+ * "Service 1" and "Address line 1" are also plain words ("Bus service 1 runs to the centre"; the row of a table of addresses), so
+ * they too count only as the whole text (Hinshitsu audit of WU-1, adversarial finding 6).
  * A street address such as "123 Main Street" is on no list: real businesses have that address (review of 2026-11-24, F-13).
  */
-export const WHOLE_PHRASES: readonly string[] = ['acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation'];
+export const WHOLE_PHRASES: readonly string[] = ['acme', 'acme inc', 'acme corp', 'acme co', 'acme corporation', 'service 1', 'address line 1'];
 
 /** The first placeholder phrase in a text, or null. A phrase counts as whole words: "unleash" is not in "unleashed". Every run of white space, a line break and a no-break space among them, reads as one space. */
 export function placeholderIn(text: string): string | null {
