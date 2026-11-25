@@ -61,11 +61,11 @@ export function keyboardReachable(doc: Document): Finding[] {
   // the page, shrunk to a pixel, or clipped away, so neither the eye nor a screen reader finds it; only a program fills it in
   // (finding F-5 of the review of 2026-11-24). Both signs are needed: a field that people can see is judged like any other.
   const unmet = (el: Element): boolean => {
-    if (!el.closest('[aria-hidden="true"]')) return false;
+    if (!view || !el.closest('[aria-hidden="true"]')) return false;
     for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
       const box = at.getBoundingClientRect();
-      const computed = (view ?? window).getComputedStyle(at);
-      if (box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + (view?.scrollY ?? 0) <= 0 || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
+      const computed = view.getComputedStyle(at);
+      if (box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
     }
     return false;
   };
