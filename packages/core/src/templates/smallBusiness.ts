@@ -244,7 +244,7 @@ body[data-nav="split-cta"] .nav nav { margin-inline: auto; }
 .hero::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background-image: var(--atmo-image); background-size: var(--atmo-size); -webkit-mask-image: var(--atmo-mask); mask-image: var(--atmo-mask); }
 .hero-grid { display: grid; gap: var(--space-10); align-items: center; }
 /* The headline: never wider than the screen allows, and never smaller than its floor (see --h1-floor in the tokens). */
-.hero h1 { font-size: clamp(var(--h1-floor), calc(var(--text-display) * var(--display-scale)), calc(13vw * var(--display-scale))); max-width: 18ch; padding-block: 0.04em; }
+:is(.hero, .inner-intro) h1 { font-size: clamp(var(--h1-floor), calc(var(--text-display) * var(--display-scale)), calc(13vw * var(--display-scale))); max-width: 18ch; padding-block: 0.04em; }
 .tag { font-size: var(--text-sm); font-weight: 600; color: var(--accent-text); margin-bottom: var(--space-4); }
 body[data-strategy="color-block"] .tag { color: inherit; }
 .lede { font-size: var(--lede-size); line-height: 1.5; max-width: 52ch; margin-top: var(--space-5); color: var(--text-muted); }
@@ -258,7 +258,7 @@ body[data-strategy="color-block"] .hero .btn-primary { background: var(--hero-te
 .hero-media { display: none; }
 .fact-list.hero-facts { display: none; }
 
-body[data-display="ink-gradient"] .hero h1, body[data-display="accent-gradient"] .hero h1 { background: var(--display-fill); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+body[data-display="ink-gradient"] :is(.hero, .inner-intro) h1, body[data-display="accent-gradient"] :is(.hero, .inner-intro) h1 { background: var(--display-fill); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
 
 body[data-hero="centered"] .hero-copy { text-align: center; margin-inline: auto; }
 body[data-hero="centered"] .hero h1, body[data-hero="centered"] .lede { margin-inline: auto; }
@@ -407,13 +407,13 @@ body[data-elevation="flat"] .about .promise, body[data-elevation="tonal"] .about
 .media span { position: relative; background: var(--surface); color: var(--text-muted); font-size: var(--text-xs); font-weight: 600; padding: var(--space-1) var(--space-3); border-radius: var(--radius-small); box-shadow: 0 0 0 1px var(--border), 0 1px 2px var(--recess); }
 
 /* Signature elements: one memorable move */
-body[data-signature="marker"] .hero mark { background: linear-gradient(transparent 56%, var(--marker) 56% 92%, transparent 92%); padding-inline: 0.08em; -webkit-text-fill-color: var(--hero-text); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+body[data-signature="marker"] :is(.hero, .inner-intro) mark { background: linear-gradient(transparent 56%, var(--marker) 56% 92%, transparent 92%); padding-inline: 0.08em; -webkit-text-fill-color: var(--hero-text); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 body[data-signature="big-numerals"] .service .num { display: block; font-size: var(--numeral-size); line-height: 1; letter-spacing: -0.03em; }
 body[data-signature="big-numerals"][data-sections="ledger"] .service .num { font-size: var(--h2-size); padding-top: 0; }
 body[data-signature="color-band"] .facts { background: var(--band-solid-bg); color: var(--band-solid-text); padding-block: var(--space-16); }
 body[data-signature="color-band"] .facts .fact-list dt { font-size: var(--numeral-size); }
 body[data-signature="color-band"][data-strategy="color-block"] .facts { background: var(--band-bg); color: var(--band-text); }
-body[data-signature="outline-type"] .hero mark { color: var(--hero-bg); -webkit-text-fill-color: var(--hero-bg); -webkit-text-stroke: 0.055em var(--hero-text); paint-order: stroke fill; }
+body[data-signature="outline-type"] :is(.hero, .inner-intro) mark { color: var(--hero-bg); -webkit-text-fill-color: var(--hero-bg); -webkit-text-stroke: 0.055em var(--hero-text); paint-order: stroke fill; }
 body[data-signature="corner-tag"] .tag { display: inline-block; background: var(--accent-2); color: var(--on-accent-2); padding: var(--space-1) var(--space-3); border-radius: var(--radius-small); transform: rotate(-2deg); transform-origin: left center; }
 
 /* Expressive motion: one orchestrated entrance. The page is complete at rest, and still previews skip it. */
@@ -443,7 +443,7 @@ body[data-focus="error"] .form .hint, body[data-focus="error"] .form > .voice-he
 body[data-focus="error"] .form > p, body[data-focus="error"] .error-summary, body[data-focus="error"] .field-error { font-size: var(--text-sm); }
 body[data-focus="error"] .error-summary h3 { font-size: inherit; }
 .focus-example { outline: var(--focus-w) var(--focus-style, solid) var(--focus); outline-offset: 2px; }
-.inner-intro { padding-block: var(--space-8); }
+.inner-intro { padding-block: var(--space-8); background: var(--hero-bg); color: var(--hero-text); }
 .inner-intro h1 { margin-block: var(--space-4); }
 .inner-intro p { max-width: var(--measure); }
 body[data-page="contact"][data-motion="expressive"]:not([data-still]) .inner-intro { animation: rise var(--dur-slow) var(--ease-out) both; }
@@ -637,7 +637,7 @@ ${SMALL_BUSINESS_CSS}
 <main id="main">
 ${contactFallback ? '<p class="wrap preview-fallback">That section appears only on the home page. Showing the top of the contact page instead.</p>' : ''}
 ${behavior}
-${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1>${e(contactPageContent(c).title)}</h1><p>${e(contactPageContent(c).intro)}</p><h2>Plan your visit</h2><p>${e(contactPageContent(c).directions)}</p></div></section>` : `
+${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1>${headlineHtml({ ...c, headline: contactPageContent(c).title })}</h1><p>${e(contactPageContent(c).intro)}</p><h2>Plan your visit</h2><p>${e(contactPageContent(c).directions)}</p></div></section>` : `
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">

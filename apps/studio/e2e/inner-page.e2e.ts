@@ -36,6 +36,33 @@ describe('inner page: generated pages', () => {
     } finally { await context.close(); }
   });
 
+  it('PR13: Contact and home headlines share size, color fades and highlighted treatments', async () => {
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    try {
+      const page = await context.newPage();
+      for (const displayTreatment of ['solid', 'ink-gradient', 'accent-gradient'] as const) {
+        for (const signature of ['none', 'marker', 'outline-type'] as const) {
+          const project = createProject();
+          project.content.contactPage = { title: project.content.headline, intro: 'Plan your visit.', directions: 'Use the main door.' };
+          const params = { ...project.params, displayTreatment, signature, colorStrategy: 'color-block' as const };
+          const input = { params, content: project.content, tokens: deriveTokens(params, project.a11y).css, still: true, links: 'inert' as const };
+          const styles = [];
+          for (const pageName of ['home', 'contact'] as const) {
+            await page.setContent(renderSmallBusiness({ ...input, page: pageName }));
+            styles.push(await page.locator('h1').evaluate((el) => {
+              const h = getComputedStyle(el);
+              const section = getComputedStyle(el.closest('section')!);
+              const mark = el.querySelector('mark');
+              const m = mark ? getComputedStyle(mark) : null;
+              return { size: h.fontSize, fill: h.webkitTextFillColor, fade: h.backgroundImage, background: section.backgroundColor, markFill: m?.webkitTextFillColor, stroke: m?.webkitTextStrokeWidth };
+            }));
+          }
+          expect(styles[1], `${displayTreatment}/${signature}`).toEqual(styles[0]);
+        }
+      }
+    } finally { await context.close(); }
+  });
+
   for (const pageName of ['home', 'contact'] as const) for (const width of [375, 1280]) for (const theme of ['light', 'dark'] as const) {
     it(`${pageName}, ${width}px, ${theme}: kit checks have no failing machine floor and axe has no serious finding`, async () => {
       const context = await browser.newContext({ viewport: { width, height: 800 }, colorScheme: theme });
