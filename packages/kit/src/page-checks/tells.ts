@@ -48,10 +48,10 @@ export function placeholderCopy(doc: Document): Finding[] {
     const given = textOf(block);
     if (given === '') continue;
     const text = given.toLowerCase().replace(/’/g, '\'');
-    const short = text.split(' ').length <= 4 && !block.closest(formText) && !(block.id !== '' && described.has(block.id));
-    const all = text.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
     // The words of a form's own label name the field ("Address line 1" over a real address field); they are no filler.
     const names = block.closest(formText) !== null || (block.id !== '' && described.has(block.id));
+    const short = text.split(' ').length <= 4 && !names;
+    const all = text.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
     const hit = /(^|[^A-Za-z0-9])TODO:|^[^A-Za-z0-9]*TODO[^A-Za-z0-9]*$/.test(given) ? 'todo' : phrases.find((phrase) => !(names && /^address line/.test(phrase)) && (whole.includes(phrase) ? all === phrase : found(text, phrase) && (short || !slots.includes(phrase))));
     if (hit) out.push({ ruleId, status: 'fails', where: `${block.tagName.toLowerCase()}: "${given.slice(0, 40)}"`, measured: `the phrase "${hit}"`, required: 'the owner\'s own words', fix: 'Replace the phrase with the real content from the Brief.' });
   }

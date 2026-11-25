@@ -87,7 +87,7 @@ export function focusIsVisible(doc: Document): Finding[] {
   const view = doc.defaultView;
   if (!view) return [{ ruleId, status: 'could-not-measure', measured: 'the page has no window' }];
   const name = (el: Element): string => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}${el.classList[0] ? '.' + el.classList[0] : ''}`;
-// A change counts only when an eye can see it (finding F-11 of the review of 2026-11-24). Each color is painted on a canvas,
+  // A change counts only when an eye can see it (finding F-11 of the review of 2026-11-24). Each color is painted on a canvas,
   // off the page, and read back as four numbers. An outline, a border, or a shadow in a clear color is no mark, and a color
   // that moves by less than 30 of 255 steps (#000000 to #000001) is no change. Whether the change stands out enough from
   // what is around it (3 to 1, as WCAG 2.4.13 asks) is not measured.

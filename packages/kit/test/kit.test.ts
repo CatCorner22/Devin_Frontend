@@ -60,6 +60,14 @@ describe('rule records', () => {
 });
 
 describe('the kit stands alone', () => {
+  it('Hinshitsu audit of WU-1: the two checks of movement find a pause control by the same lines, marked buttons first', () => {
+    const neuro = sources.find(({ path }) => path === join('page-checks', 'neuro.ts'))?.text ?? '';
+    const copies = neuro.split('  const hasPause = ').slice(1).map((rest) => rest.slice(0, rest.indexOf('\n  });')));
+    expect(copies).toHaveLength(2);
+    expect(copies[0]).toBe(copies[1]);
+    expect(copies[0]).toContain(`'button[data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll`);
+  });
+
   it('imports nothing but zod and its own files', () => {
     const bad: string[] = [];
     for (const { path, text } of sources) for (const match of text.matchAll(/from\s+'([^']+)'/g)) { const from = match[1] ?? ''; if (from !== 'zod' && !(from.startsWith('.') && !from.includes('../../'))) bad.push(`${path}: ${from}`); }
@@ -333,6 +341,7 @@ describe('design ID', () => {
     const started = Date.now();
     designId({ '--bg': 'url('.repeat(4000) });
     designId({ '--bg': 'url("'.repeat(4000) });
+    // The clock guards against minutes only: the limit is many times what the work takes, and it is no claim of speed.
     expect(Date.now() - started).toBeLessThan(2000);
     expect(designId({ '--bg': 'url("a\\")B.png")' })).not.toBe(designId({ '--bg': 'url("a\\")b.png")' }));
     expect(designId({ '--bg': "url('a\\')B.png')" })).not.toBe(designId({ '--bg': "url('a\\')b.png')" }));
@@ -364,6 +373,7 @@ describe('design ID', () => {
     for (const piece of ['url(', 'url("', '"', "'", 'u', 'url( ', ') url("a', 'a  ', '\\\\"', '"\\\\', '--', 'url("\\\\"']) {
       const started = performance.now();
       expect(designId({ '--bg': piece.repeat(Math.ceil(320_000 / piece.length)) })).toMatch(/^rx-[0-9a-f]{16}$/);
+      // The clock guards against minutes only: the limit is many times what the work takes, and it is no claim of speed.
       expect(performance.now() - started).toBeLessThan(5000);
     }
   });
@@ -463,12 +473,14 @@ describe('the Brief', () => {
     const many = { ...good, services: Array.from({ length: 4000 }, (_, i) => ({ name: `Service ${i}`, description: `We repair item ${i} for you.` })), wordsToAvoid: Array.from({ length: 4000 }, (_, i) => `word${i}`) };
     let started = performance.now();
     const problems = checkBrief(many);
+    // The clock guards against minutes only: the limit is many times what the work takes, and it is no claim of speed.
     expect(performance.now() - started).toBeLessThan(3000);
     expect(problems.filter((p) => /more here than a Brief can hold/.test(p.problem))).toHaveLength(1);
     let deep: unknown = 'Lorem ipsum';
     for (let i = 0; i < 200000; i++) deep = [deep];
     started = performance.now();
     const nested = checkBrief({ ...good, proof: deep });
+    // The clock guards against minutes only: the limit is many times what the work takes, and it is no claim of speed.
     expect(performance.now() - started).toBeLessThan(3000);
     expect(nested.some((p) => /more here than a Brief can hold/.test(p.problem))).toBe(true);
     // The limit does not hide a placeholder or a word to avoid in a Brief of ordinary size.

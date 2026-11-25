@@ -31,7 +31,7 @@ export function noEndlessMotion(doc: Document): Finding[] {
   // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
   // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
   // (finding F-10 of the review of 2026-11-24). Its size as a target is the business of the target-size rule.
-  const hasPause = [...doc.querySelectorAll<HTMLElement>('button, [role="button"]')].slice(0, 2000).some((el) => {
+  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll<HTMLElement>('button, [role="button"]')].slice(0, 2000).some((el) => {
     if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible') return false;
     for (let up: Element | null = el; up; up = up.parentElement) if (parseFloat(view.getComputedStyle(up).opacity) < 0.1) return false;
     const box = el.getBoundingClientRect();
@@ -310,7 +310,7 @@ export function noScriptedMotion(doc: Document): Promise<Finding[]> {
   // A pause control counts only where a person can see it and reach it: drawn, not transparent, at least 8 by 8 pixels and
   // inside the page, with a name, with a keyboard stop, not disabled, and not hidden from screen readers
   // (finding F-10 of the review of 2026-11-24). Its size as a target is the business of the target-size rule.
-  const hasPause = [...doc.querySelectorAll<HTMLElement>('button, [role="button"]')].slice(0, 2000).some((el) => {
+  const hasPause = [...doc.querySelectorAll<HTMLElement>('button[data-pause-motion], [role="button"][data-pause-motion]'), ...doc.querySelectorAll<HTMLElement>('button, [role="button"]')].slice(0, 2000).some((el) => {
     if (el.getClientRects().length === 0 || view.getComputedStyle(el).visibility !== 'visible') return false;
     for (let up: Element | null = el; up; up = up.parentElement) if (parseFloat(view.getComputedStyle(up).opacity) < 0.1) return false;
     const box = el.getBoundingClientRect();

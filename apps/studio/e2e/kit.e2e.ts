@@ -263,6 +263,7 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await page.context().close();
       expect(comfort.length).toBeGreaterThan(0);
       expect(comfort.some((f) => f.ruleId === 'neuro-line-length' && f.status === 'fails')).toBe(false);
+      // The clock guards against minutes only: the limit is many times what the work takes, and it is no claim of speed.
       expect(Date.now() - started).toBeLessThan(40000);
     });
 
@@ -639,22 +640,22 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       const tabs = (first: string) => `<div role="tablist"><span role="tab" tabindex="${first}" style="display:inline-block;padding:12px">One</span><span role="tab" tabindex="-1" style="display:inline-block;padding:12px">Two</span></div>`;
       expect(await statuses(tabs('-1'), 'keyboardReachable')).toContain('fails');
       expect(await statuses(tabs('0'), 'keyboardReachable')).not.toContain('fails');
-    // The same group built from native buttons (automated review of pull request 9).
-    const buttons = (first: string) => `<div role="tablist"><button role="tab" tabindex="${first}">One</button><button role="tab" tabindex="-1">Two</button></div>`;
-    expect(await statuses(buttons('-1'), 'keyboardReachable')).toContain('fails');
-    expect(await statuses(buttons('0'), 'keyboardReachable')).not.toContain('fails');
-    // Tabs that are all switched off answer no click and need no Tab stop (second automated review of pull request 9).
-    expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" disabled>One</button><button role="tab" tabindex="-1" disabled>Two</button></div>', 'keyboardReachable')).not.toContain('fails');
-    expect(await statuses('<div role="tablist" inert><button role="tab" tabindex="-1">One</button><button role="tab" tabindex="-1">Two</button></div>', 'keyboardReachable')).not.toContain('fails');
-    expect(await statuses('<div inert><dialog id="d"><div role="tablist"><button role="tab" tabindex="-1">One</button><button role="tab" tabindex="-1">Two</button></div><button>Close</button></dialog></div><script>document.getElementById("d").showModal()</script>', 'keyboardReachable')).toContain('fails');
-    expect(await statuses('<div inert><dialog id="d"><div role="tablist"><button role="tab" tabindex="-1">One</button><button role="tab" tabindex="-1">Two</button></div></dialog></div><dialog id="top"><button>Close</button></dialog><script>document.getElementById("d").showModal(); document.getElementById("top").showModal()</script>', 'keyboardReachable')).not.toContain('fails');
-    // The mark aria-disabled switches no click off: tabs that carry it and have no way in still fail.
-    expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" aria-disabled="true">One</button><button role="tab" tabindex="-1" aria-disabled="true">Two</button></div>', 'keyboardReachable')).toContain('fails');
-    // A web component with no box of its own (display: contents) whose shadow content is drawn still hides that content from the checks.
-    const boxless = await pageOf('<h1>Shop</h1><x-box id="box" style="display: contents"></x-box>');
-    await boxless.evaluate(() => { const root = document.getElementById('box')?.attachShadow({ mode: 'open' }); const button = document.createElement('button'); button.textContent = 'Buy'; root?.append(button); });
-    expect((await run(boxless, 'unseenParts')).length).toBeGreaterThan(0);
-    await boxless.context().close();
+      // The same group built from native buttons (automated review of pull request 9).
+      const buttons = (first: string) => `<div role="tablist"><button role="tab" tabindex="${first}">One</button><button role="tab" tabindex="-1">Two</button></div>`;
+      expect(await statuses(buttons('-1'), 'keyboardReachable')).toContain('fails');
+      expect(await statuses(buttons('0'), 'keyboardReachable')).not.toContain('fails');
+      // Tabs that are all switched off answer no click and need no Tab stop (second automated review of pull request 9).
+      expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" disabled>One</button><button role="tab" tabindex="-1" disabled>Two</button></div>', 'keyboardReachable')).not.toContain('fails');
+      expect(await statuses('<div role="tablist" inert><button role="tab" tabindex="-1">One</button><button role="tab" tabindex="-1">Two</button></div>', 'keyboardReachable')).not.toContain('fails');
+      expect(await statuses('<div inert><dialog id="d"><div role="tablist"><button role="tab" tabindex="-1">One</button><button role="tab" tabindex="-1">Two</button></div><button>Close</button></dialog></div><script>document.getElementById("d").showModal()</script>', 'keyboardReachable')).toContain('fails');
+      expect(await statuses('<div inert><dialog id="d"><div role="tablist"><button role="tab" tabindex="-1">One</button><button role="tab" tabindex="-1">Two</button></div></dialog></div><dialog id="top"><button>Close</button></dialog><script>document.getElementById("d").showModal(); document.getElementById("top").showModal()</script>', 'keyboardReachable')).not.toContain('fails');
+      // The mark aria-disabled switches no click off: tabs that carry it and have no way in still fail.
+      expect(await statuses('<div role="tablist"><button role="tab" tabindex="-1" aria-disabled="true">One</button><button role="tab" tabindex="-1" aria-disabled="true">Two</button></div>', 'keyboardReachable')).toContain('fails');
+      // A web component with no box of its own (display: contents) whose shadow content is drawn still hides that content from the checks.
+      const boxless = await pageOf('<h1>Shop</h1><x-box id="box" style="display: contents"></x-box>');
+      await boxless.evaluate(() => { const root = document.getElementById('box')?.attachShadow({ mode: 'open' }); const button = document.createElement('button'); button.textContent = 'Buy'; root?.append(button); });
+      expect((await run(boxless, 'unseenParts')).length).toBeGreaterThan(0);
+      await boxless.context().close();
     });
 
     it('F-24: a button made with input and a button named by a letter that draws nothing have no name', async () => {
@@ -958,6 +959,7 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       await page.evaluate(() => { document.getElementById('big')!.textContent = '1'.repeat(2_000_000); document.getElementById('long')!.textContent = 'word  "x" '.repeat(300_000); });
       const started = Date.now();
       for (const fn of ['tabularNumerals', 'typographicMarks', 'placeholderCopy', 'emojiAsIcons']) await run(page, fn);
+      // The clock guards against minutes only: the limit is many times what the work takes, and it is no claim of speed.
       expect(Date.now() - started).toBeLessThan(10_000);
       await page.context().close();
     });
