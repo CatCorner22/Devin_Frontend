@@ -966,6 +966,9 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await narrow('<h1>Shop</h1><div style="overflow:hidden"><canvas width="900" height="100" aria-label="Chart"></canvas></div>')).toEqual(['fails']);
       expect(await narrow('<h1>Shop</h1><section style="contain:paint"><p style="width:900px">A line of text that is set wider than the window and that nobody can reach by scrolling.</p></section>')).toEqual(['fails']);
       expect(await narrow('<h1>Shop</h1><div style="overflow:hidden"><p style="margin-left:-200px;white-space:nowrap">Phone 0113 496 0000 for orders today</p></div>')).toEqual(['fails']);
+      // Correctness finding 7: a line that may not wrap, cut by the part around it.
+      expect(await narrow('<h1>Shop</h1><div style="overflow:hidden"><p style="white-space:nowrap">Open every day from eight in the morning until six in the evening, Sundays too</p></div>')).toEqual(['fails']);
+      expect(await narrow('<h1>Shop</h1><div style="contain:paint"><p style="white-space:nowrap">Open every day from eight in the morning until six in the evening, Sundays too</p></div>')).toEqual(['fails']);
       // A picture with an empty alt is an ornament: a wide one that its box crops loses nothing a person must read.
       const dot = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
       expect(await narrow(`<h1>Shop</h1><div style="overflow:hidden;height:120px"><img alt="" src="${dot}" style="width:900px;height:120px;max-width:none"></div><p>Bread, baked each morning.</p>`)).toEqual(['holds']);
