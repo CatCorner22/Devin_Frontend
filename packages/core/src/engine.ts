@@ -79,7 +79,7 @@ export function effectiveParams(project: Project): DesignParams {
   }
   for (const step of steps) {
     const decision = project.decisions[step.id];
-    const optionId = decision?.optionId ?? matchingOptionId(project.params, step);
+    const optionId = decision?.kind === 'picked' ? decision.optionId : matchingOptionId(project.base, step);
     const option = step.options.find((o) => o.id === optionId);
     if (decision?.kind !== 'tuned' && option?.derive) params = { ...params, ...resolvePatch(option, params) };
   }
@@ -203,7 +203,9 @@ export function applyDirection(project: Project, direction: Direction | string, 
   const next: Project = { ...project, direction: found.id, base: { ...found.params }, params: { ...found.params }, decisions: {} };
   delete next.skin;
   delete next.skinLayer;
-  return skinId !== undefined && offersSkin(found.id, skinId) ? setSkin(next, skinId) : next;
+  if (skinId === undefined || !offersSkin(found.id, skinId)) return next;
+  const colored = setSkin(next, skinId);
+  return { ...colored, base: { ...effectiveParams(colored) } };
 }
 
 /** True when the curated Direction with this identifier offers the Skin. */
@@ -305,8 +307,7 @@ export function keep(project: Project, stepId: string, now = isoNow()): Project 
   const step = mustStep(stepId);
   const previous = project.decisions[stepId];
   if (previous || skinCoversStep(project, stepId)) return project;
-  const visible = effectiveParams(project);
-  return withDecision(project, step, { ...project.params, ...ownedValues(step, visible) }, { kind: 'kept', rejected: [], at: now });
+  return withDecision(project, step, { ...project.params, ...ownedValues(step, project.params) }, { kind: 'kept', rejected: [], at: now });
 }
 
 function checkOwnedValues(step: Step, values: Partial<DesignParams>): void {

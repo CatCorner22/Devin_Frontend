@@ -7,7 +7,7 @@ it('review 3: new starting Skins are removable layers while old saved colors ret
   const started = applyDirection(createProject(), direction, skin.id);
   expect(started.skinLayer).toBeDefined();
   expect(started.params).toEqual(direction.params);
-  expect(started.base).toEqual(direction.params);
+  expect(started.base).toEqual(skinParams(direction, skin));
   expect(effectiveParams(started)).toEqual(skinParams(direction, skin));
   expect(setSkin(started, null).params).toEqual(direction.params);
   const old = { ...applyDirection(createProject(), direction), skin: skin.id, params: skinParams(direction, skin), base: skinParams(direction, skin) };

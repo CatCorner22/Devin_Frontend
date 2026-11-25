@@ -1993,7 +1993,7 @@ describe('Studio: skins, the same look in other colors (decision D52)', () => {
     expect(await page.locator('.rail-direction strong').innerText()).toBe('Midnight Aurora in the Skin “Sunset fade”');
     expect(effectiveParams(project)).toEqual(expected);
     expect(project.params).toEqual(aurora.params);
-    expect(project.base).toEqual(aurora.params);
+    expect(project.base).toEqual(expected);
     expect(project.decisions).toEqual({});
     // Colors changed; a value of layout, of letters, and of shape did not.
     expect(effectiveParams(project).accentHue).not.toBe(aurora.params.accentHue);
