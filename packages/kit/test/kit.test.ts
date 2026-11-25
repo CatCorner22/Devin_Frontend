@@ -224,6 +224,10 @@ describe('receipt', () => {
     expect(lines([{ ruleId: id, status: 'holds' }, { ruleId: id, status: 'holds' }])).toEqual(['Holds']);
     expect(lines([{ ruleId: id, status: 'holds' }, { ruleId: id, status: 'fails', where: 'div.turn' }])).toEqual(['Holds', 'Fails (‹div.turn›)']);
   });
+  it('Hinshitsu audit of WU-1: the 11 records that the repairs of the second review changed carry the date of the change', () => {
+    const changed = ['craft-tabular-numerals', 'craft-picture-size', 'craft-typographic-marks', 'fit-colors', 'fit-fonts', 'fit-radii', 'fit-unused-color', 'neuro-motion-can-stop', 'neuro-text-size', 'neuro-no-surprise', 'state-loading-keeps-size'];
+    expect(KIT_RULES.filter((rule) => rule.reviewed === '2026-11-24').map((rule) => rule.id).sort()).toEqual([...changed].sort());
+  });
   it('keeps the four lists apart', () => {
     const r = receipt([fails('floor-a'), holds('fit-a'), { ruleId: 'craft-a', status: 'could-not-measure', measured: 'No window.' }], RULES);
     expect(r.measured.map((line) => line.ruleId)).toEqual(['floor-a', 'fit-a']);
