@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_PARAMS, DIRECTIONS, NOT_CHECKED, PAIRS, RADIUS_SLIDER_TOP, SMALL_BUSINESS_CSS, STEPS, TOKEN_OF, activeTunables, deriveTokens, resolvePatch, tokensToCss, type DesignParams } from '../src/index.js';
+import { DEFAULT_PARAMS, DIRECTIONS, NOT_CHECKED, PAIRS, RADIUS_SLIDER_TOP, SMALL_BUSINESS_CSS, STEPS, TOKEN_OF, activeTunables, deriveTokens, resolvePatch, skinParams, skinsOf, tokensToCss, type DesignParams } from '../src/index.js';
 import { contrastHex, everyDesign, remeasure } from './helpers.js';
 
-const designs = everyDesign();
+const designs = [...everyDesign(), ...DIRECTIONS.flatMap((d) => skinsOf(d).flatMap((s) => (['light', 'dark'] as const).map((theme) => ({ label: `${d.id}/${s.id}/${theme}`, params: { ...skinParams(d, s), theme } }))))];
 const direction = (id: string): DesignParams => DIRECTIONS.find((d) => d.id === id)!.params;
 
 describe('tokens', () => {
@@ -49,7 +49,7 @@ describe('contrast profiles', () => {
     for (const d of designs) expect(deriveTokens(d.params, 'off').issues, d.label).toEqual([]);
   });
 
-  it('Advise reports exactly the pairs that fall short, and changes no color', () => {
+  it('Advise reports exactly the pairs that fall short, and changes no additional color beyond fixed floors', () => {
     for (const d of designs) {
       const off = deriveTokens(d.params, 'off');
       const advise = deriveTokens(d.params, 'advise');
@@ -161,11 +161,12 @@ describe('contrast profiles', () => {
     expect(lede.alpha).toBeLessThan(1);
   });
 
-  it('Enforce keeps both ends of a headline fill (fade or two-color gradient) at 3 to 1 or better against the first screen (finding T2-03)', () => {
+  it('fixed floors keep both ends of a headline fill at 3 to 1 in every profile, including every offered Skin', () => {
     let fills = 0;
     for (const d of designs) {
       for (const displayTreatment of ['ink-gradient', 'accent-gradient'] as const) {
-        const t = deriveTokens({ ...d.params, displayTreatment }, 'enforce');
+        for (const profile of ['off', 'advise', 'enforce'] as const) {
+        const t = deriveTokens({ ...d.params, displayTreatment }, profile);
         const ground = t.hex['--hero-bg']!;
         // Each end of the fill is written as six hexadecimal digits, or as red, green, and blue steps with the share that shows.
         const stops = [...t.css['--display-fill']!.matchAll(/#([0-9a-f]{6})\b|rgb\((\d+) (\d+) (\d+) \/ ([\d.]+)\)/g)];
@@ -176,30 +177,27 @@ describe('contrast profiles', () => {
           expect(measured, `${d.label}: ${displayTreatment}, stop ${stop[0]} on ${ground}`).toBeGreaterThanOrEqual(3);
         }
         fills++;
+        }
       }
     }
     expect(fills).toBeGreaterThan(200);
   });
 
-  it('Enforce says "repaired" only for a pair that now passes, and gives the ratio before and after', () => {
+  it('fixed floors hold in every profile and disclose the ratio before and after repair', () => {
     let repairs = 0;
     for (const d of designs) {
-      const before = new Map(deriveTokens(d.params, 'off').pairs.map((p) => [p.id, p]));
-      const t = deriveTokens(d.params, 'enforce');
+      for (const profile of ['off', 'advise', 'enforce'] as const) {
+      const t = deriveTokens(d.params, profile);
       const after = new Map(t.pairs.map((p) => [p.id, p]));
-      for (const issue of t.issues) {
+      for (const pair of t.pairs) expect(remeasure(pair, t.hex), `${d.label}/${profile}/${pair.id}`).toBeGreaterThanOrEqual(pair.required);
+      for (const issue of t.floorRepairs) {
         expect(issue.outcome, `${d.label}: ${issue.id}`).toBe('repaired');
         expect(issue.after!, `${d.label}: ${issue.id}`).toBeGreaterThanOrEqual(issue.required);
         expect(issue.ratio, `${d.label}: ${issue.id}`).toBeLessThan(issue.required);
-        // "Before" is what the Off profile measures for the same pair.
-        const was = before.get(issue.id);
-        if (was) expect(Math.abs(was.ratio - issue.ratio), `${d.label}: ${issue.id}`).toBeLessThan(0.02);
         expect(after.get(issue.id)!.passes, `${d.label}: ${issue.id}`).toBe(true);
         repairs++;
       }
-      // Every pair that failed under Off is accounted for under Enforce.
-      const failedOff = [...before.values()].filter((p) => !p.passes).map((p) => p.id);
-      for (const id of failedOff) if (after.has(id)) expect(t.issues.some((i) => i.id === id), `${d.label}: ${id} failed and was not reported`).toBe(true);
+      }
     }
     expect(repairs).toBeGreaterThan(200);
   });

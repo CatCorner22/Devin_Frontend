@@ -52,7 +52,7 @@ const SAVE_LABEL: Record<StudioState['saved'], string> = {
 };
 const PROFILE_MEANING: Record<A11yProfile, string> = {
   off: 'Off: no contrast notes are shown.',
-  advise: 'Warn me: the Studio notes colors that are hard to tell apart, and changes nothing.',
+  advise: 'Warn me: the Studio reports extra contrast notes. Fixed floors always apply.',
   enforce: 'Fix for me: the Studio adjusts colors that are hard to tell apart, and lists each change.',
 };
 const HUE_NAMES: [number, string][] = [[25, 'red'], [55, 'orange'], [95, 'yellow'], [140, 'green'], [195, 'teal'], [258, 'blue'], [298, 'violet'], [345, 'pink']];
@@ -194,6 +194,7 @@ function TopBar(): React.JSX.Element {
           <option value="enforce">Fix for me</option>
         </select>
         <span id="a11y-meaning" className="profile-meaning">{PROFILE_MEANING[s.project.a11y]}</span>
+        <span className="hint">Fixed contrast floors always apply, including when notes are off. They adjust derived colors, not your saved choices.</span>
       </div>
       <button type="button" className="btn small" disabled={s.history.length === 0} onClick={s.undo}>Undo</button>
       <span className="save-state" role="status">{SAVE_LABEL[s.saved]}</span>

@@ -470,13 +470,12 @@ describe('Skins: pre-built colors for a Direction', () => {
     }
   });
 
-  it('offers a Skin only where its color shows and its text is true, without a clash, in harmony, and with no color pair failing that the Direction’s own colors pass', () => {
+  it('offers a Skin only where its color shows and its text is true, without a clash, in harmony, and with every measured floor holding in both themes and every profile', () => {
     let offering = 0;
     for (const d of DIRECTIONS) {
       const skins = skinsOf(d);
       expect(skins.length, `${d.id}: every listed skin exists`).toBe(d.skins?.length ?? 0);
       if (skins.length > 0) offering += 1;
-      const own = new Set(deriveTokens(d.params, 'advise').pairs.filter((pair) => !pair.passes).map((pair) => pair.id));
       for (const skin of skins) {
         // The offer rule: the color must show on something large, and the Skin's words must fit what is drawn (finding DT-01).
         expect(skinFits(d, skin), `${d.id}/${skin.id}: the Direction cannot show this Skin as its text describes it`).toBe(true);
@@ -488,8 +487,10 @@ describe('Skins: pre-built colors for a Direction', () => {
         expect(() => assertKnownParams(p), `${d.id}/${skin.id}`).not.toThrow();
         expect(conflicts({ ...createProject(), params: p }), `${d.id}/${skin.id}: clash`).toEqual([]);
         expect(harmonize(p), `${d.id}/${skin.id}: harmony`).toEqual(p);
-        const failing = deriveTokens(p, 'advise').pairs.filter((pair) => !pair.passes && !own.has(pair.id)).map((pair) => pair.id);
-        expect(failing, `${d.id}/${skin.id}: color pairs`).toEqual([]);
+        for (const theme of ['light', 'dark'] as const) for (const profile of ['off', 'advise', 'enforce'] as const) {
+          const failing = deriveTokens({ ...p, theme }, profile).pairs.filter((pair) => !pair.passes).map((pair) => pair.id);
+          expect(failing, `${d.id}/${skin.id}/${theme}/${profile}: color pairs`).toEqual([]);
+        }
       }
     }
     // Most Directions offer Skins; the ones that paint their main color on small marks only, or whose main color is nearly gray, offer none.

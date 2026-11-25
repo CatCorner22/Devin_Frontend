@@ -13,7 +13,7 @@ export interface TokenIssue {
   required: number;
   /**
    * `warning`: the pair is below the requirement and was left as picked.
-   * `repaired`: the Enforce profile changed a color, and the pair was measured again and now meets the requirement.
+   * `repaired`: a fixed floor or the Enforce profile changed a color; a new measurement meets the requirement.
    */
   outcome: 'warning' | 'repaired';
   /** The ratio after the repair, measured again. Present only when the outcome is `repaired`. */
@@ -42,6 +42,8 @@ export interface DerivedTokens {
   /** The colors of the measured pairs, as hexadecimal digits: the same digits that the stylesheet carries. */
   hex: Record<string, string>;
   issues: TokenIssue[];
+  /** Non-overridable contrast-floor repairs, independent of the chosen reporting profile. */
+  floorRepairs: TokenIssue[];
   /** Every checked pair with its final measured ratio, in every contrast profile. */
   pairs: MeasuredPair[];
 }
@@ -295,6 +297,54 @@ function applyProfile(p: DesignParams, pal: Palette, profile: A11yProfile): Toke
   return issues;
 }
 
+function applyFloors(p: DesignParams, pal: Palette): TokenIssue[] {
+  const specs = PAIRS.filter((s) => !s.applies || s.applies(p, pal));
+  const before = new Map(specs.map((s) => [s.id, measure(pal, s)]));
+  const markerBefore = measureMarker(pal);
+  for (let pass = 0; pass < 4; pass++) {
+    for (const spec of specs) {
+      if (measure(pal, spec) >= spec.required) continue;
+      const key = spec.move === 'fg' ? spec.fg : spec.bg;
+      const original = pal[key];
+      const related = specs.filter((s) => s.fg === key || s.bg === key);
+      const holds = (l: number): boolean => {
+        pal[key] = { ...original, l };
+        return related.every((s) => measure(pal, s) >= s.required * MARGIN);
+      };
+      let closest: Oklch | undefined;
+      for (const end of [0, 1]) {
+        if (!holds(end)) continue;
+        let fail = original.l;
+        let good = end;
+        for (let i = 0; i < 24; i++) {
+          const middle = (fail + good) / 2;
+          if (holds(middle)) good = middle;
+          else fail = middle;
+        }
+        if (!closest || Math.abs(good - original.l) < Math.abs(closest.l - original.l)) closest = { ...original, l: good };
+      }
+      pal[key] = closest ?? original;
+    }
+    if (filledButton(p)) { pal.action = pal.btnFill; pal.onAction = pal.btnLabel; }
+  }
+  const repairs: TokenIssue[] = specs.filter((s) => before.get(s.id)! < s.required).map((s) => {
+    const after = measure(pal, s);
+    return { id: s.id, pair: s.pair, ratio: figure(before.get(s.id)!), required: s.required, outcome: after >= s.required ? 'repaired' : 'warning', ...(after >= s.required ? { after: figure(after) } : {}) };
+  });
+  if (markerApplies(p) && measureMarker(pal) < MARKER_PAIR.required) {
+    let good = 0;
+    let fail = pal.markerAlpha;
+    for (let i = 0; i < 24; i++) {
+      pal.markerAlpha = (good + fail) / 2;
+      if (measureMarker(pal) >= MARKER_PAIR.required * MARGIN) good = pal.markerAlpha;
+      else fail = pal.markerAlpha;
+    }
+    pal.markerAlpha = good;
+    repairs.push({ ...MARKER_PAIR, ratio: figure(markerBefore), outcome: 'repaired', after: figure(measureMarker(pal)) });
+  }
+  return repairs;
+}
+
 /** Measure every applicable pair from the final palette. */
 function measurePairs(p: DesignParams, pal: Palette): MeasuredPair[] {
   const out: MeasuredPair[] = PAIRS.filter((s) => !s.applies || s.applies(p, pal)).map((s) => {
@@ -476,23 +526,28 @@ function atmosphereTokens(p: DesignParams, pal: Palette): Record<string, string>
   return out;
 }
 
-function displayTokens(p: DesignParams, pal: Palette, profile: A11yProfile): Record<string, string> {
+function displayTokens(p: DesignParams, pal: Palette): Record<string, string> {
   const ground = pal.heroBg;
   if (p.displayTreatment === 'ink-gradient') {
     // A quiet sheen: full ink at the top, fading slightly toward the bottom.
     let fade = 0.56;
-    // Large text needs 3:1. Under "Fix for me" the faded end is strengthened until it holds that against the first screen (finding T2-03).
-    if (profile === 'enforce') while (fade < 1 && contrastOverEmitted(pal.heroText, fade, ground) < 3 * MARGIN) fade = round(fade + 0.04, 2);
+    if (contrastOverEmitted(pal.heroText, fade, ground) < 3 * MARGIN) {
+      let fail = fade;
+      let good = 1;
+      for (let i = 0; i < 24; i++) {
+        const middle = (fail + good) / 2;
+        if (contrastOverEmitted(pal.heroText, middle, ground) >= 3 * MARGIN) good = middle;
+        else fail = middle;
+      }
+      fade = Math.ceil(good * 1000) / 1000;
+    }
     return { '--display-fill': `linear-gradient(to bottom, ${toCss(pal.heroText)} 28%, ${toCssAlpha(pal.heroText, Math.min(1, fade))} 112%)` };
   }
   if (p.displayTreatment === 'accent-gradient') {
     let from = pal.heroPainted ? pal.heroText : pal.accentText;
     let to = pal.heroPainted ? shiftL(pal.heroText, pal.heroText.l > 0.5 ? -0.16 : 0.2) : p.colorStrategy === 'duo' ? pal.accent2 : shiftH(pal.accentText, 52);
-    if (profile === 'enforce') {
-      // Large text needs 3:1.
-      from = ensureContrast(from, ground, 3 * MARGIN);
-      to = ensureContrast(to, ground, 3 * MARGIN);
-    }
+    from = ensureContrast(from, ground, 3 * MARGIN);
+    to = ensureContrast(to, ground, 3 * MARGIN);
     // The ends are written as exact digits. The blend between them runs in the OKLab color space, where the middle keeps a
     // lightness between its two ends; a blend in plain red-green-blue can dip darker in the middle (finding T3-15).
     return { '--display-fill': `linear-gradient(96deg in oklab, ${toCss(from)} 4%, ${toCss(to)} 96%)` };
@@ -593,6 +648,7 @@ function shapeTokens(p: DesignParams): Record<string, string> {
 /** Derive every token from the design parameters, under the chosen contrast profile. */
 export function deriveTokens(p: DesignParams, profile: A11yProfile): DerivedTokens {
   const pal = basePalette(p);
+  const floorRepairs = applyFloors(p, pal);
   const issues = applyProfile(p, pal, profile);
   const css: Record<string, string> = {};
   const hex: Record<string, string> = {};
@@ -612,8 +668,8 @@ export function deriveTokens(p: DesignParams, profile: A11yProfile): DerivedToke
   css['--media-b'] = toCss(pal.surface2);
   css['--inset-highlight'] = p.theme === 'dark' ? toCssAlpha(WHITE, 0.07) : toCssAlpha(WHITE, 0.8);
   css['--recess'] = p.theme === 'dark' ? toCssAlpha(BLACK, 0.35) : toCssAlpha(BLACK, 0.045);
-  Object.assign(css, elevationTokens(p, pal), buttonTokens(p, pal), atmosphereTokens(p, pal), displayTokens(p, pal, profile), motionTokens(p), typeTokens(p), spaceTokens(p), shapeTokens(p));
-  return { css, hex, issues, pairs: measurePairs(p, pal) };
+  Object.assign(css, elevationTokens(p, pal), buttonTokens(p, pal), atmosphereTokens(p, pal), displayTokens(p, pal), motionTokens(p), typeTokens(p), spaceTokens(p), shapeTokens(p));
+  return { css, hex, issues, floorRepairs, pairs: measurePairs(p, pal) };
 }
 
 /** A token value is written into a stylesheet, so it must not be able to close the rule or the style block. */
