@@ -161,11 +161,10 @@ describe('contrast profiles', () => {
     expect(lede.alpha).toBeLessThan(1);
   });
 
-  it('fixed floors keep both ends of a headline fill at 3 to 1 in every profile, including every offered Skin', () => {
+  it.each(['off', 'advise', 'enforce'] as const)('fixed floors keep both ends of a headline fill at 3 to 1 in %s, including every offered Skin', (profile) => {
     let fills = 0;
     for (const d of designs) {
       for (const displayTreatment of ['ink-gradient', 'accent-gradient'] as const) {
-        for (const profile of ['off', 'advise', 'enforce'] as const) {
         const t = deriveTokens({ ...d.params, displayTreatment }, profile);
         const ground = t.hex['--hero-bg']!;
         // Each end of the fill is written as six hexadecimal digits, or as red, green, and blue steps with the share that shows.
@@ -177,9 +176,9 @@ describe('contrast profiles', () => {
           expect(measured, `${d.label}: ${displayTreatment}, stop ${stop[0]} on ${ground}`).toBeGreaterThanOrEqual(3);
         }
         fills++;
-        }
       }
     }
+    expect(fills).toBe(designs.length * 2);
     expect(fills).toBeGreaterThan(200);
   });
 
