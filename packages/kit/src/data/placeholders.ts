@@ -26,6 +26,6 @@ export function placeholderIn(text: string): string | null {
   const all = plain.replace(/^[^a-z0-9]+|[^a-z0-9]+$/g, '');
   // "555-0" is the made-up number of North America, which follows an area code of three digits or none: "0113 555-0142" is a
   // number of another country (Hinshitsu audit of WU-1, correctness finding 9).
-  const found = (phrase: string): boolean => new RegExp(`(^|[^a-z0-9])${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : '($|[^a-z0-9])'}`).test(plain) && !(phrase === '555-0' && /\d{4}[ .-]555-0/.test(plain));
+  const found = (phrase: string): boolean => new RegExp(`(^|[^a-z0-9])${phrase === '555-0' ? '(?<!\\d{4}[ .-])' : ''}${phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}${phrase === '555-0' ? '' : '($|[^a-z0-9])'}`).test(plain);
   return PLACEHOLDER_PHRASES.find((phrase) => (WHOLE_PHRASES.includes(phrase) ? all === phrase : found(phrase) && (short || !SHORT_PHRASES.includes(phrase)))) ?? null;
 }

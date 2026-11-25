@@ -554,6 +554,8 @@ describe('the Brief', () => {
     expect(checkBrief({ ...good, headline: 'Lorem\nipsum' })).toMatchObject([{ field: 'headline' }]);
     // Hinshitsu audit of WU-1, correctness finding 9.
     for (const real of ['Unleash your dog in our fenced field', 'The parcel goes here, by the side door.', 'Call 0113 555-0142']) expect(placeholderIn(real), real).toBeNull();
+    // Re-audit of WU-1, finding 4: a number of another country, or digits before a hyphen, do not excuse a made-up number beside them.
+    for (const filler of ['Leeds office 0113 555-0142. New York office (212) 555-0199.', 'Invoice 2024-555-0142 is paid. Call us on 555-0100.']) expect(placeholderIn(filler), filler).toBe('555-0');
     expect(placeholderIn('Unleash the power of AI')).toBe('unleash the power');
     expect(placeholderIn('Call (212) 555-0142')).toBe('555-0');
     const hits: [string, string][] = [['Business Name', 'business name'], ['Headline goes here', 'headline goes here'], ['Service One', 'service one'], ['you@yourdomain.com', 'yourdomain'], ['Address line 1', 'address line 1'], ['Testimonial text will appear in this space.', 'will appear in this space'], ['Customer Name', 'customer name'], ['Sample text', 'sample text'], ['Acme', 'acme'], ['ACME Inc.', 'acme inc'], ['TODO', 'todo'], ['TODO: write the headline', 'todo']];
