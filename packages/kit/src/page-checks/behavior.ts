@@ -233,7 +233,13 @@ export function controlsHaveNames(doc: Document): Finding[] {
     // A target that is itself hidden lends all its text: a name may point at a hidden label. Of a target that is shown,
     // only the text that is shown counts: the browser leaves out a hidden part inside it.
     const lent = (target: Element): string => {
-      if (target.getClientRects().length === 0 || target.closest('[aria-hidden="true"]') || doc.defaultView?.getComputedStyle(target).visibility !== 'visible') return target.textContent ?? '';
+      if (target.getClientRects().length === 0 || target.closest('[aria-hidden="true"]') || doc.defaultView?.getComputedStyle(target).visibility !== 'visible') {
+        // Of a hidden target, the text of a style sheet or a script inside it is still no name.
+        let all = '';
+        const every = doc.createTreeWalker(target, 4);
+        for (let node = every.nextNode(); node; node = every.nextNode()) if (!node.parentElement?.closest('style, script, template, noscript')) all += node.textContent ?? '';
+        return all;
+      }
       let drawn = '';
       const within = doc.createTreeWalker(target, 4);
       const span = doc.createRange();
