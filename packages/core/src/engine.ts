@@ -694,6 +694,7 @@ const contentSchema = z.object({
   fees: z.array(z.object({ item: shortText, price: shortText })).max(12),
   aboutTitle: shortText, aboutBody: shortText, promise: shortText,
   contactTitle: shortText, contactBody: shortText, address: shortText, hours: shortText, footerNote: shortText,
+  contactPage: z.object({ title: shortText, intro: shortText, directions: shortText }).optional(),
 });
 
 const decisionSchema = z.object({

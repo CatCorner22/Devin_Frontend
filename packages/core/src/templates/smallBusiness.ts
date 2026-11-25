@@ -19,6 +19,14 @@ export interface FeeItem {
   price: string;
 }
 
+export interface ContactPageContent {
+  title: string;
+  intro: string;
+  directions: string;
+}
+
+export type MockupPage = 'home' | 'contact';
+
 export interface SiteContent {
   business: string;
   /** Short label near the headline, for example a founding year or a locality. */
@@ -46,6 +54,11 @@ export interface SiteContent {
   address: string;
   hours: string;
   footerNote: string;
+  contactPage?: ContactPageContent;
+}
+
+export function contactPageContent(content: SiteContent): ContactPageContent {
+  return content.contactPage ?? { title: content.contactTitle, intro: content.contactBody, directions: content.address };
 }
 
 /** Sample content. The Studio labels it as a sample; the owner replaces it in the Brief Stage. */
@@ -100,6 +113,7 @@ export const MOCKUP_CLOSE_UPS = ['buttons', 'box'] as const;
 export type MockupFocus = (typeof MOCKUP_FOCUSES)[number];
 
 export interface MockupInput {
+  page?: MockupPage;
   params: DesignParams;
   /** Derived CSS custom properties. */
   tokens: Record<string, string>;
@@ -427,6 +441,10 @@ body[data-focus="error"] .form .hint, body[data-focus="error"] .form > .voice-he
 body[data-focus="error"] .form > p, body[data-focus="error"] .error-summary, body[data-focus="error"] .field-error { font-size: var(--text-sm); }
 body[data-focus="error"] .error-summary h3 { font-size: inherit; }
 .focus-example { outline: var(--focus-w) var(--focus-style, solid) var(--focus); outline-offset: 2px; }
+.inner-intro { padding-block: var(--space-8); }
+.inner-intro h1 { margin-block: var(--space-4); }
+.inner-intro p { max-width: var(--measure); }
+body[data-page="contact"][data-motion="expressive"]:not([data-still]) .inner-intro { animation: rise var(--dur-slow) var(--ease-out) both; }
 .error-summary, .field-error { border-left: 4px solid var(--text); padding: var(--space-3); }
 .timing-track { position: relative; height: 3rem; border-bottom: 2px solid var(--border); margin-block: var(--space-6); }
 .timing-track span { position: absolute; color: var(--text); }
@@ -559,6 +577,7 @@ export function renderSmallBusiness(input: MockupInput): string {
     `data-display="${e(p.displayTreatment)}"`,
     `data-motion="${e(p.motion)}"`,
     `data-focus="${e(focus)}"`,
+    ...(input.page === 'contact' ? ['data-page="contact"'] : []),
     ...(overlays.length > 0 ? [`data-overlays="${overlays.join(' ')}"`] : []),
     ...(input.still ? ['data-still'] : []),
   ].join(' ');
@@ -596,7 +615,7 @@ export function renderSmallBusiness(input: MockupInput): string {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; base-uri 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="${e(p.theme)}">
-<title>${e(c.business)}</title>
+<title>${input.page === 'contact' ? `${e(contactPageContent(c).title)} · ` : ''}${e(c.business)}</title>
 <style>
 ${fontFaceCss}
 ${tokensToCss(tokens)}
@@ -614,6 +633,7 @@ ${SMALL_BUSINESS_CSS}
 </header>
 <main id="main">
 ${behavior}
+${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1>${e(contactPageContent(c).title)}</h1><p>${e(contactPageContent(c).intro)}</p><h2>Plan your visit</h2><p>${e(contactPageContent(c).directions)}</p></div></section>` : `
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
@@ -646,6 +666,7 @@ ${behavior}
       <figure class="promise card"><p>${e(c.promise)}</p><span>${e(c.business)}</span></figure>
     </div>
   </section>
+  `}
   <section class="block contact" id="contact">
     <div class="wrap contact-grid">
       <div>

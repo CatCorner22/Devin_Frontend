@@ -1,5 +1,5 @@
 import type { SiteContent } from '../templates/smallBusiness.js';
-import { SAMPLE_CONTENT } from '../templates/smallBusiness.js';
+import { SAMPLE_CONTENT, contactPageContent } from '../templates/smallBusiness.js';
 import type { Voice } from '../params.js';
 
 export const BRIEF_STAGE = {
@@ -25,5 +25,5 @@ export const EMPTY_BRIEF: BriefNotes = {
 };
 
 export function isSampleContent(content: SiteContent): boolean {
-  return (Object.keys(SAMPLE_CONTENT) as (keyof SiteContent)[]).every((key) => key === 'footerNote' || JSON.stringify(content[key]) === JSON.stringify(SAMPLE_CONTENT[key]));
+  return (!content.contactPage || JSON.stringify(content.contactPage) === JSON.stringify(contactPageContent(SAMPLE_CONTENT))) && (Object.keys(SAMPLE_CONTENT) as (keyof SiteContent)[]).every((key) => key === 'footerNote' || JSON.stringify(content[key]) === JSON.stringify(SAMPLE_CONTENT[key]));
 }
