@@ -82,27 +82,29 @@ export function noEndlessMotion(doc: Document): Finding[] {
   for (const el of doc.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[placeholder], textarea[placeholder]')) {
     const style = view.getComputedStyle(el, '::placeholder');
     if (el.value !== '' || el.getClientRects().length === 0) continue;
-    // An animation whose name no @keyframes rule carries, or whose keyframes all say the same, moves nothing. As the browser
-    // does, this reads the last rule of the name, opens a sheet that @import brings in, and skips a @media or @supports block
-    // whose condition does not hold. The computed style writes the name escaped, so the rule's name is escaped the same way.
+    // An animation whose name no @keyframes rule carries, or whose keyframes all say the same, moves nothing. Which rule of
+    // a name the browser takes depends on layers, prefixes, media and switched-off sheets; this does not decide that. It
+    // reads every rule of the name, also in a sheet that @import brings in, and counts movement where any one of them moves:
+    // a miss is the worse error. The computed style writes the name escaped, so the escapes are taken out before comparing.
+    const plainName = (text: string): string => text.replace(/^"(.*)"$/, '$1').replace(/\\([0-9a-f]{1,6}) ?|\\(.)/gi, (_all, hex: string | undefined, one: string | undefined) => (hex ? String.fromCodePoint(parseInt(hex, 16)) : one ?? ''));
     const changes = (animation: string): boolean => {
       const win = view as Window & typeof globalThis;
-      let said: string[] | null = null;
+      let moves = false;
       const read = (rules: CSSRuleList): void => {
         for (const rule of rules) {
-          if (rule instanceof win.CSSKeyframesRule) { if (win.CSS.escape(rule.name) === animation) said = [...rule.cssRules].map((frame) => (frame as CSSKeyframeRule).style.cssText); }
-          else if (rule instanceof win.CSSImportRule) { if (rule.styleSheet && (rule.media.mediaText === '' || win.matchMedia(rule.media.mediaText).matches)) read(rule.styleSheet.cssRules); }
-          else if (rule instanceof win.CSSMediaRule) { if (win.matchMedia(rule.conditionText).matches) read(rule.cssRules); }
-          else if (rule instanceof win.CSSSupportsRule) { if (win.CSS.supports(rule.conditionText)) read(rule.cssRules); }
+          if (rule instanceof win.CSSKeyframesRule) {
+            if (rule.name !== plainName(animation)) continue;
+            const frames = [...rule.cssRules].map((frame) => (frame as CSSKeyframeRule).style.cssText);
+            if (frames.length === 1 ? frames[0] !== '' : new Set(frames).size > 1) moves = true;
+          } else if (rule instanceof win.CSSImportRule) { if (rule.styleSheet) read(rule.styleSheet.cssRules); }
           else if ('cssRules' in rule) read((rule as CSSGroupingRule).cssRules);
         }
       };
       for (const sheet of [...doc.styleSheets, ...doc.adoptedStyleSheets]) { try { read(sheet.cssRules); } catch { return true; } }
-      const frames: string[] = said ?? [];
-      return frames.length === 1 ? frames[0] !== '' : new Set(frames).size > 1;
+      return moves;
     };
     // One entry per animation name; a shorter list of durations, counts or states is read again from its start, as CSS does.
-    const list = (text: string): string[] => text.split(',').map((t) => t.trim());
+    const list = (text: string): string[] => text.split(/(?<!\\),/).map((t) => t.trim());
     const [durations, counts, states] = [list(style.animationDuration), list(style.animationIterationCount), list(style.animationPlayState)];
     const total = Math.max(0, ...list(style.animationName).map((animation, i) => {
       if (animation === 'none' || states[i % states.length] === 'paused' || !changes(animation)) return 0;
