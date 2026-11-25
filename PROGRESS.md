@@ -6,6 +6,8 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 ### PR 10 review repairs (2026-11-25)
 
+- Follow-up review found that editing a menu label after About left the header hidden, and that a long label could make the fixed phone action cover the page. Both new regression tests failed before repair (2 failed, 117 skipped). Menu edits now show the first screen. The fixed action stays one line with an ellipsis, and the Brief warns beside its label whenever that Overlay is on (D65); the full button on the first screen still wraps. Affected browser checks: 17 passed, 102 skipped; `npm run check`: 8 files, 267 tests passed, all other stages passed; both exit codes 0.
+
 - The preview follows the section being edited instead of returning to the first screen on each letter. It keeps the locked, script-free frame and its history isolation.
 - Button labels wrap, including a 600-character unbroken word at 375 pixels. Each list add and remove has its own Undo entry; typing still groups by field.
 - Three regression tests failed on the reviewed code (3 failed, 114 skipped); after the repairs, the affected Brief, Back-button, plain-words and axe tests passed (15 passed, 102 skipped). `npm run check`: 8 files, 267 tests passed; type check, lint and boundaries passed. Both commands exited 0. The full browser suite runs with M5 unit 2, not twice here.

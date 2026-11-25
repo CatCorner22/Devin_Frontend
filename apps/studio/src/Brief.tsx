@@ -49,7 +49,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
   const html = mockupHtml(s.project, s.project.params, { wireframe: false, focus: previewFocus, still: true });
   const field = (key: (typeof PAGE_FIELDS)[number][0], label: string): React.JSX.Element => <TextField
     key={key} label={label} value={c[key]} sample={SAMPLE_CONTENT[key]} words={words}
-    warning={key === 'headlineEmphasis' && c.headlineEmphasis && !c.headline.includes(c.headlineEmphasis) ? 'The highlighted phrase must occur in the headline. Until it does, the preview shows the headline without a highlight.' : undefined}
+    warning={key === 'headlineEmphasis' && c.headlineEmphasis && !c.headline.includes(c.headlineEmphasis) ? 'The highlighted phrase must occur in the headline. Until it does, the preview shows the headline without a highlight.' : key === 'primaryAction' && s.project.overlays?.includes('sticky-call') ? 'The phone’s fixed action shows one line with an ellipsis (…) when the label is too long. The full label stays in the first screen’s button. Use a short label so the fixed action is clear.' : undefined}
     change={(value) => {
       setPreviewFocus(key.startsWith('services') ? 'services' : key.startsWith('fees') ? 'fees' : key.startsWith('about') || key === 'promise' ? 'about' : ['contactTitle', 'contactBody', 'phone', 'address', 'hours', 'footerNote'].includes(key) ? 'contact' : 'top');
       s.setContent({ ...c, [key]: value }, key);

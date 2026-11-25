@@ -2460,6 +2460,21 @@ describe('Studio: Brief', () => {
     await context.close();
   });
 
+  it('Brief review: the sticky phone action stays bounded and warns about shortening', async () => {
+    const project = { ...worked('Long phone action'), overlays: ['sticky-call'] };
+    const { context, page } = await open({ hash: '#brief', storage: { [LOCAL_KEY]: envelope(project) } });
+    await page.getByLabel('Main button label', { exact: true }).fill('W'.repeat(600));
+    await page.locator('.top-nav a[href="#summary"]').click();
+    await page.getByRole('button', { name: 'Phone', exact: true }).click();
+    const bar = page.frameLocator('.summary-side iframe').locator('.sticky-call');
+    await bar.scrollIntoViewIfNeeded();
+    expect(await bar.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThanOrEqual(96);
+    expect(await bar.locator('.btn').evaluate((el) => ({ ending: getComputedStyle(el).textOverflow, shortened: el.scrollWidth > el.clientWidth }))).toEqual({ ending: 'ellipsis', shortened: true });
+    await page.locator('.top-nav a[href="#brief"]').click();
+    expect(await page.locator('.brief-editor').innerText()).toContain('one line with an ellipsis');
+    await context.close();
+  });
+
   it('Brief review: editing a lower section keeps that section in view', async () => {
     const { context, page } = await open({ hash: '#brief' });
     const frame = page.frameLocator('.brief-preview iframe');

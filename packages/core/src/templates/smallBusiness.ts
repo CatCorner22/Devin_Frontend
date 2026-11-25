@@ -445,7 +445,8 @@ body[data-focus="overlays"] .overlay-demo { display: block; padding-block: var(-
 .ov-phone { display: grid; gap: 0; border: var(--border-w) solid var(--border); border-radius: var(--radius-surface); overflow: hidden; background: var(--surface); }
 .ov-phone p { margin: 0; padding: var(--space-4); color: var(--text-muted); font-size: var(--text-sm); }
 .ov-bar, .sticky-call { display: grid; padding: var(--space-3) var(--space-4); background: var(--surface); border-top: var(--border-w) solid var(--border); }
-.ov-bar .btn, .sticky-call .btn { width: 100%; justify-content: center; }
+.ov-bar, .sticky-call { grid-template-columns: minmax(0, 1fr); }
+.ov-bar .btn, .sticky-call .btn { display: block; width: 100%; height: var(--target-min); line-height: calc(var(--target-min) - 2px); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sticky-call { display: none; }
 @media (max-width: 599px) {
   body[data-overlays~="sticky-call"]:not([data-focus="overlays"]):not([data-focus="buttons"]):not([data-focus="box"]) .sticky-call { display: grid; position: sticky; bottom: 0; z-index: 3; }
