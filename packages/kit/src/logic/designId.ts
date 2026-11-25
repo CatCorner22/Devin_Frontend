@@ -9,11 +9,19 @@
  * The ID is not secret and proves nothing about who built a page: anyone can copy it. It only links a build to a design.
  * Two different designs can share an ID by chance; with 64 bits that takes about four billion designs to become likely.
  */
+// A value that JSON cannot write (it holds itself, or holds a big integer) is read as the text that String gives it, and does not throw.
+const asText = (given: object): string => {
+  try {
+    return JSON.stringify(given) ?? '';
+  } catch {
+    return String(given);
+  }
+};
 export function designId(tokens: Readonly<Record<string, unknown>>): string {
   // One pass from left to right, and no pattern that can back up: the time grows with the length of the value and no faster
   // (finding F-27 of the review of 2026-11-24: a pattern here took 192 seconds for one value of 16,000 letters).
   const tidy = (given: unknown): string => {
-    const value = (given === undefined || given === null ? '' : typeof given === 'string' ? given : typeof given === 'object' ? JSON.stringify(given) ?? '' : String(given as number | boolean | bigint)).trim();
+    const value = (given === undefined || given === null ? '' : typeof given === 'string' ? given : typeof given === 'object' ? asText(given) : String(given as number | boolean | bigint)).trim();
     let out = '';
     // A search for a closing mark that failed from one place fails from every later place too, and is not made again.
     const noneFrom: Record<string, number> = {};

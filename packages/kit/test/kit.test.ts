@@ -349,6 +349,11 @@ describe('design ID', () => {
     expect(same('VAR(--brand)', 'var(--brand)')).toBe(true);
     expect(same('var(--Brand, RED)', 'var(--Brand, red)')).toBe(true);
     // A value that is not text is read as its text, and does not throw.
+    // Hinshitsu audit of WU-1: nor does a value that JSON cannot write: one that holds itself, or holds a big integer.
+    const loop: Record<string, unknown> = {};
+    loop.self = loop;
+    expect(designId({ '--a': loop })).toMatch(/^rx-[0-9a-f]{16}$/);
+    expect(designId({ '--a': { n: 1n } })).toMatch(/^rx-[0-9a-f]{16}$/);
     expect(same(8, '8')).toBe(true);
     expect(same(8, 9)).toBe(false);
     expect(same(true, 'true')).toBe(true);
