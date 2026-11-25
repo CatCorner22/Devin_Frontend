@@ -627,7 +627,7 @@ function StepsView(): React.JSX.Element {
 
   const mainLabel = s.variations
     ? shown.id === 'as-it-was' ? 'Keep the starting point and continue' : `Pick “${shown.label}” and continue`
-    : lookingAtApplied && !(s.cardTouched && skinCoversStep(s.project, step.id) && step.options.some((option) => option.id === shown.id))
+    : lookingAtApplied && !(s.cardTouched && step.options.some((option) => option.id === shown.id))
       ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
   const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => effectiveParams(s.project)[key] !== startingParams(s.project)[key]);

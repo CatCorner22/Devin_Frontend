@@ -1,8 +1,8 @@
 import { expect, it } from 'vitest';
-import { DIRECTIONS, SKIN_COLOR_KEYS, STEPS, applyDirection, createProject, effectiveParams, keep, matchingOptionId, ownedValues, parseProject, pick, revert, setSkin, skinParams, skinsOf, tune } from '../src/index.js';
+import { DIRECTIONS, SKIN_COLOR_KEYS, STEPS, applyDirection, createProject, effectiveParams, keep, matchingOptionId, ownedValues, parseProject, pick, pickValues, revert, setReason, setSkin, skinParams, skinsOf, tune } from '../src/index.js';
 
 const colorSteps = STEPS.filter((step) => step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
-const actions = ['set', 'clear', 'keep', 'pick', 'reset', 'direction', 'reload', 'main', 'fixed'] as const;
+const actions = ['set', 'clear', 'keep', 'pick', 'reset', 'direction', 'reload', 'main', 'fixed', 'restore'] as const;
 const mainStep = STEPS.find((step) => step.owns.includes('accentHue'))!;
 const pairingStep = STEPS.find((step) => step.options.some((option) => option.derive))!;
 
@@ -43,7 +43,8 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
       const action = actions[index < actions.length ? index : next(actions.length)]!;
       seen.add(action);
       const before = project;
-      const step = colorSteps[next(colorSteps.length)]!;
+      const available = action === 'restore' ? colorSteps.filter((step) => step.tunables?.length) : colorSteps;
+      const step = available[next(available.length)]!;
       const label = `${start.id}/${firstSkin?.id ?? 'bare'}/${index}/${action}/${step.id}`;
       expect(project.base, label).toEqual(direction.params);
       if (action === 'set') {
@@ -83,6 +84,23 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
         withoutSkin = pick(withoutSkin, step.id, option.id);
         if (project.skinLayer) expect(project.skinLayer.overrides, label).toContain(step.id);
         expect(matchingOptionId(effectiveParams(project), step), label).toBe(option.id);
+        expect(project.decisions[step.id]!.kind, label).toBe('picked');
+        if (before.decisions[step.id]?.kind === 'tuned') expect(project.decisions[step.id]!.reason, label).toBeUndefined();
+      } else if (action === 'restore') {
+        const option = step.options[next(step.options.length)]!;
+        project = setReason(pick(project, step.id, option.id), step.id, label);
+        withoutSkin = setReason(pick(withoutSkin, step.id, option.id), step.id, label);
+        const values = ownedValues(step, project.params);
+        const tunable = step.tunables![next(step.tunables!.length)]!;
+        const value = project.params[tunable.key] as number;
+        const moved = value + tunable.step <= tunable.max ? value + tunable.step : value - tunable.step;
+        project = tune(project, step.id, tunable.key, moved);
+        withoutSkin = tune(withoutSkin, step.id, tunable.key, moved);
+        expect(project.decisions[step.id]!.reason, `${label}: slider reason`).toBe(label);
+        project = pickValues(project, step.id, values);
+        withoutSkin = pickValues(withoutSkin, step.id, values);
+        expect(project.decisions[step.id]!.kind, `${label}: variation intent`).toBe('tuned');
+        expect(project.decisions[step.id]!.reason, `${label}: variation reason`).toBe(label);
       } else if (action === 'reset') {
         project = revert(project, step.id);
         withoutSkin = revert(withoutSkin, step.id);

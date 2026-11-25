@@ -1704,7 +1704,7 @@ describe('Studio: what the third round of campaign 4 found', () => {
     await context.close();
   });
 
-  it('records a pick, which follows the main color, when the owner keeps a following Option that the starting design did not have', async () => {
+  it('records a following choice when the owner explicitly picks an already-matching Option', async () => {
     // "Galactic Goth" starts with a fixed red second color (18 degrees). With the main color at 258, the red stands a third of
     // the wheel away, and the card "Two colors: a third of the wheel apart" is the one in use.
     const { context, page } = await open();
@@ -1716,6 +1716,7 @@ describe('Studio: what the third round of campaign 4 found', () => {
     await page.locator('.actions.sticky .primary').click();
     await waitForStep(page, 'Amount of color');
     expect(await mainButton(page)).toContain('Two colors: a third of the wheel apart');
+    await page.locator('label.option', { hasText: 'Two colors: a third of the wheel apart' }).click();
     await page.locator('.actions.sticky .primary').click();
     await settle(page);
     expect((await stored(page))?.decisions['color-strategy']).toMatchObject({ kind: 'picked', optionId: 'duo-triad' });

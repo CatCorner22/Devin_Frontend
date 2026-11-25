@@ -134,6 +134,9 @@ The optional `content.contactPage` holds its heading, introduction and visit dir
 | Replace Direction with one not offering the Skin | Explain the loss and clear its name and layer | "Skin: a Direction that does not offer the current Skin says so and unsets it" |
 | Open old file, malformed layer or unavailable Skin | Old files add nothing; reject invalid colors; retain valid anonymous colors and explain unavailable names | Unit tests in `skin-change.test.ts`: "validates color layers and normalizes only invalid exception references, not Decisions" and "rejects unknown or unoffered Skins and handles a plain start and empty no-Skin change" |
 
+| Restore a saved Option's colors through a small variation after a slider adjustment | Save hand-set intent and retain the reason; numeric equality alone never records a named pick | "Skin review: a variation that restores a saved Option keeps its hand-set intent and reason"; seeded `skin-transitions.test.ts` restoration actions |
+| Continue on an untouched numerically matching card | Keep the current choice, not a new following relationship | "Skin review: Continue does not infer a named relationship from a numeric match" |
+
 ## What no test covers (stated plainly)
 
 - The browser's own "leave this page?" question. The Studio can only ask the browser to put it; the test browser answers it by itself.

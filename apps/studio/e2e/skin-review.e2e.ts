@@ -1,4 +1,4 @@
-import { DIRECTIONS, STEPS, activeTunables, applyDirection, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, matchingOptionId, pick, setReason, setSkin, skinCoversStep, skinParams, skinsOf, tune, type Project } from '@refraction/core';
+import { DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, matchingOptionId, pick, setReason, setSkin, skinCoversStep, skinParams, skinsOf, tune, type Project } from '@refraction/core';
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
@@ -194,6 +194,46 @@ it('Skin review: choosing one color after a second-color adjustment removes the 
     const recover = page.getByRole('button', { name: 'Keep that reason for the new choice', exact: true });
     await recover.click();
     await expect.poll(async () => (await stored(page))?.decisions['color-strategy']?.reason).toBe('This second hue contrasts with the first.');
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: a variation that restores a saved Option keeps its hand-set intent and reason', async () => {
+  const step = findStep('accent')!;
+  const saved = setReason(pick(applyDirection(createProject(), 'soft-daylight'), step.id, 'ink-blue'), step.id, 'Blue fits the owner’s work.');
+  const hue = step.tunables!.find((tunable) => tunable.key === 'accentHue')!;
+  const edited = tune(saved, step.id, hue.key, saved.params.accentHue + hue.nudge);
+  const variation = closerOptions(edited, step.id).find((option) => matchingOptionId({ ...edited.params, ...option.values }, step) === saved.decisions[step.id]!.optionId)!;
+  expect(variation).toBeDefined();
+  const { context, page, faults } = await open(edited, `#${step.id}`);
+  try {
+    await page.getByRole('button', { name: /^Show small variations of/ }).click();
+    await page.locator(`[id="option-${variation.id}"]`).press('Space');
+    await page.locator(`[id="option-${variation.id}"]`).press('Enter');
+    await expect.poll(async () => (await stored(page))?.params.accentHue).toBe(saved.params.accentHue);
+    expect((await stored(page))?.decisions[step.id]?.kind).toBe('tuned');
+    expect((await stored(page))?.decisions[step.id]?.reason).toBe(saved.decisions[step.id]!.reason);
+    await page.locator(`a[href="#${step.id}"]`).first().press('Enter');
+    await page.locator('[id="option-ink-blue"]').click();
+    expect(await page.locator('.actions.sticky .primary').innerText()).toMatch(/^Pick /);
+    await page.locator('[id="option-ink-blue"]').press('Enter');
+    await expect.poll(async () => (await stored(page))?.decisions[step.id]?.kind).toBe('picked');
+    expect((await stored(page))?.decisions[step.id]?.reason).toBeUndefined();
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: Continue does not infer a named relationship from a numeric match', async () => {
+  const direction = findDirection('sticker-pop')!;
+  const fixed = applyDirection(createProject(), { ...direction, params: { ...direction.params, accent2Hue: 225 } });
+  const edited = tune(fixed, 'accent', 'accentHue', 45);
+  expect(edited.params.accent2Hue).toBe(225);
+  expect(matchingOptionId(edited.params, findStep('color-strategy')!)).toBe('duo-complement');
+  const { context, page, faults } = await open(edited, '#color-strategy');
+  try {
+    expect(await page.locator('.actions.sticky .primary').innerText()).toMatch(/^Keep /);
+    await page.locator('.actions.sticky .primary').press('Enter');
+    await expect.poll(async () => (await stored(page))?.decisions['color-strategy']?.kind).toBe('kept');
     expect(faults).toEqual([]);
   } finally { await context.close(); }
 });

@@ -1,7 +1,7 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
   DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
-  nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, setSkin, skinCoversStep, skinsOf, startPlain, tune,
+  nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
   type A11yProfile, type BriefNotes, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type MockupPage, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
@@ -796,25 +796,12 @@ export const useStudio = create<StudioState>((set, get) => {
         const current = effectiveParams(project);
         const target = { ...current, ...values };
         const unchanged = step.owns.every((key) => target[key] === current[key]);
-        const option = matchingOptionId(target, step);
-        if (unchanged) commit(keep(project, stepId));
-        else if (option) commit(pick(project, stepId, option));
+        if (shownId === 'as-it-was' && unchanged) commit(keep(project, stepId));
         else commit(pickValues(project, stepId, values));
-      } else if (cardTouched && skinCoversStep(project, stepId) && step.options.some((o) => o.id === shownId)) {
+      } else if (cardTouched && step.options.some((o) => o.id === shownId)) {
         commit(pick(project, stepId, shownId));
-      } else if (shownId === appliedCardId(project, step) || !step.options.some((o) => o.id === shownId)) {
-        // (A card name that this Step does not have counts as the design as it stands; it must never reach `pick`, which
-        // refuses an unknown Option with an error. Code review, finding "gaps 3".)
-        // The design as it stands is on show: keep it. This records that the owner looked, and changes nothing.
-        // One case is a pick all the same. The card on show is an Option whose value follows another value ("Two colors: a
-        // third of the wheel apart"), and the design matches it only since the owner changed that other value; the starting
-        // design holds a fixed value there. The button names the Option, so the owner chooses it, and it follows from now
-        // on. As a mere keep it stopped matching at the next change of the main color, without a word (campaign 4, round 3).
-        const onShow = step.options.find((o) => o.id === shownId);
-        if (!skinCoversStep(project, stepId) && onShow?.derive && !project.decisions[stepId] && matchingOptionId(project.base, step) !== onShow.id) commit(pick(project, stepId, onShow.id));
-        else commit(keep(project, stepId));
       } else {
-        commit(pick(project, stepId, shownId));
+        commit(keep(project, stepId));
       }
       advance();
       // A pick of another Option removes the reason that the owner wrote for the earlier choice (see `pick`). Say so, on the
