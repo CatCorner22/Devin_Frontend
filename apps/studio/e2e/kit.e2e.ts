@@ -894,6 +894,20 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       // Digits of a font whose digits are of one width need no setting; digits of unequal width fail.
       const cell = (font: string) => `<table><tr><td style="font-family: ${font}">1,111.00</td></tr><tr><td style="font-family: ${font}">8,888.00</td></tr></table>`;
       expect(await statuses(cell('monospace'), 'tabularNumerals')).not.toContain('fails');
+      // Hinshitsu audit of WU-1: a typeface with no "mono" in its name is judged by the widths of its digits. Which typefaces a
+      // machine holds differs, so the test measures the digits itself and expects the check to agree, for each family.
+      const widths = await pageOf('<p>digits</p>');
+      for (const font of ['serif', 'sans-serif', 'cursive', 'fantasy']) {
+        const equal = await widths.evaluate((family) => {
+          const pen = document.createElement('canvas').getContext('2d');
+          if (!pen) return null;
+          pen.font = `normal 400 16px ${family}`;
+          return Math.abs(pen.measureText('1111111111').width - pen.measureText('8888888888').width) < 0.01;
+        }, font);
+        expect(equal).not.toBeNull();
+        expect(await statuses(cell(font), 'tabularNumerals'), font).toEqual(equal ? ['holds'] : ['fails', 'fails']);
+      }
+      await widths.context().close();
       // Spaces in the source that the browser draws as one are no fault; a straight quotation mark is.
       expect(await statuses('<p>One sentence.\n      The next  sentence of the paragraph.</p>', 'typographicMarks')).not.toContain('fails');
       expect(await statuses('<p>She said "now" and left.</p>', 'typographicMarks')).toContain('fails');
