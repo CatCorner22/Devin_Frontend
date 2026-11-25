@@ -6,11 +6,11 @@
  * variables). The function name `url` itself may be written in capitals. A backslash inside quotation marks keeps the next
  * letter from ending them. Quotation marks that are never closed keep every letter to the end of the value.
  * A value that is not text (a number in a token file) is read as its text; a missing value is read as the empty text.
- * A value that cannot be written as text at all (one nested many thousands deep) is read as one fixed word, and a value that holds itself as the text "[object Object]", so two such values share an ID.
+ * A value that cannot be written as text at all (one nested many thousands deep) is read as one fixed word, and a value that holds itself as the text "[object Object]", so two such values share an ID. A big integer shares an ID with the text of its digits and the letter n.
  * The ID is not secret and proves nothing about who built a page: anyone can copy it. It only links a build to a design.
  * Two different designs can share an ID by chance; with 64 bits that takes about four billion designs to become likely.
  */
-// A big integer is written as its digits. A value that JSON cannot write (it holds itself, or is nested too deep) is read as the text that String
+// A big integer is written as its digits and the letter n, so it shares an ID with the text of just that (1n and "1n"). A value that JSON cannot write (it holds itself, or is nested too deep) is read as the text that String
 // gives it. Where String cannot write it either, it is read as one fixed word: no token file holds such a value, and the ID
 // must not throw (Hinshitsu audit of WU-1, adversarial finding 5).
 const asText = (given: object): string => {
