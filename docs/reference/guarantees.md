@@ -1,6 +1,6 @@
 # [00] Studio guarantees: living reference
 
-Version 1.5. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
+Version 1.6. Owner: the owner of this repository. Scope: this file states each guarantee that the Studio makes about saved work, project files, the preview, colors, Decisions, and its own words, and names the test or decision that backs each one; it does not cover design advice, the Fitter, or the plan.
 
 Stale-after: 90
 
@@ -23,6 +23,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - A promise to keep a copy never rests on a copy that can go away. §10.12
 - A page that closes with an unsaved change first writes it to an entry of its own. §10.13
 - Opening a file never adds to a Decision, and brings no value the Studio cannot set. §20.05
+- The Brief puts your words in every Mockup; its warnings never stop saving. §10.15
 - A written reason leaves a Decision only with a notice that offers it back. §50.06
 - A tab that is not saving keeps its unsaved work as a copy when it reloads or closes. §10.08
 - A tab never takes another tab's save for its own. §10.09
@@ -66,6 +67,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
   - [10.12 A promise to keep a copy never rests on a copy that can go away](#1012-a-promise-to-keep-a-copy-never-rests-on-a-copy-that-can-go-away)
   - [10.13 A page that closes with an unsaved change first writes it to an entry of its own](#1013-a-page-that-closes-with-an-unsaved-change-first-writes-it-to-an-entry-of-its-own)
   - [10.14 A tab that finishes opening while another tab saved does not say "Saved" over a project that storage no longer holds](#1014-a-tab-that-finishes-opening-while-another-tab-saved-does-not-say-saved-over-a-project-that-storage-no-longer-holds)
+  - [10.15 The Brief puts your words in every Mockup; warnings never stop saving](#1015-the-brief-puts-your-words-in-every-mockup-warnings-never-stop-saving)
 - [20 Project files](#20-project-files)
   - [20.01 A saved project loads back exactly as it was saved](#2001-a-saved-project-loads-back-exactly-as-it-was-saved)
   - [20.02 The Studio refuses a file that is not a project, in fixed words](#2002-the-studio-refuses-a-file-that-is-not-a-project-in-fixed-words)
@@ -266,6 +268,20 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Examples.** The saving table (`docs/reference/saving-table.md`) lists every situation of a tab against every event. Writing it on 2026-11-14 showed this case, which no earlier review had found; the test failed before the repair.
 - **Open.** The table names what no test covers: the browser's own "leave this page?" question, a browser that ends a tab without running the page's last code, and any browser other than Chromium.
 - Last verified: 2026-11-14
+
+### [10.15] The Brief puts your words in every Mockup; warnings never stop saving
+
+<!-- index: Brief | own content; words to avoid; see also: saving -->
+
+> **Changed 2026-11-25.** The Brief is the first Stage, before Layout.
+
+- **Rule.** The Brief edits the project's page text and optional notes for the builder. Every Mockup uses that text. Warnings about sample words, known filler, the avoid list, or a missing highlighted phrase never stop saving. The status line alone reports whether saving worked. [S1 at D64; S3]
+- **Elements.** Each page text field accepts up to 600 characters. Builder notes use the same limit. The avoid list allows 30 lines of 40 characters; extra lines and characters on a line are left out as typed. Existing saving failures, stopped saving, and closing-page limits still apply. [S12]
+- **Exceptions.** The fixed helper words of the Template and the Overlay examples are not editable page content. A warning cannot determine whether text is true, and the filler list cannot find every generic phrase. No tool has checked whether the owner's claims about the business are true.
+- **Test.** "Brief: words reach every preview and survive reload and a file"; "Brief: warnings never block and the sample has a way back"; the eight saving cases in `saving-table.md`; unit tests in `packages/core/test/project-file.test.ts`. [S2; S3]
+- **Policy.** Restoring the sample asks first, leaves design choices alone, and offers Undo within the existing 100-step, current-page limit.
+- **Open.** Chromium only; no screen reader or real private-page database check. No independent review yet.
+- Last verified: 2026-11-25
 
 ## [20] Project files
 
@@ -619,6 +635,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 ## [85] Changelog
 
+- 2026-11-25 v1.6: added §10.15 for M5 unit 1, the Brief (D64), including warning-only feedback and restoring the sample.
 - 2026-11-14 v1.5: after the reviews of 2026-11-14 (decision D54): §20.06 covers look-alike marks and invisible direction signs; §20.07 says which original is kept; §50.07 states the rule for offering a Skin; §70.03 states its exception. 49 guarantees.
 - 2026-11-14 v1.4: after the saving table, Skins, Overlays, and research rules (decisions D52, D53): added §10.14, §20.07, §30.06, §50.07, §50.08, §60.03, §60.04; §60.01 names the test under its new name. 49 guarantees.
 - 2026-11-14 v1.3: after round 3 of campaign 4: added §10.12, §10.13, §20.05, §20.06, §50.06. 42 guarantees.
@@ -643,9 +660,9 @@ The lines used most often. Each line ends with the ID of the section that suppor
 ## [91] Cite index
 
 <!-- authorities:start -->
-- [S1] The builder and the owner, *DECISIONS.md*, repository `catcorner22/frontend`, file `DECISIONS.md` (2026-11-13) — §10.02, §10.03, §10.05, §10.07, §10.08, §10.09, §10.12, §10.13, §20.05, §20.06, §20.07, §30.06, §40.01, §50.05, §50.06, §50.07, §50.08, §60.01, §60.03, §60.04, §70.02, §70.03
-- [S2] The builder, *Unit tests of the project file*, file `packages/core/test/project-file.test.ts` (2026-11-13) — §20.01, §20.02, §20.03, §20.04, §20.05, §20.07, §50.08
-- [S3] The builder, *Browser tests of the Studio*, file `apps/studio/e2e/studio.e2e.ts` (2026-11-13) — §10.01, §10.02, §10.03, §10.04, §10.05, §10.06, §10.07, §10.08, §10.09, §10.10, §10.11, §10.12, §10.13, §10.14, §20.02, §20.03, §20.05, §20.06, §20.07, §30.02, §30.03, §30.04, §50.06, §50.07, §50.08, §60.01, §60.04, §70.04
+- [S1] The builder and the owner, *DECISIONS.md*, repository `catcorner22/frontend`, file `DECISIONS.md` (2026-11-13) — §10.02, §10.03, §10.05, §10.07, §10.08, §10.09, §10.12, §10.13, §10.15, §20.05, §20.06, §20.07, §30.06, §40.01, §50.05, §50.06, §50.07, §50.08, §60.01, §60.03, §60.04, §70.02, §70.03
+- [S2] The builder, *Unit tests of the project file*, file `packages/core/test/project-file.test.ts` (2026-11-13) — §10.15, §20.01, §20.02, §20.03, §20.04, §20.05, §20.07, §50.08
+- [S3] The builder, *Browser tests of the Studio*, file `apps/studio/e2e/studio.e2e.ts` (2026-11-13) — §10.01, §10.02, §10.03, §10.04, §10.05, §10.06, §10.07, §10.08, §10.09, §10.10, §10.11, §10.12, §10.13, §10.14, §10.15, §20.02, §20.03, §20.05, §20.06, §20.07, §30.02, §30.03, §30.04, §50.06, §50.07, §50.08, §60.01, §60.04, §70.04
 - [S4] The builder, *Browser tests of the Mockup and of drawn colors*, file `apps/studio/e2e/visual.e2e.ts`… — §30.05, §40.02, §70.02
 - [S5] The builder, *Unit tests of the color values and contrast checks*, file `packages/core/test/tokens.test.ts`… — §40.01, §40.02, §40.03, §40.05, §40.04
 - [S7] The builder, *Unit tests of the Mockup*, file `packages/core/test/mockup.test.ts` (2026-11-13) — §30.01, §30.02, §30.03, §30.06
@@ -653,7 +670,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - [S9] The builder, *Unit tests of the engine*, file `packages/core/test/engine.test.ts` (2026-11-13) — §20.01, §50.01, §50.02, §50.03, §50.04, §50.05, §50.06
 - [S10] The owner and the builder, *Standing rules for every session in this repository*, file `CLAUDE.md`… — §30.01, §30.04, §30.06, §40.04, §60.02, §60.03, §70.01, §70.03, §70.05
 - [S11] The builder, *Boundary rules*, file `.dependency-cruiser.cjs` (2026-11-13) — §70.01
-- [S12] The builder, *The saving table: what the Studio does with your work, in every situation*, file… — §10.14
+- [S12] The builder, *The saving table: what the Studio does with your work, in every situation*, file… — §10.14, §10.15
 <!-- authorities:end -->
 
 ## [92] Index
@@ -672,6 +689,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - backup — *see* kept copy
 - baseline — *see* stored picture
 - boundary — *see* core
+- **Brief** — §10.15; *see also* saving
 
 **C**
 
@@ -791,6 +809,8 @@ The lines used most often. Each line ends with the ID of the section that suppor
 - **Overlay** — §50.08
 - **Overlay picture** — §30.06; *see also* Mockup
 
+- own content — *see* Brief
+
 **P**
 
 - package — *see* dependency
@@ -889,6 +909,8 @@ The lines used most often. Each line ends with the ID of the section that suppor
 
 **W**
 
+- words to avoid — *see* Brief
+
 - WCAG — *see* compliance claim
 - where guidance comes from — *see* source
 - why this choice — *see* reason
@@ -899,7 +921,7 @@ The lines used most often. Each line ends with the ID of the section that suppor
 ## [99] Health
 
 <!-- health:start -->
-_66 sections, 11 sources, 48 index terms. Cadence: 90 days. Generated content last changed 2026-11-14._
+_67 sections, 11 sources, 49 index terms. Cadence: 90 days. Generated content last changed 2026-11-25._
 
 - No findings.
 <!-- health:end -->

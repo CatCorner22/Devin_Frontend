@@ -2449,10 +2449,233 @@ describe('Studio: addresses and the browser’s Back button', () => {
   });
 });
 
+describe('Studio: Brief', () => {
+  it('Brief review: editing a menu label after About brings the header back', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    await page.getByLabel('About text', { exact: true }).fill('Careful repairs for old houses.');
+    await page.getByLabel('Menu label 1', { exact: true }).fill('Our repair work');
+    const header = page.frameLocator('.brief-preview iframe').locator('.site-header');
+    await expect.poll(() => header.isVisible()).toBe(true);
+    expect(await header.innerText()).toContain('Our repair work');
+    await context.close();
+  });
+
+  it('Brief review: the sticky phone action stays bounded and warns about shortening', async () => {
+    const project = { ...worked('Long phone action'), overlays: ['sticky-call'] };
+    const { context, page } = await open({ hash: '#brief', storage: { [LOCAL_KEY]: envelope(project) } });
+    await page.getByLabel('Main button label', { exact: true }).fill('W'.repeat(600));
+    await page.locator('.top-nav a[href="#summary"]').click();
+    await page.getByRole('button', { name: 'Phone', exact: true }).click();
+    const bar = page.frameLocator('.summary-side iframe').locator('.sticky-call');
+    await bar.scrollIntoViewIfNeeded();
+    expect(await bar.evaluate((el) => el.getBoundingClientRect().height)).toBeLessThanOrEqual(96);
+    expect(await bar.locator('.btn').evaluate((el) => ({ ending: getComputedStyle(el).textOverflow, shortened: el.scrollWidth > el.clientWidth }))).toEqual({ ending: 'ellipsis', shortened: true });
+    await page.locator('.top-nav a[href="#brief"]').click();
+    expect(await page.locator('.brief-editor').innerText()).toContain('one line with an ellipsis');
+    await context.close();
+  });
+
+  it('Brief review: editing a lower section keeps that section in view', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    const frame = page.frameLocator('.brief-preview iframe');
+    await frame.locator('.about').evaluate((el) => el.scrollIntoView());
+    await page.getByLabel('About text', { exact: true }).fill('We repair old houses with care.');
+    await expect.poll(() => frame.locator('.about p').first().evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      return el.textContent?.includes('We repair old houses') && box.top >= 0 && box.top < window.innerHeight;
+    })).toBe(true);
+    await context.close();
+  });
+
+  it('Brief review: allowed button labels fit the phone without clipping', async () => {
+    const { context, page } = await open({ hash: '#summary' });
+    await page.getByRole('button', { name: 'Phone', exact: true }).click();
+    await page.evaluate(() => { location.hash = '#brief'; });
+    for (const label of ['Book a careful repair '.repeat(30).slice(0, 600), 'W'.repeat(600)]) {
+      await page.getByLabel('Main button label', { exact: true }).fill(label);
+      const button = page.frameLocator('.brief-preview iframe').locator('.hero .btn-primary');
+      await expect.poll(() => button.innerText()).toBe(label.trim());
+      expect(await button.evaluate((el) => {
+        const range = el.ownerDocument.createRange();
+        range.selectNodeContents(el);
+        const box = el.getBoundingClientRect();
+        return [...range.getClientRects()].every((rect) => rect.left >= box.left && rect.right <= box.right && rect.left >= 0 && rect.right <= 375);
+      })).toBe(true);
+    }
+    await context.close();
+  });
+
+  it('Brief review: each list add and remove has its own Undo step', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    const remove = page.getByRole('button', { name: /^Remove service / });
+    const original = await remove.count();
+    await page.getByRole('button', { name: 'Add service', exact: true }).click();
+    await page.getByRole('button', { name: 'Add service', exact: true }).click();
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    expect(await remove.count()).toBe(original + 1);
+    await remove.last().click();
+    await remove.last().click();
+    await page.getByRole('button', { name: 'Undo', exact: true }).click();
+    expect(await remove.count()).toBe(original);
+    await context.close();
+  });
+
+  const typeWords = async (page: Page): Promise<void> => {
+    await page.getByLabel('Business name', { exact: true }).fill('Moss & Stone');
+    await page.getByLabel('Who the page is for', { exact: true }).fill('People who repair old homes');
+  };
+  const background = (page: Page): Promise<void> => page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+
+  it('Brief: words reach every preview and survive reload and a file', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    await typeWords(page);
+    const headline = 'Repair <old> homes & keep their stories';
+    await page.getByLabel('Headline', { exact: true }).fill(headline);
+    await page.getByLabel('Phrase to highlight in the headline', { exact: true }).fill('keep their stories');
+    await page.getByLabel('Service 1: Name', { exact: true }).fill('Sash window repairs');
+    await page.getByLabel('Voice: formal or friendly').selectOption('formal');
+    await page.getByLabel('Words to avoid (one word or phrase per line)', { exact: true }).fill('supercharge\nseamlessly');
+    await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('h1').innerText()).toBe(headline);
+    await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('mark').innerText()).toBe('keep their stories');
+    expect(await page.frameLocator('.brief-preview iframe').locator('body').innerText()).not.toContain('Sample content for design preview.');
+    await settle(page);
+    await page.reload();
+    await page.getByLabel('Business name', { exact: true }).waitFor();
+    expect(await page.getByLabel('Who the page is for', { exact: true }).inputValue()).toBe('People who repair old homes');
+    await page.locator('.top-nav a[href="#directions"]').click();
+    expect(await page.locator('.teach').first().innerText()).not.toContain('made-up dental practice');
+    await page.locator('.top-nav a').filter({ hasText: 'Steps' }).click();
+    await page.waitForSelector('.cards iframe');
+    await expect.poll(() => page.frameLocator('.preview-wrap iframe').locator('h1').innerText()).toBe(headline);
+    await expect.poll(() => page.frameLocator('.cards iframe').first().locator('h1').innerText()).toBe(headline);
+    await page.locator('.top-nav a[href="#overlays"]').click();
+    await expect.poll(() => page.frameLocator('.preview-wrap iframe').locator('h1').innerText()).toBe(headline);
+    await page.locator('.top-nav a[href="#summary"]').click();
+    await expect.poll(() => page.frameLocator('.summary-side iframe').locator('h1').innerText()).toBe(headline);
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download the project file', exact: true }).click()]);
+    const text = readFileSync((await download.path())!, 'utf8');
+    const exported = JSON.parse(text) as Project;
+    expect(exported.brief?.voice.tone).toBe('formal');
+    expect(exported.brief?.wordsToAvoid).toEqual(['supercharge', 'seamlessly']);
+    expect(exported.content.services[0]?.title).toBe('Sash window repairs');
+    const second = await open({ hash: '#summary' });
+    await second.page.locator('#project-file').setInputFiles({ name: 'own.json', mimeType: 'application/json', buffer: Buffer.from(text) });
+    await second.page.locator('.top-nav a[href="#brief"]').click();
+    await expect.poll(() => second.page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Moss & Stone');
+    expect(await second.page.getByLabel('Who the page is for', { exact: true }).inputValue()).toBe('People who repair old homes');
+    await second.context.close();
+    await context.close();
+  });
+
+  it('Brief: opening writes nothing', async () => {
+    const saved = envelope(createProject());
+    const { context, page } = await open({ hash: '#brief', storage: { [LOCAL_KEY]: saved }, pageDb: { doc: null, getDelay: 2500 }, dontWaitUntilOpen: true });
+    expect(await page.locator('.brief-editor').count()).toBe(0);
+    await background(page);
+    expect(await rawStored(page, LOCAL_KEY)).toBe(saved);
+    await page.getByLabel('Business name', { exact: true }).waitFor();
+    expect(await page.getByLabel('Who the page is for', { exact: true }).inputValue()).toBe('');
+    expect((await stored(page))?.brief).toBeUndefined();
+    await context.close();
+  });
+
+  it('Brief: pending words flush on background', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    await typeWords(page);
+    await background(page);
+    expect((await stored(page))?.content.business).toBe('Moss & Stone');
+    expect((await stored(page))?.brief?.audience).toBe('People who repair old homes');
+    await context.close();
+  });
+
+  it('Brief: words save to both stores', async () => {
+    const { context, page } = await open({ hash: '#brief', pageDb: { doc: null } });
+    await typeWords(page);
+    await settle(page);
+    const doc = await page.evaluate(() => (window as unknown as { __pageDb: { doc: { project: string } } }).__pageDb.doc);
+    expect(JSON.parse(doc.project)).toEqual(await stored(page));
+    expect((await stored(page))?.brief?.audience).toBe('People who repair old homes');
+    await context.close();
+  });
+
+  it('Brief: failed saves keep words and retry', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    expect(await fillStorage(page, 0)).toBe(true);
+    await typeWords(page);
+    await settle(page);
+    expect(await page.locator('.save-state').innerText()).toContain('Cannot save here');
+    expect(await page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Moss & Stone');
+    await page.evaluate(() => window.localStorage.removeItem('test.capacity'));
+    await page.getByRole('button', { name: 'Try to save again' }).click();
+    await expect.poll(async () => (await stored(page))?.brief?.audience).toBe('People who repair old homes');
+    expect((await stored(page))?.content.business).toBe('Moss & Stone');
+    await context.close();
+  });
+
+  it('Brief: held words stay in a kept copy', async () => {
+    const { context, page } = await open({ hash: '#brief', storage: { [LOCAL_KEY]: '{broken' } });
+    await typeWords(page);
+    await background(page);
+    expect(await rawStored(page, LOCAL_KEY)).toBe('{broken');
+    expect((await keptCopies(page)).some((copy) => {
+      try { const p = JSON.parse(copy.text) as Project; return p.content.business === 'Moss & Stone' && p.brief?.audience === 'People who repair old homes'; } catch { return false; }
+    })).toBe(true);
+    await page.reload();
+    expect(await rawStored(page, LOCAL_KEY)).toBe('{broken');
+    expect((await keptCopies(page)).some((copy) => copy.text.includes('People who repair old homes'))).toBe(true);
+    await context.close();
+  });
+
+  it('Brief: another tab stops saving', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    await typeWords(page);
+    await settle(page);
+    const other = await context.newPage();
+    await other.goto(pageUrl + '#brief');
+    await other.getByLabel('Business name', { exact: true }).fill('Other studio');
+    await page.locator('.banner.hold').waitFor();
+    expect(await page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Moss & Stone');
+    expect(await page.locator('.banner.hold').getByRole('button', { name: 'Keep this tab’s copy' }).count()).toBe(1);
+    expect(await page.locator('.banner.hold').getByRole('button', { name: 'Reload to see the other copy' }).count()).toBe(1);
+    await context.close();
+  });
+
+  it('Brief: warnings never block and the sample has a way back', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    await page.getByLabel('Business name', { exact: true }).fill('Lorem ipsum');
+    await page.getByLabel('Who the page is for', { exact: true }).fill('Local families');
+    await page.getByLabel('Words to avoid (one word or phrase per line)', { exact: true }).fill('local');
+    await page.getByLabel('Headline', { exact: true }).fill('<img src=x onerror=alert(1)> Local work');
+    await page.getByLabel('Phrase to highlight in the headline', { exact: true }).fill('not in headline');
+    expect(await page.locator('.brief-editor').innerText()).toContain('may be made-up or generic');
+    expect(await page.locator('.brief-editor').innerText()).toContain('words-to-avoid list');
+    expect(await page.locator('.brief-editor').innerText()).toContain('must occur in the headline');
+    await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('h1').innerText()).toBe('<img src=x onerror=alert(1)> Local work');
+    expect(await page.frameLocator('.brief-preview iframe').locator('script, h1 img').count()).toBe(0);
+    expect(await page.getByLabel('Business name', { exact: true }).getAttribute('maxlength')).toBe('600');
+    await settle(page);
+    expect((await stored(page))?.content.business).toBe('Lorem ipsum');
+    await page.getByRole('button', { name: 'Restore sample content' }).click();
+    await page.getByRole('button', { name: 'Keep my words', exact: true }).click();
+    expect(await page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Lorem ipsum');
+    await page.getByRole('button', { name: 'Restore sample content' }).click();
+    await page.getByRole('button', { name: 'Use the sample', exact: true }).click();
+    expect(await page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Harbor Street Dental');
+    expect(await page.locator('.brief-editor').innerText()).toContain('This is sample content');
+    await page.locator('.banner').getByRole('button', { name: 'Undo', exact: true }).click();
+    expect(await page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Lorem ipsum');
+    expect(await page.getByLabel('Who the page is for', { exact: true }).inputValue()).toBe('Local families');
+    await context.close();
+  });
+});
+
 describe('Studio: its own interface', () => {
   it('has no serious or critical axe finding on any screen, in light and dark', async () => {
     for (const colorScheme of ['light', 'dark'] as const) {
-      for (const hash of ['#directions', '#nav', '#typeface', '#accent', '#motion', '#overlays', '#summary', '#licences']) {
+      for (const hash of ['#brief', '#directions', '#nav', '#typeface', '#accent', '#motion', '#overlays', '#summary', '#licences']) {
         const { context, page } = await open({ hash });
         await page.emulateMedia({ colorScheme });
         await page.waitForSelector('main');
@@ -2634,6 +2857,9 @@ describe('Studio: plain words on every screen (decision D38, finding U2-03)', ()
     };
     await page.waitForSelector('.direction');
     await check('the Directions');
+    await page.evaluate(() => { window.location.hash = '#brief'; });
+    await page.waitForSelector('.brief-editor');
+    await check('the Brief');
     let sourceLists = 0;
     for (const step of STEPS) {
       await page.evaluate((id) => { window.location.hash = `#${id}`; }, step.id);

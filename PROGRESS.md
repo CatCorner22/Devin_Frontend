@@ -2,6 +2,23 @@
 
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
+## M5 started: unit 1, the Brief (2026-11-25)
+
+### PR 10 review repairs (2026-11-25)
+
+- Follow-up review found that editing a menu label after About left the header hidden, and that a long label could make the fixed phone action cover the page. Both new regression tests failed before repair (2 failed, 117 skipped). Menu edits now show the first screen. The fixed action stays one line with an ellipsis, and the Brief warns beside its label whenever that Overlay is on (D65); the full button on the first screen still wraps. Affected browser checks: 17 passed, 102 skipped; `npm run check`: 8 files, 267 tests passed, all other stages passed; both exit codes 0.
+
+- The preview follows the section being edited instead of returning to the first screen on each letter. It keeps the locked, script-free frame and its history isolation.
+- Button labels wrap, including a 600-character unbroken word at 375 pixels. Each list add and remove has its own Undo entry; typing still groups by field.
+- Three regression tests failed on the reviewed code (3 failed, 114 skipped); after the repairs, the affected Brief, Back-button, plain-words and axe tests passed (15 passed, 102 skipped). `npm run check`: 8 files, 267 tests passed; type check, lint and boundaries passed. Both commands exited 0. The full browser suite runs with M5 unit 2, not twice here.
+
+- D63 permits M5 to start while M4 still waits for the owner's trial. This unit does not close either milestone.
+- The Brief is first in navigation, before Layout. It edits the page text and optional notes for the builder (business purpose, audience, main job, voice and words to avoid). Every existing preview reads the project content. Sample warnings remain beside unchanged sample fields; restoring the sample asks first and offers Undo.
+- The Studio uses the kit's placeholder check for warning-only feedback. Files without Brief notes keep their old shape (format version 2, following D53). `docs/reference/saving-table.md` recorded eight new saving cases before the implementation; each names a browser test.
+- `npm run check`: type check, lint and boundaries passed; 8 test files, 267 tests passed (exit 0). The full browser suite passed: 3 files, 436 tests, 990.38 seconds (exit 0), using Chromium 1255 at the path in "Start here". This includes the Brief's eight saving cases, own words in the large and card previews, reload and file round trips, old files, hostile text, sample restoration, and axe on the Brief in light and dark.
+- The first full browser run found one plain-words failure: the Brief legend said "the tool". The builder changed it to name the Fitter and explain it. That run had 435 passed, 1 failed (976.05 seconds, exit 1); the full rerun above checks the repair. No assertion or threshold changed. Build warnings about `inlineDynamicImports` and chunk size remain; the separate 1600 KB size check passed (1271 KB).
+- The builder audited its diff. The three independent red-team reviewers could not run: this session exposes no reviewer/session-spawn tool. This is an open review requirement, not a substitute review. No visual check has run.
+
 ## Browser-test isolation (2026-11-15)
 
 - Each of the three long Mockup loop tests now owns a browser context. Vitest closes that context when the test finishes, including after a timeout. The stored-picture tests keep their separate page. No loop, assertion, threshold, or timeout changed.
@@ -80,7 +97,7 @@ A fresh session reads this file to learn where the project stands. Update it aft
 
 **What the next session should do first.** CI runs 92 and 93 passed on 2026-11-14 (commits `a6c82ee` and `3908189`), so the main line is green. Read "Next" and "Waiting on the owner" below. If the owner has sent the ten trial answers, turn each named problem into a row in `redteam/FINDINGS.md` and repair the serious ones; M4 then closes on the owner's word and M5 starts with the Brief (the owner's own words in every preview).
 
-## Current milestone: M4 (Step screen). Not complete.
+## Current work: M5 unit 1 (Brief); M4 (Step screen) stays open under D63.
 
 **Why M4 is not complete.** Its exit test has three parts: the owner uses the Studio on the private page; a keyboard-only pass; the owner picks the Studio's own look. The keyboard pass runs as an automated test. The owner's trial has not happened; `docs/trial-guide.md` walks the owner through it in about 25 minutes and asks ten questions. The three major ease-of-use findings that stood in the way were repaired on 2026-11-14 (U2-06 and U3-05 fixed; U2-08 fixed in part, with the rest stated on screen in words). Overlays and research rules belong to M5 in the plan; the owner asked for them early (decision D52), and they were built before M4's exit test.
 

@@ -181,7 +181,7 @@ body[data-atmosphere="grain"][data-theme="dark"]::after { mix-blend-mode: overla
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
   min-height: var(--target-min); padding: 0 var(--space-5);
   border: var(--control-border-w) solid transparent; border-radius: var(--radius-control);
-  font: inherit; font-weight: 600; letter-spacing: -0.006em; text-decoration: none; cursor: pointer; white-space: nowrap; user-select: none;
+  font: inherit; font-weight: 600; letter-spacing: -0.006em; text-decoration: none; cursor: pointer; white-space: normal; overflow-wrap: anywhere; max-width: 100%; min-width: 0; user-select: none;
 }
 .btn-primary { background: var(--btn-bg); color: var(--btn-color); border-color: var(--btn-border); box-shadow: var(--btn-shadow); }
 @media (hover: hover) {
@@ -445,7 +445,8 @@ body[data-focus="overlays"] .overlay-demo { display: block; padding-block: var(-
 .ov-phone { display: grid; gap: 0; border: var(--border-w) solid var(--border); border-radius: var(--radius-surface); overflow: hidden; background: var(--surface); }
 .ov-phone p { margin: 0; padding: var(--space-4); color: var(--text-muted); font-size: var(--text-sm); }
 .ov-bar, .sticky-call { display: grid; padding: var(--space-3) var(--space-4); background: var(--surface); border-top: var(--border-w) solid var(--border); }
-.ov-bar .btn, .sticky-call .btn { width: 100%; justify-content: center; }
+.ov-bar, .sticky-call { grid-template-columns: minmax(0, 1fr); }
+.ov-bar .btn, .sticky-call .btn { display: block; width: 100%; height: var(--target-min); line-height: calc(var(--target-min) - 2px); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sticky-call { display: none; }
 @media (max-width: 599px) {
   body[data-overlays~="sticky-call"]:not([data-focus="overlays"]):not([data-focus="buttons"]):not([data-focus="box"]) .sticky-call { display: grid; position: sticky; bottom: 0; z-index: 3; }

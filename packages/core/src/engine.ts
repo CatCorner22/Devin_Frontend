@@ -1,6 +1,7 @@
 // The engine: pure functions that turn the owner's actions into a project state. No React, no browser APIs.
 
 import { z } from 'zod';
+import type { BriefNotes } from './catalog/brief.js';
 import { DIRECTIONS, findDirection, type Direction } from './catalog/directions.js';
 import { OVERLAYS, findOverlay } from './catalog/overlays.js';
 import { skinsOf } from './catalog/skins.js';
@@ -49,6 +50,7 @@ export interface Project {
   params: DesignParams;
   decisions: Record<string, Decision>;
   content: SiteContent;
+  brief?: BriefNotes;
   /**
    * The Overlays that are switched on, by identifier, in the Catalog's order. Absent when none is on, so that a project saved
    * before Overlays existed opens without a change.
@@ -706,6 +708,13 @@ const projectSchema = z.object({
   params: paramsSchema,
   decisions: z.record(z.string().max(60), decisionSchema),
   content: contentSchema,
+  brief: z.object({
+    whatItDoes: shortText,
+    audience: shortText,
+    mainJob: shortText,
+    voice: z.object({ tone: z.enum(['formal', 'friendly']), length: z.enum(['brief', 'detailed']), stance: z.enum(['modest', 'confident']) }),
+    wordsToAvoid: z.array(z.string().max(40)).max(30),
+  }).optional(),
   overlays: z.array(z.string().max(40)).max(40).optional(),
   skin: z.string().max(40).optional(),
 });
@@ -717,7 +726,7 @@ export type ParseResult =
 // Every message is fixed text. A message never repeats content from the file.
 const NOT_A_PROJECT = 'This is not a Refraction project file.';
 const NEWER_VERSION = 'A newer version of the Studio made this file, and this version cannot read it.';
-const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content', 'overlays', 'skin'] as const;
+const SECTIONS = ['name', 'template', 'a11y', 'direction', 'base', 'params', 'decisions', 'content', 'brief', 'overlays', 'skin'] as const;
 /** What each part of a project file holds, in plain words, for the message that refuses a damaged file (finding U2-21). The words are fixed; nothing from the file is repeated. */
 const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   name: 'the project name',
@@ -728,6 +737,7 @@ const SECTION_WORDS: Record<(typeof SECTIONS)[number], string> = {
   params: 'the design values',
   decisions: 'the Decisions',
   content: 'the sample text',
+  brief: 'the Brief notes',
   overlays: 'the Overlays',
   skin: 'the Skin',
 };
@@ -861,6 +871,7 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   const skin = data.skin !== undefined && offersSkin(direction, data.skin) ? data.skin : undefined;
   if (data.skin !== undefined && skin === undefined) notes.push('The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
   const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
+  if (data.brief !== undefined) project.brief = data.brief;
   return { project, notes };
 }
 

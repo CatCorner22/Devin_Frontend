@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DEFAULT_PARAMS, DIRECTIONS, SAMPLE_CONTENT, SCHEMA_VERSION, STEPS,
+  DEFAULT_PARAMS, DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, SCHEMA_VERSION, STEPS,
   OVERLAYS, findSkin, skinParams, skinsOf, startPlain, applyDirection, createProject, findStep, keep, matchingOptionId, overlaysOf, ownedValues, parseProject, pick, setOverlay, setReason, tune,
   type Project,
 } from '../src/index.js';
@@ -316,6 +316,29 @@ describe('saved projects: files from version 1 (finding M-07)', () => {
     expect(Object.keys(DEFAULT_PARAMS)).toHaveLength(31);
     expect(STEPS).toHaveLength(23);
     expect(SCHEMA_VERSION).toBe(2);
+  });
+});
+
+describe('saved projects: Brief drafts', () => {
+  it('round-trips owner text and builder notes, including empty drafts and hostile text', () => {
+    for (const text of ['', 'Moss & Stone', '<script>alert("words")</script>', 'x'.repeat(600)]) {
+      const project = createProject();
+      project.content = { ...project.content, business: text, headline: text, footerNote: '' };
+      project.brief = { ...EMPTY_BRIEF, whatItDoes: text, audience: text, mainJob: text, voice: { tone: 'formal', length: 'detailed', stance: 'confident' }, wordsToAvoid: ['lorem ipsum', '<script>'] };
+      expect(ok(roundTrip(project)).project).toEqual(project);
+    }
+  });
+
+  it('opens older projects without Brief notes without changing their shape', () => {
+    const project = createProject();
+    expect(ok(roundTrip(project)).project).toEqual(project);
+    expect(ok(roundTrip(project)).project).not.toHaveProperty('brief');
+  });
+
+  it('refuses malformed or oversized Brief notes on import', () => {
+    for (const brief of [null, [], 'text', {}, { ...EMPTY_BRIEF, audience: 5 }, { ...EMPTY_BRIEF, mainJob: 'x'.repeat(601) }, { ...EMPTY_BRIEF, voice: { tone: 'loud', length: 'brief', stance: 'modest' } }, { ...EMPTY_BRIEF, wordsToAvoid: ['x'.repeat(41)] }, { ...EMPTY_BRIEF, wordsToAvoid: Array(31).fill('word') }]) {
+      expect(refusal({ ...createProject(), brief })).toContain('the Brief notes');
+    }
   });
 });
 
