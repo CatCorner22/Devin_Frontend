@@ -2,7 +2,7 @@
 import {
   DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
   nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, startPlain, tune,
-  type A11yProfile, type BriefNotes, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type Project, type SiteContent, type Skin, type Step,
+  type A11yProfile, type BriefNotes, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type MockupPage, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
 import {
@@ -66,6 +66,7 @@ export interface StudioState {
   /** Rises each time keyboard focus should move to the main thing on screen (the cards, or the page heading). */
   focusTick: number;
   device: Device;
+  previewPage: MockupPage;
   region: MockupFocus | 'auto';
   /** Structure Steps show the layout in gray unless this is off. */
   wireframe: boolean;
@@ -108,6 +109,7 @@ export interface StudioState {
   /** Try once more to save, after a save failed (for example when the owner has made room in storage). */
   saveAgain(): void;
   setDevice(device: Device): void;
+  setPreviewPage(page: MockupPage): void;
   setRegion(region: MockupFocus | 'auto'): void;
   setWireframe(on: boolean): void;
   setStudioLook(look: 'studio' | 'project'): void;
@@ -684,6 +686,7 @@ export const useStudio = create<StudioState>((set, get) => {
     variations: null,
     focusTick: 0,
     device: 'desktop',
+    previewPage: 'home',
     region: 'auto',
     wireframe: true,
     studioLook: 'studio',
@@ -967,6 +970,9 @@ export const useStudio = create<StudioState>((set, get) => {
       void saveNow(true);
     },
 
+    setPreviewPage(previewPage) {
+      set({ previewPage });
+    },
     setDevice(device) {
       set({ device });
       storePrefs();

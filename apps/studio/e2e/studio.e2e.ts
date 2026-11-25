@@ -2714,6 +2714,86 @@ describe('Studio: Brief', () => {
 });
 
 describe('Studio: behavior Steps', () => {
+  it('inner page: switch pages without changing the project', async () => {
+    const initial = createProject();
+    const { context, page } = await open({ hash: '#summary', storage: { [LOCAL_KEY]: envelope(initial) } });
+    const frame = page.frameLocator('.summary-side iframe');
+    await page.getByRole('combobox', { name: 'Preview page', exact: true }).selectOption('contact');
+    await expect.poll(() => frame.locator('h1').innerText()).toBe(initial.content.contactTitle);
+    expect(await frame.locator('.hero').isVisible()).toBe(false);
+    expect(await frame.locator('form').isVisible()).toBe(true);
+    await page.locator('.top-nav a[href="#overlays"]').click();
+    expect(await page.getByRole('combobox', { name: 'Preview page', exact: true }).inputValue()).toBe('contact');
+    await page.evaluate(() => { location.hash = '#radius'; });
+    await page.locator('.preview-wrap iframe').waitFor();
+    await expect.poll(() => page.frameLocator('.preview-wrap iframe').locator('body').getAttribute('data-page')).toBe('contact');
+    expect(await page.frameLocator('.option iframe').first().locator('.hero').isVisible()).toBe(true);
+    await settle(page);
+    expect(await stored(page)).toEqual(initial);
+    await page.reload();
+    await page.getByRole('combobox', { name: 'Preview page', exact: true }).waitFor();
+    expect(await page.getByRole('combobox', { name: 'Preview page', exact: true }).inputValue()).toBe('home');
+    await context.close();
+  });
+
+  it('inner page: owner words survive reload and a file', async () => {
+    const { context, page } = await open({ hash: '#brief' });
+    const title = 'Arrange a window repair';
+    const intro = 'Tell our workshop what your windows need.';
+    const directions = 'Use the blue gate beside Moss Lane.';
+    for (const [label, text] of [['Contact page heading', title], ['Contact page introduction', intro], ['Contact page visit directions', directions]]) await page.getByLabel(label!, { exact: true }).fill(text!);
+    const frame = page.frameLocator('.brief-preview iframe');
+    await expect.poll(() => frame.locator('h1').innerText()).toBe(title);
+    expect(await frame.locator('.inner-intro').innerText()).toContain(directions);
+    expect(await page.locator('.brief-editor .note').count()).toBe(0);
+    await settle(page);
+    await page.reload();
+    await page.getByLabel('Contact page heading', { exact: true }).waitFor();
+    expect(await page.getByLabel('Contact page heading', { exact: true }).inputValue()).toBe(title);
+    await page.locator('.top-nav a[href="#summary"]').click();
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download the project file', exact: true }).click()]);
+    const text = readFileSync((await download.path())!, 'utf8');
+    expect((JSON.parse(text) as Project).content.contactPage).toEqual({ title, intro, directions });
+    const other = await open({ hash: '#summary' });
+    await other.page.locator('#project-file').setInputFiles({ name: 'inner.json', mimeType: 'application/json', buffer: Buffer.from(text) });
+    await other.page.getByRole('combobox', { name: 'Preview page', exact: true }).selectOption('contact');
+    await expect.poll(() => other.page.frameLocator('.summary-side iframe').locator('h1').innerText()).toBe(title);
+    await page.locator('.top-nav a[href="#brief"]').click();
+    await page.getByRole('button', { name: 'Restore sample content', exact: true }).click();
+    await page.getByRole('button', { name: 'Use the sample', exact: true }).click();
+    await settle(page);
+    expect((await stored(page))?.content.contactPage).toBeUndefined();
+    await page.getByRole('button', { name: 'Undo', exact: true }).first().click();
+    await settle(page);
+    expect((await stored(page))?.content.contactPage).toEqual({ title, intro, directions });
+    await other.context.close();
+    await context.close();
+  });
+
+  it('inner page: Decisions change its form, states, motion and paint', async () => {
+    const { context, page } = await open({ hash: '#focus-style' });
+    await page.getByRole('combobox', { name: 'Preview page', exact: true }).selectOption('contact');
+    for (const step of STEPS.filter((s) => s.stage === 'behavior')) {
+      await page.evaluate((id) => { location.hash = '#' + id; }, step.id);
+      for (const option of step.options) {
+        await page.locator('#option-' + option.id).check();
+        const frame = page.frameLocator('.preview-wrap iframe');
+        await expect.poll(() => frame.locator('body').getAttribute('data-page')).toBe('contact');
+        if (step.id === 'focus-style') await expect.poll(() => frame.locator('.focus-example').evaluate((el) => getComputedStyle(el).outlineStyle)).toBe(option.id === 'outline' ? 'solid' : option.id);
+        if (step.id === 'motion-timing') await expect.poll(() => frame.locator('.behavior-demo').innerText()).toContain(option.id + ':');
+        if (step.id === 'motion') await expect.poll(() => frame.locator('body').getAttribute('data-motion')).toBe(option.patch.motion);
+        if (option.voice) await expect.poll(() => frame.locator('#m-name').locator('..').innerText()).toContain(option.voice.tone === 'formal' ? 'Full name' : 'Your name');
+        if (step.id === 'empty-state') await expect.poll(() => frame.locator('.empty-example h2').innerText()).toBe(option.id === 'example' ? 'What could go here?' : option.id === 'explain' ? 'Why is this list empty?' : 'Nothing here yet');
+        if (step.id === 'error-state') await expect.poll(() => frame.locator('.error-summary').count()).toBe(option.id === 'inline' ? 0 : 1);
+        await page.getByRole('button', { name: new RegExp('^(?:Pick|Keep) “' + option.label) }).click();
+        await page.evaluate((id) => { location.hash = '#' + id; }, step.id);
+      }
+    }
+    await page.evaluate(() => { location.hash = '#radius'; });
+    await page.locator('#option-soft').check();
+    await expect.poll(() => page.frameLocator('.preview-wrap iframe').locator('form').evaluate((el) => getComputedStyle(el).borderRadius)).not.toBe('0px');
+    await context.close();
+  });
   it('review: editing audience preserves a kept default voice and its reason', async () => {
     const initial = keep(createProject(), 'voice');
     initial.decisions['voice']!.reason = 'Short help suits these visitors.';

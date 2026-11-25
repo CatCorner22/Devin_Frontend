@@ -100,6 +100,17 @@ Motion timing, keyboard focus, empty-list help, and form-error placement use the
 | Replacing a voice Decision through the Brief | Say that the earlier Decision and reason were removed; Undo restores the earlier voice and Decision | "behavior: Brief voice stays in sync, keeps owner text, and offers Undo after replacing a Decision" |
 | Opening an old file | Do not insert behavior Decisions or optional fields; keep the old tokens | Unit test "opens old parameters without adding behavior fields or Decisions" |
 
+## Contact inner page (M5, unit 4)
+
+The optional `content.contactPage` holds its heading, introduction and visit directions. Until edited, these read from the existing contact heading, contact text and address; opening an old file does not insert a copy or sample words. The same project saving and tab rules apply.
+
+| Situation and event | What must happen | Test |
+|---|---|---|
+| Saved: edit contact-page text and reload | The words survive, including through a project-file round trip | "inner page: owner words survive reload and a file" |
+| Opening an old file | Keep the new field absent; use that owner's existing contact words | Unit test "old content stays unchanged and supplies the contact defaults" |
+| Switching preview pages | Change no Decision or project content; keep the view across Studio screens in this tab, return to Home on reload | "inner page: switch pages without changing the project" |
+| Restoring the sample | The existing confirmation clears the optional contact text too; Undo restores it | "inner page: owner words survive reload and a file" |
+
 ## What no test covers (stated plainly)
 
 - The browser's own "leave this page?" question. The Studio can only ask the browser to put it; the test browser answers it by itself.
