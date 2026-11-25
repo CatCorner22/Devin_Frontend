@@ -511,6 +511,14 @@ describe('walks', () => {
     expect(tabsWalk(['#a', '#b']).steps).toContainEqual({ do: 'expect-attribute', on: '#a', name: 'aria-selected', value: 'true' });
   });
 
+  it('Hinshitsu audit of WU-1: the README tells how to run the walks, names only the runner that was proven, and its example is typed', () => {
+    const readme = readFileSync(join(root, '..', 'README.md'), 'utf8');
+    for (const name of ['dialogWalk', 'tabsWalk', 'tabOrderWalk', "{ ruleId: 'behavior-dialog-keys', status: 'holds' }", 'holds no program that runs the steps']) expect(readme).toContain(name);
+    expect(readme).toMatch(/On `fixtures\/good\.html` the example prints the grade "Not graded"/);
+    expect(readme).not.toMatch(/Playwright's own, Vitest, or `tsx`/);
+    expect(readme).toContain('const findings: Finding[] = [];');
+    expect(readme).toContain('four lists');
+  });
   it('second review, F-28 and F-34: the README advises no check with JavaScript switched off, and states the limit of the typeface check', () => {
     const readme = readFileSync(join(root, '..', 'README.md'), 'utf8');
     expect(readme).not.toMatch(/with JavaScript switched off for the page, or/);

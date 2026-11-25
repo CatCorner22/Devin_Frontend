@@ -36,28 +36,34 @@ A rule is checked in one of three ways: by a **page check** (a program reads the
 ## How to use it
 
 ```ts
-import { KIT_RULES, grade, receipt, receiptText, repairPlan, designId } from '@refraction/kit';
-import * as checks from '@refraction/kit/src/page-checks/index.js';
+import { KIT_RULES, grade, receipt, receiptText, repairPlan, designId, type Finding } from '@refraction/kit';
+import * as pageChecks from '@refraction/kit/src/page-checks/index.js';
+
+const checks = pageChecks as unknown as Record<string, (...args: never[]) => unknown>;
 
 // In a browser page (Playwright): send each check into the page as text, so that it runs there.
 // `tokenFit` also takes the design's tokens. `noSidewaysScroll` answers only when the window is 320 pixels wide.
-const findings = [];
+const findings: Finding[] = [];
 for (const fn of Object.keys(checks)) {
   if (fn === 'noSidewaysScroll') await page.setViewportSize({ width: 320, height: 800 });
   const more = fn === 'tokenFit' ? `, ${JSON.stringify(tokens)}` : '';
-  findings.push(...await page.evaluate(`(${checks[fn]})(document${more})`));
+  findings.push(...(await page.evaluate(`(${checks[fn]})(document${more})`) as Finding[]));
   if (fn === 'noSidewaysScroll') await page.setViewportSize({ width: 1280, height: 800 });
 }
 
 grade(findings, KIT_RULES);               // { grade: 'Below floor' | 'Meets floor' | 'Crafted' | 'Not graded', ... }
 repairPlan([findings], KIT_RULES);        // what to repair next, floors first; stops after 3 rounds
-receiptText(receipt(findings, KIT_RULES)); // measured / not measured / a person must still check
+receiptText(receipt(findings, KIT_RULES)); // four lists: measured / answered by a person / not measured / a person must still check
 designId(tokens);                         // 'rx-1a2b3c4d5e6f7a8b': links a build to a design; not secret, proves nothing about authorship
 ```
 
 `tokenFit` takes a second argument, the design's tokens. `noSidewaysScroll` answers only in a window 320 pixels wide, where the reflow floor is defined; at any other width it reports "could not measure", and the grade is then "Not graded". `layoutShift` and `noScriptedMotion` return a promise; `noScriptedMotion` takes 11 seconds unless a pause button is in view. `unseenParts` belongs to no single rule (`WHOLE_PAGE_CHECKS`); run it with the others, as the loop above does. A rule record may name further checks under `also`.
 
-The example needs a TypeScript-aware runner (Playwright's own, Vitest, or `tsx`): the package ships TypeScript source and has no build step, so plain `node` cannot import it. `checks` holds every page check by name; pass the tokens to `tokenFit` as the example in `apps/studio/e2e/kit.e2e.ts` does (`run`).
+On `fixtures/good.html` the example prints the grade "Not graded" with `unmeasuredFloors: ['behavior-dialog-keys']`. That is the right answer and no fault of the setup: the example runs no walk, and one floor is checked by a walk.
+
+**The walks.** The kit exports three builders of walks: `dialogWalk(opener, dialog)`, `tabsWalk(tabs)` and `tabOrderWalk(start, order)`. Each returns a plain list of steps (focus this, press that key, expect the focus here) for parts that the caller names by CSS selector. The kit holds no program that runs the steps: the checker runs them. The function `walk` in `apps/studio/e2e/kit.e2e.ts` is a runner of 20 lines to copy. When every step of a walk holds, the checker adds a finding under the walk's `ruleId`, for example `{ ruleId: 'behavior-dialog-keys', status: 'holds' }`; when a step does not, the same with `status: 'fails'`. With the window walk counted, `fixtures/good.html` grades "Meets floor".
+
+**The runner.** Run the example under Vitest, as this repository's browser tests do. The package ships TypeScript source and has no build step, so plain `node` cannot import it. Two other runners were tried on 2026-11-24 and do not work as the example is written: `tsx` rewrites the checks so that they call a helper that does not exist inside the page, and Playwright's own test runner does not find the second import (a relative path to `packages/kit/src/page-checks/index.ts` works there). `checks` holds every page check by name; pass the tokens to `tokenFit` as the example in `apps/studio/e2e/kit.e2e.ts` does (`run`).
 
 ## What can go wrong
 
