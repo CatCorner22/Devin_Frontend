@@ -63,6 +63,7 @@ export interface Project {
   skinLayer?: {
     colors: Pick<DesignParams, typeof SKIN_COLOR_KEYS[number]>;
     overrides: string[];
+    keys?: (typeof SKIN_COLOR_KEYS[number])[];
     startColors?: Pick<DesignParams, typeof SKIN_COLOR_KEYS[number]>;
     resets?: string[];
     off?: boolean;
@@ -75,23 +76,34 @@ export function startingParams(project: Project): DesignParams {
   return project.skinLayer?.startColors ? { ...project.base, ...project.skinLayer.startColors } : project.base;
 }
 
-/** Saved design values remain underneath the Skin; later choices take precedence for their own Step. */
+/**
+ * base/params hold the underlying Direction recipe, independent of Skin actions.
+ * startColors is the immutable starting-Skin snapshot; colors is the current Skin snapshot.
+ * off disables the current Skin, overrides reveal raw Steps, keys reveal partial raw choices, and resets reveal starting-Skin Steps.
+ * Explicit Decisions select a following Option or fix hand-set values; a visible Skin fixes its colors.
+ * Resolve all visible layers first, then derive every unfixed dependent color once from its final visible source.
+ * Neither visible derivation nor starting-color resets may write Skin values into the underlying recipe.
+ */
 export function effectiveParams(project: Project): DesignParams {
   const layer = project.skinLayer;
-  if (!layer) return project.params;
-  let params = layer.off ? { ...project.params } : { ...project.params, ...layer.colors };
-  const steps = STEPS.filter((step) => layer.overrides.includes(step.id));
+  let params = layer ? { ...project.params, ...(!layer.off ? layer.colors : {}) } : project.params;
+  const steps = STEPS.filter((step) => layer?.overrides.includes(step.id));
   for (const step of steps) {
     for (const key of step.owns) if ((SKIN_COLOR_KEYS as readonly string[]).includes(key)) Object.assign(params, { [key]: project.params[key] });
   }
-  for (const step of STEPS.filter((step) => layer.resets?.includes(step.id))) {
-    for (const key of step.owns) if (layer.startColors && (SKIN_COLOR_KEYS as readonly string[]).includes(key)) Object.assign(params, { [key]: layer.startColors[key as typeof SKIN_COLOR_KEYS[number]] });
+  for (const step of STEPS.filter((step) => layer?.resets?.includes(step.id))) {
+    for (const key of step.owns) if (layer?.startColors && (SKIN_COLOR_KEYS as readonly string[]).includes(key)) Object.assign(params, { [key]: layer.startColors[key as typeof SKIN_COLOR_KEYS[number]] });
   }
-  for (const step of steps) {
+  for (const key of layer?.keys ?? []) params = { ...params, [key]: project.params[key] };
+  for (const step of STEPS) {
+    if (!step.options.some((option) => option.derive)) continue;
     const decision = project.decisions[step.id];
     const optionId = decision?.kind === 'picked' ? decision.optionId : matchingOptionId(project.base, step);
     const option = step.options.find((o) => o.id === optionId);
-    if (decision?.kind !== 'tuned' && option?.derive) params = { ...params, ...resolvePatch(option, params) };
+    if (decision?.kind !== 'tuned' && option?.derive && !skinCoversKey(project, step, option.derive.key) && Object.entries(option.patch).every(([key, value]) => same(params[key as keyof DesignParams], value))) {
+      const hue = hueTurn(params[option.derive.from], option.derive.turn);
+      if (!same(params[option.derive.key], hue)) params = { ...params, [option.derive.key]: hue };
+    }
   }
   return params;
 }
@@ -120,19 +132,32 @@ function skinChoice(project: Project, step: Step): Project {
   if (!project.skinLayer || !step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))) return project;
   const overrides = [...project.skinLayer.overrides.filter((id) => id !== step.id), step.id];
   const resets = project.skinLayer.resets?.filter((id) => id !== step.id);
-  return { ...project, skinLayer: { ...project.skinLayer, overrides, ...(resets ? { resets } : {}) } };
+  const keys = project.skinLayer.keys?.filter((key) => !step.owns.includes(key));
+  return { ...project, skinLayer: { ...project.skinLayer, overrides, ...(resets ? { resets } : {}), ...(keys ? { keys } : {}) } };
+}
+
+function skinPartialChoice(project: Project, changed: readonly (keyof DesignParams)[]): Project {
+  const layer = project.skinLayer;
+  if (!layer) return project;
+  const keys = SKIN_COLOR_KEYS.filter((key) => layer.keys?.includes(key) || changed.includes(key));
+  return keys.length ? { ...project, skinLayer: { ...layer, keys } } : project;
 }
 
 function skinReset(project: Project, step: Step): Project {
   const layer = project.skinLayer;
   if (!layer?.startColors || !step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))) return skinChoice(project, step);
-  return { ...project, skinLayer: { ...layer, overrides: layer.overrides.filter((id) => id !== step.id), resets: [...new Set([...(layer.resets ?? []), step.id])] } };
+  return { ...project, skinLayer: { ...layer, overrides: layer.overrides.filter((id) => id !== step.id), resets: [...new Set([...(layer.resets ?? []), step.id])], ...(layer.keys ? { keys: layer.keys.filter((key) => !step.owns.includes(key)) } : {}) } };
+}
+
+function skinCoversKey(project: Project, step: Step, key: keyof DesignParams): boolean {
+  const layer = project.skinLayer;
+  return Boolean(layer && (SKIN_COLOR_KEYS as readonly string[]).includes(key) && !layer.keys?.includes(key as typeof SKIN_COLOR_KEYS[number])
+    && ((layer.startColors && layer.resets?.includes(step.id)) || (!layer.off && !layer.overrides.includes(step.id))));
 }
 
 export function skinCoversStep(project: Project, stepId: string): boolean {
   const step = mustStep(stepId);
-  const layer = project.skinLayer;
-  return Boolean(layer && (layer.resets?.includes(stepId) || (!layer.off && !layer.overrides.includes(stepId))) && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
+  return step.owns.some((key) => skinCoversKey(project, step, key));
 }
 
 const hueTurn = (h: number, by: number): number => (((h + by) % 360) + 360) % 360;
@@ -297,14 +322,10 @@ function rederive(before: Project, after: Project, actedStepId: string): Project
   return changed ? { ...after, params, decisions } : after;
 }
 
-function withDecision(project: Project, step: Step, params: DesignParams, decision: Omit<Decision, 'stepId' | 'values' | 'optionId'>): Project {
+function withDecision(project: Project, step: Step, params: DesignParams, decision: Omit<Decision, 'stepId' | 'values' | 'optionId'>, changed?: readonly (keyof DesignParams)[]): Project {
   const full: Decision = { ...decision, stepId: step.id, optionId: matchingOptionId(params, step, project.brief?.voice), values: ownedValues(step, params) };
-  return rederive(project, skinChoice({ ...project, params, decisions: { ...project.decisions, [step.id]: full } }, step), step.id);
-}
-
-function sourceForStep(project: Project, step: Step): DesignParams {
-  return project.skinLayer && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))
-    ? { ...project.params, ...ownedValues(step, effectiveParams(project)) } : project.params;
+  const next = { ...project, params, decisions: { ...project.decisions, [step.id]: full } };
+  return rederive(project, changed ? skinPartialChoice(next, changed) : skinChoice(next, step), step.id);
 }
 
 /** Pick one of the Catalog's Options for a Step. */
@@ -346,7 +367,7 @@ export function pickValues(project: Project, stepId: string, values: Partial<Des
   const step = mustStep(stepId);
   checkOwnedValues(step, values);
   const previous = project.decisions[stepId];
-  return withDecision(project, step, { ...sourceForStep(project, step), ...values }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) });
+  return withDecision(project, step, { ...project.params, ...values }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) }, Object.keys(values) as (keyof DesignParams)[]);
 }
 
 /** Fine-tune one value by hand. Only that value changes. The Step's Decision becomes "tuned". */
@@ -357,7 +378,7 @@ export function tune(project: Project, stepId: string, key: keyof DesignParams, 
   if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('That value is not a number.');
   const clamped = Math.min(tunable.max, Math.max(tunable.min, value));
   const previous = project.decisions[stepId];
-  return withDecision(project, step, { ...sourceForStep(project, step), [key]: clamped }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) });
+  return withDecision(project, step, { ...project.params, [key]: clamped }, { kind: 'tuned', rejected: previous?.rejected ?? [], at: now, ...(previous?.reason ? { reason: previous.reason } : {}) }, [key]);
 }
 
 /** A value on a slider's grid: a whole number of steps, counted from zero, inside the slider's range. */
@@ -816,6 +837,7 @@ const projectSchema = z.object({
   skinLayer: z.object({
     colors: skinColorsSchema,
     overrides: z.array(z.string().max(40)).max(40),
+    keys: z.array(z.enum(SKIN_COLOR_KEYS)).max(SKIN_COLOR_KEYS.length).optional(),
     startColors: skinColorsSchema.optional(),
     resets: z.array(z.string().max(40)).max(40).optional(),
     off: z.boolean().optional(),
@@ -979,6 +1001,7 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
     const overrides = [...new Set(data.skinLayer.overrides)].filter((id) => findStep(id)?.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
     if (overrides.length !== data.skinLayer.overrides.length) notes.push('The file repeats a Skin exception or names a Step that cannot change a Skin color. Those entries were left out.');
     project.skinLayer = { colors: { ...data.skinLayer.colors }, overrides };
+    if (data.skinLayer.keys) project.skinLayer.keys = [...new Set(data.skinLayer.keys)];
     if (data.skinLayer.startColors) project.skinLayer.startColors = { ...data.skinLayer.startColors };
     if (data.skinLayer.resets) {
       const resets = data.skinLayer.startColors ? [...new Set(data.skinLayer.resets)].filter((id) => findStep(id)?.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key))) : [];

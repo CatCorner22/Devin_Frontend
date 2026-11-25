@@ -1,8 +1,30 @@
 import { expect, it } from 'vitest';
-import { DIRECTIONS, SKIN_COLOR_KEYS, STEPS, applyDirection, createProject, effectiveParams, keep, matchingOptionId, ownedValues, parseProject, pick, revert, setSkin, skinParams, skinsOf } from '../src/index.js';
+import { DIRECTIONS, SKIN_COLOR_KEYS, STEPS, applyDirection, createProject, effectiveParams, keep, matchingOptionId, ownedValues, parseProject, pick, revert, setSkin, skinParams, skinsOf, tune } from '../src/index.js';
 
 const colorSteps = STEPS.filter((step) => step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
-const actions = ['set', 'clear', 'keep', 'pick', 'reset', 'direction', 'reload'] as const;
+const actions = ['set', 'clear', 'keep', 'pick', 'reset', 'direction', 'reload', 'main', 'fixed'] as const;
+const mainStep = STEPS.find((step) => step.owns.includes('accentHue'))!;
+const pairingStep = STEPS.find((step) => step.options.some((option) => option.derive))!;
+
+function checkEffectivePairing(project: ReturnType<typeof createProject>, label: string): void {
+  const visible = effectiveParams(project);
+  for (const step of STEPS.filter((step) => step.options.some((option) => option.derive))) {
+    const layer = project.skinLayer;
+    const key = step.options.find((option) => option.derive)!.derive!.key;
+    const starting = layer?.startColors && layer.resets?.includes(step.id) && !layer.keys?.includes(key);
+    const current = layer && !layer.off && !layer.overrides.includes(step.id) && !layer.keys?.includes(key);
+    const decision = project.decisions[step.id];
+    const option = decision?.kind === 'picked' ? step.options.find((option) => option.id === decision.optionId)
+      : step.options.find((option) => option.derive && Object.entries(option.patch).every(([key, value]) => project.base[key as keyof typeof project.base] === value)
+        && project.base[option.derive.key] === (project.base[option.derive.from] + option.derive.turn) % 360);
+    const derive = step.options.find((option) => option.derive)!.derive!;
+    if (starting) expect(visible[derive.key], `${label}: fixed starting pair`).toBe(layer!.startColors![derive.key]);
+    else if (current) expect(visible[derive.key], `${label}: fixed current pair`).toBe(layer!.colors[derive.key]);
+    else if (decision?.kind !== 'tuned' && option?.derive && Object.entries(option.patch).every(([key, value]) => visible[key as keyof typeof visible] === value)) {
+      expect(visible[option.derive.key], `${label}: following visible pair`).toBe((visible[option.derive.from] + option.derive.turn) % 360);
+    } else expect(visible[derive.key], `${label}: fixed recipe or Decision pair`).toBe(project.params[derive.key]);
+  }
+}
 
 it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
   for (const firstSkin of [undefined, ...skinsOf(start)]) {
@@ -17,7 +39,7 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
     let project = applyDirection(createProject(), direction, firstSkin?.id);
     let withoutSkin = applyDirection(createProject(), direction);
     const seen = new Set<string>();
-    for (let index = 0; index < 49; index++) {
+    for (let index = 0; index < 96; index++) {
       const action = actions[index < actions.length ? index : next(actions.length)]!;
       seen.add(action);
       const before = project;
@@ -44,6 +66,17 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
         const layer = before.skinLayer;
         if (layer && (layer.resets?.includes(step.id) || (!layer.off && !layer.overrides.includes(step.id)))) expect(project, label).toBe(before);
         expect(project.params, label).toEqual(before.params);
+      } else if (action === 'main') {
+        const hue = next(360);
+        project = tune(project, mainStep.id, 'accentHue', hue);
+        withoutSkin = tune(withoutSkin, mainStep.id, 'accentHue', hue);
+        expect(project.params.accentHue, label).toBe(hue);
+      } else if (action === 'fixed') {
+        const key = pairingStep.options.find((option) => option.derive)!.derive!.key;
+        const hue = next(360);
+        project = tune(project, pairingStep.id, key, hue);
+        withoutSkin = tune(withoutSkin, pairingStep.id, key, hue);
+        expect(effectiveParams(project)[key], label).toBe(hue);
       } else if (action === 'pick') {
         const option = step.options[next(step.options.length)]!;
         project = pick(project, step.id, option.id);
@@ -81,6 +114,8 @@ it.each(DIRECTIONS)('Skin transition contracts: $id', (start) => {
         }
       }
       expect(project.base, label).toEqual(direction.params);
+      expect(project.skinLayer?.startColors, label).toEqual(startedWithSkin ? Object.fromEntries(SKIN_COLOR_KEYS.map((key) => [key, baseline[key]])) : undefined);
+      checkEffectivePairing(project, label);
       expect(project.params, `${label}: no-Skin replay`).toEqual(withoutSkin.params);
     }
     expect(seen.size).toBe(actions.length);

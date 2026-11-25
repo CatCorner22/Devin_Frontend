@@ -160,3 +160,24 @@ it('Skin review: reset after No Skin keeps starting colors removable without cha
     expect(faults).toEqual([]);
   } finally { await context.close(); }
 });
+
+it('Skin review: a slider changes only its raw value and leaves unmoved Skin controls on the layer', async () => {
+  const pair = DIRECTIONS.flatMap((direction) => skinsOf(direction).map((skin) => ({ direction, skin })))
+    .find(({ direction, skin }) => skin.accentChroma !== undefined && skin.accentChroma !== direction.params.accentChroma)!;
+  const started = applyDirection(createProject(), pair.direction, pair.skin.id);
+  const before = effectiveParams(started);
+  const { context, page, faults } = await open(started, '#accent');
+  try {
+    await page.getByText('Adjust with sliders', { exact: true }).click();
+    const hue = findStep('accent')!.tunables!.find((tunable) => tunable.key === 'accentHue')!;
+    await page.getByRole('slider', { name: hue.label, exact: true }).press('ArrowRight');
+    await expect.poll(async () => (await stored(page))?.decisions.accent?.kind).toBe('tuned');
+    const changed = (await stored(page))!;
+    expect(effectiveParams(changed).accentHue).not.toBe(before.accentHue);
+    expect(effectiveParams(changed).accentChroma).toBe(before.accentChroma);
+    expect(effectiveParams(changed).accentLightness).toBe(before.accentLightness);
+    expect(changed.params.accentChroma).toBe(started.params.accentChroma);
+    expect(changed.skinLayer?.keys).toContain('accentHue');
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});

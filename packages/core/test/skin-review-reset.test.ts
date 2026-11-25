@@ -13,9 +13,17 @@ it('review: putting a Step back restores its starting Skin, without making No Sk
   expect(effectiveParams(setSkin(started, null))).toEqual(started.params);
 });
 
+it('review: after No Skin and a main-color reset, a saved opposite choice follows the visible hue', () => {
+  const started = applyDirection(createProject(), 'sticker-pop', 'lagoon');
+  const paired = pick(started, 'color-strategy', 'duo-complement');
+  const reset = revert(setSkin(paired, null), 'accent');
+  const visible = effectiveParams(reset);
+  expect(visible.accent2Hue).toBe((visible.accentHue + 180) % 360);
+});
+
 it('validates starting layers, reset references, and off state without exposing those colors underneath', () => {
   const started = applyDirection(createProject(), 'soft-daylight', 'berry');
-  for (const invalid of [{ startColors: { accentHue: 20 } }, { off: 'yes' }, { resets: 'accent' }]) {
+  for (const invalid of [{ startColors: { accentHue: 20 } }, { off: 'yes' }, { resets: 'accent' }, { keys: ['fontHeading'] }, { keys: 'accentHue' }]) {
     expect(parseProject({ ...started, skinLayer: { ...started.skinLayer, ...invalid } }).ok).toBe(false);
   }
   const off = setSkin(started, null);
