@@ -213,6 +213,9 @@ export function visibleLabels(doc: Document): Finding[] {
   // The usual spam trap: a field that no person meets. It sits inside a part marked aria-hidden="true", and it is moved off
   // the page, shrunk to a pixel, or clipped away, so neither the eye nor a screen reader finds it; only a program fills it in
   // (finding F-5 of the review of 2026-11-24). All three signs are needed: a field that people can see is judged like any other.
+  // A part around the field that is shrunk to a pixel hides the field only where it also cuts off what reaches past its edge:
+  // without that the field is drawn in full and a person meets it (Hinshitsu audit of WU-1, adversarial finding 12).
+  const cuts = (computed: CSSStyleDeclaration): boolean => [computed.overflowX, computed.overflowY].every((o) => o === 'hidden' || o === 'clip');
   const unmet = (el: Element): boolean => {
     // The third sign: the trap is out of the Tab order. A field that the Tab key still reaches is met by a person;
     // inside an inert part the Tab key reaches nothing, whatever the field's tabindex says.
@@ -220,7 +223,7 @@ export function visibleLabels(doc: Document): Finding[] {
     for (let at: Element | null = el; at && at !== doc.body; at = at.parentElement) {
       const box = at.getBoundingClientRect();
       const computed = view.getComputedStyle(at);
-      if (box.width <= 1.5 || box.height <= 1.5 || box.right <= 0 || box.bottom + view.scrollY <= 0 || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
+      if (((box.width <= 1.5 || box.height <= 1.5) && (at === el || cuts(computed))) || box.right <= 0 || box.bottom + view.scrollY <= 0 || parseFloat(computed.opacity) === 0 || /^rect\(0(px)?,? 0(px)?,? 0(px)?,? 0(px)?\)$/.test(computed.clip) || /inset\((50|100)%/.test(computed.clipPath)) return true;
     }
     return false;
   };

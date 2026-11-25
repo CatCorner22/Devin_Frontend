@@ -782,6 +782,15 @@ describe('the kit: cases that the automated review of pull request 6 named', () 
       expect(await motion(svg('<circle cx="20" cy="20" r="10"><animate attributeName="r" values="10;14;10" dur="1s" repeatCount="3"/><animate attributeName="cx" values="20;22;20" dur="1s" repeatCount="indefinite" begin="indefinite"/></circle>'))).toEqual(['holds']);
     });
 
+    it('Hinshitsu audit of WU-1, adversarial finding 12: a field in a one-pixel part that cuts nothing off is drawn, and is judged like any other field', async () => {
+      const form = (wrapper: string): string => `<form><div aria-hidden="true" style="${wrapper}"><input name="card" tabindex="-1" placeholder="Card number" style="height:30px"></div><br><br><button>Pay</button></form>`;
+      expect(await statuses(form('height:1px'), 'visibleLabels')).toEqual(['fails']);
+      expect(await statuses(form('height:1px'), 'keyboardReachable')).toEqual(['fails']);
+      // The trap proper: the part is one pixel high and cuts off the field.
+      expect(await statuses(form('height:1px;overflow:hidden'), 'visibleLabels')).toEqual(['not-applicable']);
+      expect(await statuses(form('height:1px;overflow:hidden'), 'keyboardReachable')).toEqual(['holds']);
+    });
+
     it('second review F-4: endless movement drawn by ::before or ::after, or written into an SVG drawing, fails; short movement holds', async () => {
       const spin = '@keyframes spin { to { transform: rotate(360deg); } }';
       const motion = async (body: string, style = ''): Promise<[string, string | undefined][]> => {
