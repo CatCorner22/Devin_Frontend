@@ -40,11 +40,11 @@ Write 1 report, in Markdown, in this order:
 
 ## Filled in by the ORCHESTRATOR for the re-audit of WORK UNIT WU-1 (rule 16.5)
 
-- Repository `CatCorner22/Devin_Frontend`, branch `devin/1795542703-kit-minors`, commit under review: `3a7802c`. Base: `9e50434`. The first audit round examined commit `183c166`.
+- Repository `CatCorner22/Devin_Frontend`, branch `devin/1795542703-kit-minors`, commit under review: `78bf314`. Base: `9e50434`. The first audit round examined commit `183c166`.
 - You did not build this work and you raised none of the FINDINGS below. For each FINDING listed: open the report it names, read the finding's `Trigger` word for word, run that trigger (and each input the finding names) at the commit under review, and report for each: `no longer reproduces`, `still reproduces` or `could not run`, with the command and its output. Where a finding names several inputs, report each input. A statement of the BUILDER is a claim to test, not a fact.
 - Where the BUILDER states a limit in `packages/kit/README.md` and repaired nothing, report whether the README states that limit truthfully, and say `limit stated, fault remains`.
 - For each repair commit named, state whether it holds a test that fails when the repair is reverted (revert in a scratch copy and name the failing test), or `no test`.
-- Report as a new finding, with its class, any new fault that a repair introduced (a sound page now blamed, a fault now missed, a false statement). Do not hunt outside the lines that `git diff 183c166..3a7802c -- . ':!hinshitsu'` shows.
+- Report as a new finding, with its class, any new fault that a repair introduced (a sound page now blamed, a fault now missed, a false statement). Do not hunt outside the lines that `git diff 183c166..78bf314 -- . ':!hinshitsu'` shows.
 - The browser tests need Chromium: `PW_CHROMIUM=$HOME/.cache/ms-playwright/chromium-1255/chrome-linux64/chrome`; install it with `npx playwright install chromium` if the file is absent, and state the revision you used.
 - Glossary: `hinshitsu/kit-repairs/reference/GLOSSARY.md`.
 - Work in a scratch copy on your own machine. Do not push. Do not open, close, merge or comment on a pull request. Do not change a file of the repository.
