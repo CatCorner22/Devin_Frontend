@@ -1839,3 +1839,23 @@ WU-1 is the whole change of pull request 9 outside the RUN FOLDER, `git diff 9e5
 - Raised by: AUDITOR, LAUNCH E-72, `audits/WU1-language-E-72.md`, finding 16
 - Lens: contract language
 - Forward work stopped: no
+
+### E-165 · 2026-11-25T02:31:49Z · LAUNCH · orchestrator
+
+- Role: AUDITOR, re-audit of the code (rule 16.5), WU-1
+- Scope: `prompts/WU1-reaudit-code.md`
+- Commit under review: 78bf3149ba8952c478a7f0b9318d376dd42227d8
+- SUB-AGENT identifier: 92b0b26d37c6462681df4ea4417ce545 https://app.devin.ai/sessions/92b0b26d37c6462681df4ea4417ce545
+- Report: `audits/WU1-reaudit-code-E-165.md`
+
+22 of 40 SUB-AGENT runs used. First fix-and-re-audit round of WU-1 (rule 14.5).
+
+### E-166 · 2026-11-25T02:31:49Z · LAUNCH · orchestrator
+
+- Role: AUDITOR, re-audit of the records (rule 16.5), WU-1
+- Scope: `prompts/WU1-reaudit-records.md`
+- Commit under review: 78bf3149ba8952c478a7f0b9318d376dd42227d8
+- SUB-AGENT identifier: 2d1056731c9b42158c6caeb850d329af https://app.devin.ai/sessions/2d1056731c9b42158c6caeb850d329af
+- Report: `audits/WU1-reaudit-records-E-166.md`
+
+23 of 40 SUB-AGENT runs used. First fix-and-re-audit round of WU-1 (rule 14.5).
