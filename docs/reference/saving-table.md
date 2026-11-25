@@ -137,6 +137,10 @@ The optional `content.contactPage` holds its heading, introduction and visit dir
 | Restore a saved Option's colors through a small variation after a slider adjustment | Save hand-set intent and retain the reason; numeric equality alone never records a named pick | "Skin review: a variation that restores a saved Option keeps its hand-set intent and reason"; seeded `skin-transitions.test.ts` restoration actions |
 | Continue on an untouched numerically matching card | Keep the current choice, not a new following relationship | "Skin review: Continue does not infer a named relationship from a numeric match" |
 
+| Change Contrast checks while a named card is pending | Keep the same pending selection and save it when Pick is pressed | "Skin review: changing Contrast checks preserves a pending named selection"; seeded `selection.e2e.ts` sequences |
+| Keep a variation deck's starting point after selecting a named pairing | Save that named pairing, not a fixed numeric copy; it keeps following later main-color changes | "Skin review: the starting point of variations retains a pending named pairing" |
+| Compare generated variations, use finer rounds, return to standard Options, move sliders, change profile, then Pick | Save the selection whose tokens were visible immediately before Pick, retaining its kind, values and reason policy | Four seeded UI sequences in `selection.e2e.ts`, for bare and layered starts |
+
 ## What no test covers (stated plainly)
 
 - The browser's own "leave this page?" question. The Studio can only ask the browser to put it; the test browser answers it by itself.

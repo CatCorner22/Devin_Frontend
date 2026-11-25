@@ -9,7 +9,7 @@ import { CraftFloors } from './CraftFloors';
 import { LICENSE_TEXTS, MIT_COPYRIGHT_PLACEHOLDER, NOTICES } from './notices.generated';
 import { copyText, fileNameFor, probePreviews, readBackups, removeBackup, saveFile, storedProjectText, type KeptCopy } from './platform';
 import { LargePreview, PreviewPageControl, Thumbnail, mockupHtml, tokensFor } from './preview';
-import { CURRENT, DEVICE_WIDTH, appliedCardId, directionName, paramsForCard, stepOf, useStudio, type Device, type StudioState } from './store';
+import { CURRENT, DEVICE_WIDTH, appliedCardId, directionName, paramsForCard, selectionCardId, stepOf, useStudio, type Device, type StudioState } from './store';
 import { STUDIO_PARAMS, applyStudioTheme, installSpecimenFonts } from './theme';
 
 // ───────── Words. One word for one thing, everywhere on screen. ─────────
@@ -542,13 +542,15 @@ function StepsView(): React.JSX.Element {
   const wire = step.stage === 'structure' && s.wireframe;
   const applied = appliedCardId(s.project, step);
   const decision = s.project.decisions[step.id];
+  const variations = s.selection.kind === 'variation' ? s.selection : null;
+  const shownId = selectionCardId(s.project, step, s.selection);
   const [replay, setReplay] = useState(0);
 
   const cards: Card[] = useMemo(() => {
-    if (s.variations) {
+    if (variations) {
       return [
         { id: 'as-it-was', label: 'Starting point', what: 'The values these small variations start from.' },
-        ...s.variations.options.map((o) => ({ id: o.id, label: o.label, what: 'One small step away from the starting point.' })),
+        ...variations.options.map((o) => ({ id: o.id, label: o.label, what: 'One small step away from the starting point.' })),
       ];
     }
     const out: Card[] = step.options.map((o) => ({ id: o.id, label: o.label, what: o.what, chooseWhen: o.chooseWhen, risk: o.risk, exemplar: o.exemplar?.text, warn: o.warn?.text, focus: o.focus }));
@@ -557,9 +559,9 @@ function StepsView(): React.JSX.Element {
       out.unshift({ id: CURRENT, label: 'Your design now', what: `${valueLabel(s.project, step)}. ${origin} They match none of the standard Options, so they have a card of their own.` });
     }
     return out;
-  }, [s.variations, step, applied, decision, s.project, s.generated]);
+  }, [variations, step, applied, decision, s.project, s.generated]);
 
-  const shown = cards.find((c) => c.id === s.shownId) ?? cards[0]!;
+  const shown = cards.find((c) => c.id === shownId) ?? cards[0]!;
   const shownParams = paramsForCard(s, shown.id);
   const focus: MockupFocus = s.region === 'auto' ? (shown.focus ?? step.focus) : s.region;
   const width = DEVICE_WIDTH[s.device];
@@ -569,10 +571,10 @@ function StepsView(): React.JSX.Element {
   const cardsDevice = useDeferredValue(s.device);
   const thumbWidth = step.thumb?.width ?? DEVICE_WIDTH[cardsDevice];
   const thumbRatio = step.thumb?.focus ? 0.7 : step.thumb?.width ? (step.thumb.width < 600 ? 0.9 : 0.6) : THUMB_RATIO[cardsDevice];
-  const lookingAtApplied = !s.variations && shown.id === applied;
+  const lookingAtApplied = !variations && shown.id === applied;
   const sliders = activeTunables(step, effectiveParams(s.project));
 
-  const stateKey = JSON.stringify([effectiveParams(s.project), s.project.content, s.project.brief?.voice, s.project.a11y, step.id, s.variations?.round ?? -1, s.variations?.origin ?? null, wire, s.region]);
+  const stateKey = JSON.stringify([effectiveParams(s.project), s.project.content, s.project.brief?.voice, s.project.a11y, step.id, variations?.round ?? -1, variations?.originValues ?? null, wire, s.region]);
   const thumbs = useMemo(() => {
     const out: Record<string, string> = {};
     // A Step may give its small pictures a close-up of their own (the buttons, one box), so that the change can be seen at card size.
@@ -580,7 +582,7 @@ function StepsView(): React.JSX.Element {
     return out;
   }, [stateKey, cards.length]);
   // The two motion Steps play their examples; other comparisons stand still.
-  const large = useMemo(() => mockupHtml(s.project, shownParams, { page: s.previewPage, wireframe: wire, focus, still: step.id !== 'motion' && step.id !== 'motion-timing', voice: step.options.find((o) => o.id === shown.id)?.voice }), [stateKey, shown.id, focus, s.previewPage]);
+  const large = useMemo(() => mockupHtml(s.project, shownParams, { page: s.previewPage, wireframe: wire, focus, still: step.id !== 'motion' && step.id !== 'motion-timing', voice: step.options.find((o) => o.id === shown.id)?.voice }), [stateKey, shown.id, focus, s.previewPage, s.selection]);
   // The pictures follow at lower priority. A slider step first moves the knob and its number; the browser then draws the
   // pictures when it is free, and skips the steps in between while a key is held or the knob is dragged.
   const shownThumbs = useDeferredValue(thumbs);
@@ -622,12 +624,12 @@ function StepsView(): React.JSX.Element {
     if (s.focusTick > 0) document.querySelector<HTMLElement>('.cards input[type="radio"]:checked')?.focus();
   }, [s.focusTick, step.id]);
   useEffect(() => {
-    document.getElementById(`option-${s.shownId}`)?.closest('.option')?.scrollIntoView({ block: 'nearest' });
-  }, [s.shownId]);
+    document.getElementById(`option-${shownId}`)?.closest('.option')?.scrollIntoView({ block: 'nearest' });
+  }, [shownId]);
 
-  const mainLabel = s.variations
+  const mainLabel = variations
     ? shown.id === 'as-it-was' ? 'Keep the starting point and continue' : `Pick “${shown.label}” and continue`
-    : lookingAtApplied && !(s.cardTouched && step.options.some((option) => option.id === shown.id))
+    : lookingAtApplied && s.selection.kind !== 'named'
       ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
   const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => effectiveParams(s.project)[key] !== startingParams(s.project)[key]);
@@ -715,7 +717,7 @@ function StepsView(): React.JSX.Element {
           }}
         >
           <legend>
-            {s.variations ? `${step.name}: small variations${s.variations.round > 0 ? `, finer (round ${s.variations.round + 1})` : ''}` : step.name}
+            {variations ? `${step.name}: small variations${variations.round > 0 ? `, finer (round ${variations.round + 1})` : ''}` : step.name}
           </legend>
           <p id="cards-hint" className="hint">
             <span className="hint-count">This Step has {cards.length} cards; scroll down if you do not see them all. </span>
@@ -735,7 +737,7 @@ function StepsView(): React.JSX.Element {
             {cards.map((card, i) => {
               const isShown = shown.id === card.id;
               const params = paramsForCard(s, card.id);
-              const inUse = !s.variations && card.id === applied;
+              const inUse = !variations && card.id === applied;
               return (
                 <label key={card.id} className="option" data-shown={isShown || undefined} data-in-use={inUse || undefined} onClick={() => s.show(card.id)}>
                   <input id={`option-${card.id}`} type="radio" name="option" value={card.id} checked={isShown} onChange={() => s.show(card.id)} />
@@ -753,7 +755,7 @@ function StepsView(): React.JSX.Element {
                   )}
                   <span className="badges">
                     {inUse && <em className="badge in-use">In use ✓</em>}
-                    {!s.variations && card.warn && <em className="badge warn">Overused look</em>}
+                    {!variations && card.warn && <em className="badge warn">Overused look</em>}
                   </span>
                 </label>
               );
@@ -766,7 +768,7 @@ function StepsView(): React.JSX.Element {
           <button type="button" className="btn primary" onClick={s.decideAndContinue}>{mainLabel}</button>
         </div>
         <div className="actions">
-          {s.variations ? (
+          {variations ? (
             <>
               <button type="button" className="btn" onClick={s.startVariations}>Show finer variations of “{shown.label}”</button>
               <button type="button" className="btn quiet" onClick={s.endVariations}>Back to the standard Options</button>
@@ -780,8 +782,8 @@ function StepsView(): React.JSX.Element {
             </>
           )}
         </div>
-        {!s.variations && <ReasonField key={step.id} stepId={step.id} />}
-        {!s.variations && sliders.length > 0 && (
+        {!variations && <ReasonField key={step.id} stepId={step.id} />}
+        {!variations && sliders.length > 0 && (
           <details className="tune">
             <summary>Adjust with sliders</summary>
             <p className="hint">Each slider changes your design as it stands, one value at a time. The large preview follows. To go back, press Undo in the top bar.</p>

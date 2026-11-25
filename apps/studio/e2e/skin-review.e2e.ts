@@ -1,4 +1,4 @@
-import { DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, matchingOptionId, pick, setReason, setSkin, skinCoversStep, skinParams, skinsOf, tune, type Project } from '@refraction/core';
+import { DIRECTIONS, STEPS, activeTunables, applyDirection, closerOptions, createProject, deriveTokens, effectiveParams, findDirection, findSkin, findStep, matchingOptionId, nextSliderValue, pick, setReason, setSkin, skinCoversStep, skinParams, skinsOf, tune, type Project } from '@refraction/core';
 import { chromium, type Browser, type Page } from 'playwright';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 
@@ -234,6 +234,41 @@ it('Skin review: Continue does not infer a named relationship from a numeric mat
     expect(await page.locator('.actions.sticky .primary').innerText()).toMatch(/^Keep /);
     await page.locator('.actions.sticky .primary').press('Enter');
     await expect.poll(async () => (await stored(page))?.decisions['color-strategy']?.kind).toBe('kept');
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: changing Contrast checks preserves a pending named selection', async () => {
+  const project = applyDirection(createProject(), 'soft-daylight');
+  const { context, page, faults } = await open(project, '#nav');
+  try {
+    await page.locator('#option-side-rail').click();
+    await page.getByLabel('Contrast checks', { exact: true }).selectOption('enforce');
+    await page.locator('.actions.sticky .primary').press('Enter');
+    await expect.poll(async () => (await stored(page))?.decisions.nav?.optionId).toBe('side-rail');
+    expect(faults).toEqual([]);
+  } finally { await context.close(); }
+});
+
+it('Skin review: the starting point of variations retains a pending named pairing', async () => {
+  const project = applyDirection(createProject(), 'sticker-pop');
+  const { context, page, faults } = await open(project, '#color-strategy');
+  try {
+    await page.locator('#option-duo-complement').click();
+    await page.getByRole('button', { name: /^Show small variations of/ }).click();
+    await page.locator('.actions.sticky .primary').press('Enter');
+    await expect.poll(async () => (await stored(page))?.decisions['color-strategy']?.kind).toBe('picked');
+    expect((await stored(page))?.decisions['color-strategy']?.optionId).toBe('duo-complement');
+    const hue = findStep('accent')!.tunables!.find((tunable) => tunable.key === 'accentHue')!;
+    const next = nextSliderValue(hue, (await stored(page))!.params.accentHue, 1);
+    await page.locator('a[href="#accent"]').first().press('Enter');
+    await page.locator('.tune summary').press('Enter');
+    await page.locator('#tune-accentHue').press('ArrowRight');
+    await expect.poll(async () => (await stored(page))?.params.accentHue).toBe(next);
+    await expect.poll(async () => {
+      const project = await stored(page);
+      return project && project.params.accent2Hue === (project.params.accentHue + 180) % 360;
+    }).toBe(true);
     expect(faults).toEqual([]);
   } finally { await context.close(); }
 });
