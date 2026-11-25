@@ -125,6 +125,20 @@ const STILL_TWINS: Record<string, string> = {
 const PAINT_ONLY = ['neutral', 'accent', 'color-strategy', 'theme', 'contrast', 'atmosphere', 'button-finish', 'display-treatment', 'radius'];
 
 describe('Mockup: every Option shows (M3 exit test)', () => {
+  it('review: behavior card pictures differ on every Direction at their actual size', async () => {
+    const page = await loopPage();
+    await page.setViewportSize({ width: 600, height: 360 });
+    const directions = [...DIRECTIONS.filter((d) => d.id === 'ink-and-seal'), ...DIRECTIONS.filter((d) => d.id !== 'ink-and-seal')];
+    for (const direction of directions) for (const step of STEPS.filter((s) => ['focus-style', 'error-state', 'voice'].includes(s.id))) {
+      const seen = new Map<string, string>();
+      for (const option of step.options) {
+        await show(mockup({ ...direction.params, ...resolvePatch(option, direction.params) }, step.focus, option.voice), page);
+        const picture = (await page.screenshot({ type: 'png' })).toString('base64');
+        expect(seen.get(picture), `${direction.name}, ${step.name}: ${option.label}`).toBeUndefined();
+        seen.set(picture, option.label);
+      }
+    }
+  }, 180_000);
   for (const step of STEPS) {
     itShared(`"${step.name}": each Option looks different from the others`, async () => {
       if (STILL_TWINS[step.id]) {

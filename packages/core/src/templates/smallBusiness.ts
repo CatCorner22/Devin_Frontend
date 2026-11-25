@@ -418,6 +418,14 @@ body[data-focus="about"] .services, body[data-focus="contact"] .services, body[d
 body:is([data-focus="timing"], [data-focus="empty"]) main > :not(.behavior-demo),
 body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) main > :not(.contact) { display: none; }
 body:is([data-focus="timing"], [data-focus="empty"], [data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .site-footer { display: none; }
+body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .contact { padding-block: var(--space-2); }
+body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .contact-grid { grid-template-columns: minmax(0, 1fr); }
+body:is([data-focus="focus"], [data-focus="error"], [data-focus="voice"]) .contact-grid > :not(form) { display: none; }
+body[data-focus="error"] .form { gap: var(--space-2); padding: var(--space-2); }
+body[data-focus="error"] .form > .field:not(:has(#m-phone)), body[data-focus="error"] .form > button,
+body[data-focus="error"] .form .hint, body[data-focus="error"] .form > .voice-help { display: none; }
+body[data-focus="error"] .form > p, body[data-focus="error"] .error-summary, body[data-focus="error"] .field-error { font-size: var(--text-sm); }
+body[data-focus="error"] .error-summary h3 { font-size: inherit; }
 .focus-example { outline: var(--focus-w) var(--focus-style, solid) var(--focus); outline-offset: 2px; }
 .error-summary, .field-error { border-left: 4px solid var(--text); padding: var(--space-3); }
 .timing-track { position: relative; height: 3rem; border-bottom: 2px solid var(--border); margin-block: var(--space-6); }
