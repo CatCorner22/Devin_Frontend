@@ -87,7 +87,7 @@ describe('in-project Skin changes', () => {
     expect(effectiveParams(tint).neutralChroma).toBe(0.02);
     const kept = keep(colored, 'accent');
     expect(effectiveParams(kept)).toEqual(effectiveParams(colored));
-    expect(kept.params.accentHue).toBe(effectiveParams(colored).accentHue);
+    expect(kept).toBe(colored);
     const back = revert(colored, 'accent');
     expect(effectiveParams(back).accentHue).toBe(back.base.accentHue);
     for (const p of [chosen, tuned, tint, kept, back]) expect(effectiveParams(reopen(p))).toEqual(effectiveParams(p));

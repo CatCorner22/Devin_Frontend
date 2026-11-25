@@ -110,6 +110,11 @@ function skinChoice(project: Project, step: Step): Project {
   return { ...project, skinLayer: { ...project.skinLayer, overrides } };
 }
 
+export function skinCoversStep(project: Project, stepId: string): boolean {
+  const step = mustStep(stepId);
+  return Boolean(project.skinLayer && !project.skinLayer.overrides.includes(stepId) && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
+}
+
 const hueTurn = (h: number, by: number): number => (((h + by) % 360) + 360) % 360;
 const same = (a: unknown, b: unknown): boolean => (typeof a === 'number' && typeof b === 'number' ? Math.abs(a - b) < 1e-9 : a === b);
 const isoNow = (): string => new Date().toISOString();
@@ -297,15 +302,12 @@ export function pick(project: Project, stepId: string, optionId: string, now = i
   return withDecision(project, step, params, { kind: 'picked', rejected: step.options.filter((o) => o.id !== option.id).map((o) => o.id), at: now, ...(reason ? { reason } : {}) });
 }
 
-/** Keep the Step's values, making implied defaults explicit, and record that the owner looked and kept them. */
+/** Keep the Step's values. A Skin-covered Step leaves its underlying Decision untouched. */
 export function keep(project: Project, stepId: string, now = isoNow()): Project {
   const step = mustStep(stepId);
   const previous = project.decisions[stepId];
-  const covered = project.skinLayer && !project.skinLayer.overrides.includes(stepId) && step.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key));
-  if (previous && !covered) return project;
+  if (previous || skinCoversStep(project, stepId)) return project;
   const visible = effectiveParams(project);
-  const option = step.options.find((o) => o.id === matchingOptionId(visible, step));
-  if (covered && option?.derive) return pick(project, stepId, option.id, now);
   return withDecision(project, step, { ...project.params, ...ownedValues(step, visible) }, { kind: 'kept', rejected: [], at: now });
 }
 

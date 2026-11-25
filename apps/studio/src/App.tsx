@@ -1,5 +1,5 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinParams, skinsOf, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -627,7 +627,7 @@ function StepsView(): React.JSX.Element {
 
   const mainLabel = s.variations
     ? shown.id === 'as-it-was' ? 'Keep the starting point and continue' : `Pick “${shown.label}” and continue`
-    : lookingAtApplied
+    : lookingAtApplied && !(s.cardTouched && skinCoversStep(s.project, step.id) && step.options.some((option) => option.id === shown.id))
       ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
   const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => effectiveParams(s.project)[key] !== s.project.base[key]);
@@ -640,6 +640,7 @@ function StepsView(): React.JSX.Element {
           <p className="eyebrow">{STAGE_NAME[step.stage]} · Step {index + 1} of {STEPS.length} · {step.name}</p>
           <h1 id="step-title">{step.title}</h1>
           <p className="teach">{step.teach}</p>
+          {skinCoversStep(s.project, step.id) && <p className="hint">The Skin covers this Step’s saved colors. Continue leaves the saved Decision untouched. Select an Option and pick it to make that choice take priority.</p>}
           <details className="source">
             <summary>What changes on this Step, and where this guidance comes from</summary>
             <p><strong>The one thing that changes:</strong> {step.variable.toLowerCase()}. Everything else stays as it is.</p>
@@ -736,7 +737,7 @@ function StepsView(): React.JSX.Element {
               const params = paramsForCard(s, card.id);
               const inUse = !s.variations && card.id === applied;
               return (
-                <label key={card.id} className="option" data-shown={isShown || undefined} data-in-use={inUse || undefined}>
+                <label key={card.id} className="option" data-shown={isShown || undefined} data-in-use={inUse || undefined} onClick={() => s.show(card.id)}>
                   <input id={`option-${card.id}`} type="radio" name="option" value={card.id} checked={isShown} onChange={() => s.show(card.id)} />
                   <Thumbnail html={shownThumbs[card.id] ?? thumbs[card.id] ?? ''} width={thumbWidth} ratio={thumbRatio} />
                   <span className="option-title">

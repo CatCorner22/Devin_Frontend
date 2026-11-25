@@ -1,7 +1,7 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
   DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent, keep, matchingOptionId,
-  nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
+  nextStepId, overlaysOf, ownedValues, parseProject, pick, pickValues, prevStepId, previewParams, revert, setOverlay, setReason, setSkin, skinCoversStep, skinsOf, startPlain, tune,
   type A11yProfile, type BriefNotes, type DesignParams, type Direction, type GeneratedOption, type MockupFocus, type MockupPage, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
@@ -62,6 +62,7 @@ export interface StudioState {
   stepId: string;
   /** The card on show in the large preview. Looking is not deciding. */
   shownId: string;
+  cardTouched: boolean;
   variations: Variations | null;
   /** Rises each time keyboard focus should move to the main thing on screen (the cards, or the page heading). */
   focusTick: number;
@@ -459,7 +460,7 @@ export const useStudio = create<StudioState>((set, get) => {
     const now = Date.now();
     const sameRun = burst !== undefined && lastBurst !== null && lastBurst.kind === burst && now - lastBurst.at < BURST_MS && get().history.length > 0;
     lastBurst = burst === undefined ? null : { kind: burst, at: now };
-    set(sameRun ? { project } : { project, history: [...get().history, before].slice(-HISTORY_MAX) });
+    set(sameRun ? { project, cardTouched: false } : { project, cardTouched: false, history: [...get().history, before].slice(-HISTORY_MAX) });
     persist();
   };
 
@@ -485,7 +486,7 @@ export const useStudio = create<StudioState>((set, get) => {
     // it arrives a moment after the move, and it took the focus away from a control that the person had already reached
     // (finding ISO-15: the focus left the Undo button for the card on show).
     const echo = samePlace && !push;
-    set({ view, stepId: step.id, variations: null, region: 'auto', shownId: appliedCardId(state.project, step), notice, focusTick: echo ? state.focusTick : state.focusTick + 1 });
+    set({ view, stepId: step.id, variations: null, region: 'auto', shownId: appliedCardId(state.project, step), cardTouched: echo ? state.cardTouched : false, notice, focusTick: echo ? state.focusTick : state.focusTick + 1 });
     const wanted = hashFor(view, step.id);
     if (window.location.hash !== wanted) {
       if (push) window.location.hash = wanted;
@@ -684,6 +685,7 @@ export const useStudio = create<StudioState>((set, get) => {
     view: 'directions',
     stepId: STEPS[0]!.id,
     shownId: STEPS[0]!.defaultOptionId,
+    cardTouched: false,
     variations: null,
     focusTick: 0,
     device: 'desktop',
@@ -779,11 +781,11 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     show(cardId) {
-      set({ shownId: cardId });
+      if (get().shownId !== cardId || !get().cardTouched) set({ shownId: cardId, cardTouched: true });
     },
 
     decideAndContinue() {
-      const { project, stepId, shownId, variations } = get();
+      const { project, stepId, shownId, variations, cardTouched } = get();
       const step = stepOf(stepId);
       const reasonBefore = project.decisions[stepId]?.reason;
       if (variations) {
@@ -796,6 +798,8 @@ export const useStudio = create<StudioState>((set, get) => {
         if (unchanged) commit(keep(project, stepId));
         else if (option) commit(pick(project, stepId, option));
         else commit(pickValues(project, stepId, values));
+      } else if (cardTouched && skinCoversStep(project, stepId) && step.options.some((o) => o.id === shownId)) {
+        commit(pick(project, stepId, shownId));
       } else if (shownId === appliedCardId(project, step) || !step.options.some((o) => o.id === shownId)) {
         // (A card name that this Step does not have counts as the design as it stands; it must never reach `pick`, which
         // refuses an unknown Option with an error. Code review, finding "gaps 3".)
@@ -805,7 +809,7 @@ export const useStudio = create<StudioState>((set, get) => {
         // design holds a fixed value there. The button names the Option, so the owner chooses it, and it follows from now
         // on. As a mere keep it stopped matching at the next change of the main color, without a word (campaign 4, round 3).
         const onShow = step.options.find((o) => o.id === shownId);
-        if (onShow?.derive && !project.decisions[stepId] && matchingOptionId(project.base, step) !== onShow.id) commit(pick(project, stepId, onShow.id));
+        if (!skinCoversStep(project, stepId) && onShow?.derive && !project.decisions[stepId] && matchingOptionId(project.base, step) !== onShow.id) commit(pick(project, stepId, onShow.id));
         else commit(keep(project, stepId));
       } else {
         commit(pick(project, stepId, shownId));
@@ -1066,7 +1070,7 @@ export const useStudio = create<StudioState>((set, get) => {
           : `Undone: the Steps ${touched.map((st) => `“${st.name}”`).join(' and ')} are back to how they were.`);
       const elsewhere = !wholeProject && first && first.id !== stepId ? first : null;
       set({
-        project: previous, history: history.slice(0, -1), variations: null, shownId: appliedCardId(previous, stepOf(stepId)),
+        project: previous, history: history.slice(0, -1), variations: null, cardTouched: false, shownId: appliedCardId(previous, stepOf(stepId)),
         notice: { text, ...(elsewhere ? { actions: [{ label: `Go to “${elsewhere.name}”`, run: () => get().go('steps', elsewhere.id) }] } : {}) },
       });
       persist();
