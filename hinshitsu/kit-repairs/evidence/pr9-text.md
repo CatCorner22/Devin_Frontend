@@ -28,7 +28,7 @@ This pull request repairs the North Star kit (`packages/kit`, the rules and page
   - H-reaudit2-2: the motion check blames a still placeholder in three narrow cases. A repair of it made the check miss moving placeholders and was taken back; the README states the limit.
   - From the first review of the kit: KIT-01, KIT-05 (in part), KIT-42, KIT-44, KIT-45, KIT-46.
 - **For the owner to decide:**
-  - H-adversarial-11 (also H-best-practices-1 and H-framework-drift-4): the test settings gained one line, which adds the tests of the dependency-audit script and removes none. Acceptance test C3(e) as worded forbids any change to that line. Accept the line, or reword the test.
+  - H-adversarial-11 (also H-best-practices-1 and H-framework-drift-4): the test settings gained one line, which adds the tests of the dependency-audit script and removes none. Acceptance test C3(e) as worded forbids any change to that line. The owner accepted the line on 2026-11-25 ("accept"), so these 3 rows, counted under "Needs the owner" in the table, are settled.
   - KIT-46: a further review of two simple signs needs the owner's approval.
   - M4 still waits on the owner's trial of the Studio (`docs/trial-guide.md`).
 - Research record `docs/research/11-north-star-gap-2026-11-24.md`: four ranked proposals toward the North Star, none built.
