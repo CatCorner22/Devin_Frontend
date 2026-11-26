@@ -17,7 +17,7 @@ function Rule({ entry, project }: { entry: CatalogEntry; project: Project }): Re
         const option = step?.options.find((option) => option.id === matchingOptionId(project.params, step));
         return <p key={ref.stepId}>Follows the Step <a href={`#${ref.stepId}`}>{step?.name}</a>{option ? `: ${option.label}.` : ': your current values.'}</p>;
       })}
-      <p><strong>How to check:</strong> {rule.check.kind === 'person' ? `A person reviews this. ${rule.check.ask}` : rule.check.kind === 'walk' ? `The Fitter must run the keyboard walk (${rule.check.walk}) on the built page.` : `The Fitter must run the page check (${[rule.check.fn, ...(rule.check.also ?? [])].join(', ')}) on the built page.`}</p>
+      <p><strong>How to check:</strong> {rule.check.kind === 'person' ? `A person reviews this. ${rule.check.ask}` : rule.check.kind === 'walk' ? 'The Fitter must try the built page with the keyboard and check focus, controls and closing each dialog.' : 'The Fitter must measure this rule on the built page and report what passed, failed or still needs a person.'}</p>
       <p><strong>What a person must still check:</strong> {entry.notChecked}</p>
       <p><strong>How strong the guidance is:</strong> {GRADES[rule.evidence]}. Written on {rule.reviewed}; no person has reviewed this Catalog entry yet.</p>
       <ul>{rule.sources.map((source, index) => <li key={index}>{source.title.replace(/the builder(?:'s|’s)?/gi, 'the assistant')}{source.section && ` — ${source.section}`}. ({BASES[source.basis]}){source.url && <> {source.url}</>}</li>)}</ul>

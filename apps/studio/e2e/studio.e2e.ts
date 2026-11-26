@@ -2472,7 +2472,7 @@ describe('Studio: Catalog craft and floors', () => {
       expect(await row.innerText()).toContain(entry.rule.sources[0]!.title.replace(/the builder(?:'s|’s)?/gi, 'the assistant'));
     }
     expect(await floors.innerText()).toContain('Required on public pages only');
-    expect(await floors.innerText()).toContain('75th percentile');
+    expect(await floors.innerText()).toContain('At least three quarters of real visits');
     await context.close();
   });
 
