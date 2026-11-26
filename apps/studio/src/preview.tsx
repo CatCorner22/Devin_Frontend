@@ -71,7 +71,7 @@ export function mockupHtml(project: Project, params: DesignParams, options: Mock
 export function PreviewPageControl(): React.JSX.Element {
   const page = useStudio((s) => s.previewPage);
   const change = useStudio((s) => s.setPreviewPage);
-  return <label className="inline-field"><span>Preview page</span><select value={page} onChange={(e) => change(e.target.value as MockupPage)}><option value="home">Home page</option><option value="contact">Contact page</option></select></label>;
+  return <><label className="inline-field"><span>Preview page</span><select value={page} onChange={(e) => change(e.target.value as MockupPage)}><option value="home">Home page</option><option value="contact">Contact page</option></select></label><details className="hint view-help"><summary>Views are not saved</summary><p>Viewing only: unpicked comparisons and the preview page are not saved Decisions. Reload returns to Home and the in-use choice.</p></details></>;
 }
 
 function useSize(): [React.RefObject<HTMLDivElement | null>, { width: number; height: number }] {
