@@ -521,7 +521,7 @@ function ReasonField({ stepId }: { stepId: string }): React.JSX.Element | null {
   useEffect(() => {
     if (stored !== typed.current.trim()) setText(stored);
   }, [stored]);
-  if (!decision) return null;
+  if (!decision) return <p className="hint">To add an optional reason after picking, return to this Step. The “Why this choice?” field will be here.</p>;
   return (
     <label className="reason">
       <span>Why this choice? (optional)</span>
