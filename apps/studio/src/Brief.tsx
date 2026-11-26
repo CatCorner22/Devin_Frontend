@@ -90,7 +90,8 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
         </fieldset>
         <fieldset><legend>Page text</legend>{PAGE_FIELDS.map(([key, label]) => field(key, label))}</fieldset>
         <fieldset><legend>Contact page</legend>
-          <p>This second page shares your contact details, form and design choices. Until edited here, its heading, introduction and visit directions use your existing contact heading, contact text and address. Step-card pictures stay on the home page.</p>
+          <p>This second page shares your contact details, form and design choices. Step-card pictures stay on the home page.</p>
+          <p>{c.contactPage ? 'All three fields now have separate values. Later changes to the shared contact heading, text or address will not change these copies.' : 'These fields follow the shared contact heading, text and address until you edit this group. Editing any one of these fields makes separate copies of all three, including the two you leave alone.'}</p>
           {([['title', 'Contact page heading'], ['intro', 'Contact page introduction'], ['directions', 'Contact page visit directions']] as const).map(([key, label]) => <TextField key={key} label={label} value={contactPageContent(c)[key]} sample={contactPageContent(SAMPLE_CONTENT)[key]} words={words} change={(value) => {
             s.setPreviewPage('contact'); setPreviewFocus('top');
             s.setContent({ ...c, contactPage: { ...contactPageContent(c), [key]: value } }, `contactPage:${key}`);
