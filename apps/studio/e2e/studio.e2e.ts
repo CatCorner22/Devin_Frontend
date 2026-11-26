@@ -2472,7 +2472,7 @@ describe('Studio: Catalog craft and floors', () => {
       expect(await row.innerText()).toContain(entry.rule.sources[0]!.title.replace(/the builder(?:'s|’s)?/gi, 'the assistant'));
     }
     expect(await floors.innerText()).toContain('Required on public pages only');
-    expect(await floors.innerText()).toContain('75th percentile');
+    expect(await floors.innerText()).toContain('At least three quarters of real visits');
     await context.close();
   });
 
@@ -2583,7 +2583,7 @@ describe('Studio: Brief', () => {
     await page.getByLabel('Words to avoid (one word or phrase per line)', { exact: true }).fill('supercharge\nseamlessly');
     await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('h1').innerText()).toBe(headline);
     await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('mark').innerText()).toBe('keep their stories');
-    expect(await page.frameLocator('.brief-preview iframe').locator('body').innerText()).not.toContain('Sample content for design preview.');
+    expect(await page.frameLocator('.brief-preview iframe').locator('body').innerText()).toContain('Sample content for design preview.');
     await settle(page);
     await page.reload();
     await page.getByLabel('Business name', { exact: true }).waitFor();
@@ -2707,7 +2707,7 @@ describe('Studio: Brief', () => {
     await page.getByRole('button', { name: 'Restore sample content' }).click();
     await page.getByRole('button', { name: 'Use the sample', exact: true }).click();
     expect(await page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Harbor Street Dental');
-    expect(await page.locator('.brief-editor').innerText()).toContain('This is sample content');
+    expect(await page.locator('.brief-editor').innerText()).toContain('Some page fields still match the sample');
     await page.locator('.banner').getByRole('button', { name: 'Undo', exact: true }).click();
     expect(await page.getByLabel('Business name', { exact: true }).inputValue()).toBe('Lorem ipsum');
     expect(await page.getByLabel('Who the page is for', { exact: true }).inputValue()).toBe('Local families');
@@ -2755,7 +2755,7 @@ describe('Studio: behavior Steps', () => {
     const frame = page.frameLocator('.brief-preview iframe');
     await expect.poll(() => frame.locator('h1').innerText()).toBe(title);
     expect(await frame.locator('.inner-intro').innerText()).toContain(directions);
-    expect(await page.locator('.brief-editor .note').count()).toBe(0);
+    expect(await page.locator('.brief-editor .note').innerText()).toContain('Some page fields still match the sample');
     await settle(page);
     await page.reload();
     await page.getByLabel('Contact page heading', { exact: true }).waitFor();

@@ -1,5 +1,5 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, availableMockupFocus, conflicts, effectiveParams, findOverlay, findSkin, findStep, hasSampleWords, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -398,8 +398,8 @@ function DirectionsView(): React.JSX.Element {
         <p className="teach">
           First pick a Direction below. Then {STEPS.length} short Steps let you change one thing at a time, like an eye exam: “which is better, 1 or 2?” You can stop at any point; the line under the top bar says whether your work is saved.
         </p>
-        <p className="teach">{isSampleContent(s.project.content) ? 'Every picture shows the same made-up dental practice, so that only the design differs. It is a sample; it is not your content.' : 'Every picture shows your words, so that only the design differs.'} <a href="#brief">Edit your Brief</a></p>
-        {started && <p className="note">You already have a project, started from {directionName(s.project, s.generated)}. If you start from another Direction, the Studio asks first, and you can undo it.</p>}
+        <p className="teach">Every picture uses the same current page text, so that only the design differs. {hasSampleWords(s.project.content) && 'Some page fields still match the sample for a made-up dental practice. Check them in the Brief.'} Notes for the Fitter do not appear in the pictures. <a href="#brief">Edit your Brief</a></p>
+        {started && <p className="note">You already have a project, started from {directionName(s.project, s.generated)}. {Object.keys(s.project.decisions).length ? 'If you start from another Direction, the Studio asks first.' : 'With no recorded Decisions, choosing another Direction switches immediately.'} You can undo it.</p>}
       </div>
       {/* The Directions stand in groups, each under a plain heading. On a wide window every group is open; on a narrow one
           only the first is, so that the person meets four headings and not thirty-five cards in a row. */}
@@ -521,7 +521,7 @@ function ReasonField({ stepId }: { stepId: string }): React.JSX.Element | null {
   useEffect(() => {
     if (stored !== typed.current.trim()) setText(stored);
   }, [stored]);
-  if (!decision) return null;
+  if (!decision) return <p className="hint">To add an optional reason after picking, return to this Step. The “Why this choice?” field will be here.</p>;
   return (
     <label className="reason">
       <span>Why this choice? (optional)</span>
@@ -662,7 +662,7 @@ function StepsView(): React.JSX.Element {
           <label className="inline-field">
             <span>Show this part of the page</span>
             <select id="preview-region" value={s.region} onChange={(e) => s.setRegion(e.target.value as MockupFocus | 'auto')}>
-              {REGIONS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+              {REGIONS.filter((r) => r.id === 'auto' || availableMockupFocus(s.previewPage, r.id) === r.id).map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
           </label>
           {step.stage === 'structure' && (

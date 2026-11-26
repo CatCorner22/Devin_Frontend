@@ -1,4 +1,4 @@
-import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, contactPageContent, effectiveParams, isSampleContent, type BriefNotes, type MockupFocus, type SiteContent } from '@refraction/core';
+import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, contactPageContent, effectiveParams, hasSampleWords, type BriefNotes, type MockupFocus, type SiteContent } from '@refraction/core';
 import { placeholderIn } from '@refraction/kit';
 import { useEffect, useId, useRef, useState } from 'react';
 import { LargePreview, PreviewPageControl, mockupHtml } from './preview';
@@ -27,7 +27,7 @@ function TextField({ label, value, sample, words, change, warning, max = 600 }: 
   const placeholder = placeholderIn(value);
   const messages = [
     warning,
-    value && sample === value ? 'This still holds the sample’s words. Replace them when you are ready.' : undefined,
+    value && sample === value ? 'This matches the sample. Keep it if these are the words you want.' : undefined,
     placeholder ? `This may be made-up or generic text (“${placeholder}”). Check that it is what you want.` : undefined,
     avoids(value, words) ? 'This uses a word or phrase on your words-to-avoid list.' : undefined,
   ].filter(Boolean);
@@ -80,7 +80,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
         <p>{BRIEF_STAGE.teach}</p>
         <p>Warnings only warn. They never stop saving. Text fields accept up to 600 characters. The status line above tells you whether saving worked.</p>
         <p>The preview follows the page section you edit.</p>
-        {isSampleContent(c) && <p className="note">This is sample content for a made-up dental practice, not your content.</p>}
+        {hasSampleWords(c) && <p className="note">Some page fields still match the sample for a made-up dental practice. Check the marked fields below, even after editing others. Matching words are not proof that they are wrong; keep them if they are what you want.</p>}
         <fieldset><legend>Notes for the Fitter (the AI coding assistant that will build your page)</legend>
           <p>These notes travel in the project file. They do not appear as text on the page.</p>
           {note('whatItDoes', 'What your business does')}{note('audience', 'Who the page is for')}{note('mainJob', 'The one thing a visitor should do')}
@@ -90,7 +90,8 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
         </fieldset>
         <fieldset><legend>Page text</legend>{PAGE_FIELDS.map(([key, label]) => field(key, label))}</fieldset>
         <fieldset><legend>Contact page</legend>
-          <p>This second page shares your contact details, form and design choices. Until edited here, its heading, introduction and visit directions use your existing contact heading, contact text and address. Step-card pictures stay on the home page.</p>
+          <p>This second page shares your contact details, form and design choices. Step-card pictures stay on the home page.</p>
+          <p>{c.contactPage ? 'All three fields now have separate values. Later changes to the shared contact heading, text or address will not change these copies.' : 'These fields follow the shared contact heading, text and address until you edit this group. Editing any one of these fields makes separate copies of all three, including the two you leave alone.'}</p>
           {([['title', 'Contact page heading'], ['intro', 'Contact page introduction'], ['directions', 'Contact page visit directions']] as const).map(([key, label]) => <TextField key={key} label={label} value={contactPageContent(c)[key]} sample={contactPageContent(SAMPLE_CONTENT)[key]} words={words} change={(value) => {
             s.setPreviewPage('contact'); setPreviewFocus('top');
             s.setContent({ ...c, contactPage: { ...contactPageContent(c), [key]: value } }, `contactPage:${key}`);

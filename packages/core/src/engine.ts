@@ -936,7 +936,11 @@ function withinReach(params: DesignParams): { params: DesignParams; moved: numbe
   return { params: out, moved };
 }
 
-function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { project: Project; notes: string[] } {
+export function projectNameText(name: string): string {
+  return name.replace(/\p{Bidi_Control}/gu, '');
+}
+
+function normalize(data: z.infer<typeof projectSchema>, migrated: boolean, omittedDecisions: number): { project: Project; notes: string[] } {
   assertKnownParams(data.params as unknown as DesignParams);
   assertKnownParams(data.base as unknown as DesignParams);
   const reachable = withinReach(data.params as unknown as DesignParams);
@@ -944,7 +948,7 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   const base = withinReach(data.base as unknown as DesignParams).params;
   const notes: string[] = [];
   if (reachable.moved > 0) notes.push(reachable.moved === 1 ? 'One design value in the file lay outside what the Studio can set. The Studio brought it to the nearest value that it can set, and the design changed with it.' : `${reachable.moved} design values in the file lay outside what the Studio can set. The Studio brought each to the nearest value that it can set, and the design changed with them.`);
-  let dropped = 0;
+  let dropped = omittedDecisions;
   let relabelled = 0;
   let corrected = 0;
   let shortened = 0;
@@ -998,7 +1002,9 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   // The Skin's name stays only when this Direction offers that Skin; the colors are in the design values either way.
   const skin = !data.skinLayer?.off && data.skin !== undefined && offersSkin(direction, data.skin) ? data.skin : undefined;
   if (data.skin !== undefined && skin === undefined) notes.push(data.skinLayer?.off ? 'The file marks its Skin as off. The Skin name was left out; the saved colors are unchanged.' : 'The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
-  const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
+  const name = projectNameText(data.name);
+  if (name !== data.name) notes.push('Direction-changing formatting marks were removed from the project name. Its letters are unchanged.');
+  const project: Project = { schemaVersion: SCHEMA_VERSION, name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
   if (data.skinLayer) {
     const overrides = [...new Set(data.skinLayer.overrides)].filter((id) => findStep(id)?.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
     if (overrides.length !== data.skinLayer.overrides.length) notes.push('The file repeats a Skin exception or names a Step that cannot change a Skin color. Those entries were left out.');
@@ -1032,7 +1038,8 @@ export function parseProject(input: unknown): ParseResult {
     return { ok: false, error: section ? `The file does not match the project format. The problem is in the part that holds ${SECTION_WORDS[section]}.` : NOT_A_PROJECT };
   }
   try {
-    const { project, notes } = normalize(result.data, version !== SCHEMA_VERSION);
+    const omittedDecisions = isRecord(candidate) && isRecord(candidate['decisions']) ? Object.entries(candidate['decisions']).filter(([key]) => !Object.hasOwn(result.data.decisions, key)) : [];
+    const { project, notes } = normalize(result.data, version !== SCHEMA_VERSION, omittedDecisions.length);
     return { ok: true, project, migratedFrom: version === SCHEMA_VERSION ? null : version, notes };
   } catch {
     return { ok: false, error: 'The file does not match the project format. The problem is in the part that holds the design values.' };

@@ -1,7 +1,7 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
-  DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent,
-  nextStepId, overlaysOf, ownedValues, parseProject, prevStepId, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
+  DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, availableMockupFocus, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent,
+  nextStepId, overlaysOf, ownedValues, parseProject, prevStepId, projectNameText, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
   type A11yProfile, type BriefNotes, type DesignParams, type Direction, type MockupFocus, type MockupPage, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
@@ -885,12 +885,13 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     rename(name) {
-      commit({ ...get().project, name: name.slice(0, 120) }, 'name');
+      const text = projectNameText(name).slice(0, 120);
+      commit({ ...get().project, name: text }, 'name');
+      if (text !== name) set({ notice: { text: 'Direction-changing formatting marks were removed from the project name. Its letters are unchanged.' } });
     },
 
     setContent(content, field) {
-      const note = content.footerNote === SAMPLE_CONTENT.footerNote && !isSampleContent(content) ? '' : content.footerNote;
-      commit({ ...get().project, content: { ...content, footerNote: note } }, field === undefined ? undefined : `content:${field}`);
+      commit({ ...get().project, content }, field === undefined ? undefined : `content:${field}`);
     },
 
     setBrief(brief, field) {
@@ -928,7 +929,8 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     setPreviewPage(previewPage) {
-      set({ previewPage });
+      const region = get().region;
+      set({ previewPage, region: region === 'auto' ? region : availableMockupFocus(previewPage, region) });
     },
     setDevice(device) {
       set({ device });
@@ -1004,7 +1006,10 @@ export const useStudio = create<StudioState>((set, get) => {
         ? now.name !== previous.name ? `Undone: the project’s name is “${plainName(previous.name)}” again.`
           : now.a11y !== previous.a11y ? 'Undone: the Contrast checks setting is back to how it was.'
             : differs(overlaysOf(now), overlaysOf(previous)) ? 'Undone: the Overlays are back to how they were.'
-              : null
+              : differs(now.content, previous.content) ? 'Undone: your page text is back to how it was.'
+                : differs(now.brief, previous.brief) ? 'Undone: your Brief notes are back to how they were.'
+                  : now.skin !== previous.skin || differs(now.skinLayer, previous.skinLayer) ? `Undone: the Skin is back to ${previous.skin ? `“${findSkin(previous.skin)?.name ?? 'the previous Skin'}”` : 'No Skin'}.`
+                    : null
         : null;
       const text = small
         ?? (wholeProject || !first
