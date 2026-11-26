@@ -1,5 +1,8 @@
 # Red-team findings
 
+- M5R-2 — reproduced in Chromium after changing the Brief’s business name and notes: Directions disclosed remaining sample fields, Summary did not. Summary now uses the identical Directions sentence, including the Brief pointer, in its main text rather than consuming picture height. The browser regression navigates both real screens and asserts the full shared wording. The first combined browser attempt exposed a regression-test navigation race (it read the old Brief immediately after clicking); added the destination-heading wait, then completed the full suite. Existing helper tests retain all-sample, mixed, empty and nonmatching-field cases. Final combined checks pass: 2,384 unit tests and all 727 browser tests, exit 0; no timeout or coverage change.
+
+
 - M5R-1 — reproduced in pinned Chromium: importing `Invoice \\u202Efdp.exe` saved `Invoice fdp.exe`, changing owner text. Keep imported and typed names verbatim in project state, JSON round trips and browser saving; hide formatting controls only in the name input and existing notice/filename presentation paths. The disclosure now says the saved name is unchanged. Unit regressions retain ordinary RTL letters, blank names, invalid-type rejection and exact repeat-open preservation; browser regressions cover typing, importing and reload with sanitized display. Updated all four saving-table references/behaviors. Combined verification: `npm run check` passes 2,384/2,384; pinned-Chromium full e2e passes 727/727 in 27 files (2,657.79s), both exit 0. This supersedes M5G-S-2’s stored-name normalization, not its presentation-spoofing protection.
 
 

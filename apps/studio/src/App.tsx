@@ -996,6 +996,7 @@ function SummaryView(): React.JSX.Element {
       <div className="summary-main">
         <p className="eyebrow">Summary</p>
         <h1 ref={heading} tabIndex={-1}>Your Decisions, read back</h1>
+        {hasSampleWords(s.project.content) && <p className="hint">Some page fields still match the sample for a made-up dental practice. Check them in the Brief.</p>}
         <p className="teach">
           You have decided {decided} of {STEPS.length} Steps. This project started from {directionName(s.project, s.generated)}; a Step you have not decided keeps the value it started with.
         </p>

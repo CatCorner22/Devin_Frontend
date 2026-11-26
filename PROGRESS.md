@@ -1,5 +1,11 @@
 # Progress
 
+## M5 gate re-check: Summary sample wording (2026-11-26)
+
+- M5R-2 reproduced and repaired: Summary now repeats Directions’ full sample-field disclosure, with a pointer to the Brief. It sits in the main text, preserving preview height. The browser regression waits for each destination screen and checks the full wording on both; existing helper tests cover complete sample text, mixed fields, empty drafts and unrelated equal words.
+- A first combined browser attempt stopped after the new test read Brief before Directions rendered. That was a test synchronization bug, not a missing product repair; after the heading wait, the complete run passes 27/27 files and 727/727 tests in 2,657.79s (exit 0). The final `npm run check` passes 26/26 files and 2,384/2,384 tests in 25.73s (exit 0). M5 remains open.
+
+
 ## M5 gate re-check: preserve project names (2026-11-26)
 
 - M5R-1 reproduced: importing a name with a direction-control character changed the saved name. Imported and typed names now stay verbatim in project state and saving; only presentation strips the controls, and the disclosure states that storage is unchanged. Updated the saving table and its exact test links.
