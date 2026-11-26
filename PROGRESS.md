@@ -1,5 +1,11 @@
 # Progress
 
+## PR #16 review: Brief viewing help (2026-11-26)
+
+- Reproduced at `15a48d0`: the desktop help paragraph ended at y=765.5 beyond the 720px viewport. Brief now uses the same positioned preview-control bar as other screens, so the absolute help panel anchors to its own controls. Browser regression opens and closes it and checks every viewport edge.
+- Verified with the same final quality and five-file browser run above: 1,352 unit tests and 149 browser tests pass, exits 0. Screenshot: `/home/ubuntu/m5-brief-help-after.png`. Both reviewed surfaces were visually checked; M5 remains open.
+
+
 ## PR #16 review: landscape Brief (2026-11-26)
 
 - Reproduced on the reviewed head `15a48d0`: the live picture measured zero pixels high at 640×360 with touch. Mobile Brief sizing now reserves at least eight rem for the picture rather than allocating the whole pane a viewport fraction; short screens use normal scrolling instead of a sticky obstruction. Browser regression checks live owner text and visible picture geometry.

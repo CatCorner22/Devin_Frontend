@@ -1,5 +1,8 @@
 # Red-team findings
 
+- PR16-R2 — reproduced at `15a48d0`: the desktop Brief help panel extended to y=765.5 in a 720px viewport. Anchor it with the shared `.preview-bar` wrapper. Regression: `brief-view-help.e2e.ts` checks opening, viewport bounds and closing; quality and all five affected browser files pass.
+
+
 ## PR #16 follow-up review
 
 - PR16-R1 — reproduced at `15a48d0` in touch Chromium, 640×360: picture height 0. Repair mobile intrinsic sizing and reserve picture space; short screens scroll normally. Regression: `brief-landscape.e2e.ts`. Quality and all five affected browser files pass (1,352 unit tests; 149 browser tests).

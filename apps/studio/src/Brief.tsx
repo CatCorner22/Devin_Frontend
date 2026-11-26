@@ -107,7 +107,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
       </div>
       <aside className="brief-preview" aria-label="Your words as a picture">
         <h2>Your page as you type</h2>
-        <PreviewPageControl />
+        <div className="preview-bar"><PreviewPageControl /></div>
         <LargePreview html={html.html} width={DEVICE_WIDTH[s.device]} title="Large preview of your Brief" />
       </aside>
     </main>
