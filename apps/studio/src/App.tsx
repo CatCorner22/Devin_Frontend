@@ -399,7 +399,7 @@ function DirectionsView(): React.JSX.Element {
           First pick a Direction below. Then {STEPS.length} short Steps let you change one thing at a time, like an eye exam: “which is better, 1 or 2?” You can stop at any point; the line under the top bar says whether your work is saved.
         </p>
         <p className="teach">Every picture uses the same current page text, so that only the design differs. {hasSampleWords(s.project.content) && 'Some page fields still match the sample for a made-up dental practice. Check them in the Brief.'} Notes for the Fitter do not appear in the pictures. <a href="#brief">Edit your Brief</a></p>
-        {started && <p className="note">You already have a project, started from {directionName(s.project, s.generated)}. If you start from another Direction, the Studio asks first, and you can undo it.</p>}
+        {started && <p className="note">You already have a project, started from {directionName(s.project, s.generated)}. {Object.keys(s.project.decisions).length ? 'If you start from another Direction, the Studio asks first.' : 'With no recorded Decisions, choosing another Direction switches immediately.'} You can undo it.</p>}
       </div>
       {/* The Directions stand in groups, each under a plain heading. On a wide window every group is open; on a narrow one
           only the first is, so that the person meets four headings and not thirty-five cards in a row. */}
