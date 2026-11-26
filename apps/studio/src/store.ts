@@ -1,7 +1,7 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
   DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent,
-  nextStepId, overlaysOf, ownedValues, parseProject, prevStepId, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
+  nextStepId, overlaysOf, ownedValues, parseProject, prevStepId, projectNameText, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
   type A11yProfile, type BriefNotes, type DesignParams, type Direction, type MockupFocus, type MockupPage, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
 import { create } from 'zustand';
@@ -885,7 +885,9 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     rename(name) {
-      commit({ ...get().project, name: name.slice(0, 120) }, 'name');
+      const text = projectNameText(name).slice(0, 120);
+      commit({ ...get().project, name: text }, 'name');
+      if (text !== name) set({ notice: { text: 'Direction-changing formatting marks were removed from the project name. Its letters are unchanged.' } });
     },
 
     setContent(content, field) {

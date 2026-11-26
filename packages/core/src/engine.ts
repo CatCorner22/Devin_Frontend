@@ -936,6 +936,10 @@ function withinReach(params: DesignParams): { params: DesignParams; moved: numbe
   return { params: out, moved };
 }
 
+export function projectNameText(name: string): string {
+  return name.replace(/\p{Bidi_Control}/gu, '');
+}
+
 function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { project: Project; notes: string[] } {
   assertKnownParams(data.params as unknown as DesignParams);
   assertKnownParams(data.base as unknown as DesignParams);
@@ -998,7 +1002,9 @@ function normalize(data: z.infer<typeof projectSchema>, migrated: boolean): { pr
   // The Skin's name stays only when this Direction offers that Skin; the colors are in the design values either way.
   const skin = !data.skinLayer?.off && data.skin !== undefined && offersSkin(direction, data.skin) ? data.skin : undefined;
   if (data.skin !== undefined && skin === undefined) notes.push(data.skinLayer?.off ? 'The file marks its Skin as off. The Skin name was left out; the saved colors are unchanged.' : 'The file names a Skin that this version of the Studio does not offer for this Direction. The name was left out; the colors are unchanged.');
-  const project: Project = { schemaVersion: SCHEMA_VERSION, name: data.name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
+  const name = projectNameText(data.name);
+  if (name !== data.name) notes.push('Direction-changing formatting marks were removed from the project name. Its letters are unchanged.');
+  const project: Project = { schemaVersion: SCHEMA_VERSION, name, template: data.template, a11y: data.a11y, direction, base, params, decisions: Object.fromEntries(decisions), content: data.content, ...(overlays.length > 0 ? { overlays } : {}), ...(skin !== undefined ? { skin } : {}) };
   if (data.skinLayer) {
     const overrides = [...new Set(data.skinLayer.overrides)].filter((id) => findStep(id)?.owns.some((key) => (SKIN_COLOR_KEYS as readonly string[]).includes(key)));
     if (overrides.length !== data.skinLayer.overrides.length) notes.push('The file repeats a Skin exception or names a Step that cannot change a Skin color. Those entries were left out.');
