@@ -1,4 +1,4 @@
-import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, contactPageContent, effectiveParams, isSampleContent, type BriefNotes, type MockupFocus, type SiteContent } from '@refraction/core';
+import { BRIEF_STAGE, EMPTY_BRIEF, SAMPLE_CONTENT, contactPageContent, effectiveParams, hasSampleWords, type BriefNotes, type MockupFocus, type SiteContent } from '@refraction/core';
 import { placeholderIn } from '@refraction/kit';
 import { useEffect, useId, useRef, useState } from 'react';
 import { LargePreview, PreviewPageControl, mockupHtml } from './preview';
@@ -27,7 +27,7 @@ function TextField({ label, value, sample, words, change, warning, max = 600 }: 
   const placeholder = placeholderIn(value);
   const messages = [
     warning,
-    value && sample === value ? 'This still holds the sample’s words. Replace them when you are ready.' : undefined,
+    value && sample === value ? 'This matches the sample. Keep it if these are the words you want.' : undefined,
     placeholder ? `This may be made-up or generic text (“${placeholder}”). Check that it is what you want.` : undefined,
     avoids(value, words) ? 'This uses a word or phrase on your words-to-avoid list.' : undefined,
   ].filter(Boolean);
@@ -80,7 +80,7 @@ export function BriefView({ children }: { children: React.ReactNode }): React.JS
         <p>{BRIEF_STAGE.teach}</p>
         <p>Warnings only warn. They never stop saving. Text fields accept up to 600 characters. The status line above tells you whether saving worked.</p>
         <p>The preview follows the page section you edit.</p>
-        {isSampleContent(c) && <p className="note">This is sample content for a made-up dental practice, not your content.</p>}
+        {hasSampleWords(c) && <p className="note">Some page fields still match the sample for a made-up dental practice. Check the marked fields below, even after editing others. Matching words are not proof that they are wrong; keep them if they are what you want.</p>}
         <fieldset><legend>Notes for the Fitter (the AI coding assistant that will build your page)</legend>
           <p>These notes travel in the project file. They do not appear as text on the page.</p>
           {note('whatItDoes', 'What your business does')}{note('audience', 'Who the page is for')}{note('mainJob', 'The one thing a visitor should do')}

@@ -171,7 +171,7 @@ export function LargePreview({ html, width, title, replay = 0 }: LargePreviewPro
 
   return (
     <div ref={ref} className="large-preview" data-focus-inside={inside || undefined}>
-      <span className="sample-tag" aria-hidden="true">Sample website</span>
+      <span className="sample-tag" aria-hidden="true">Website preview</span>
       {scale > 0 && (
         <iframe
           key={key}
