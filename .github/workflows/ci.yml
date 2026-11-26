@@ -9,13 +9,12 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  quality:
     runs-on: ubuntu-latest
-    # The browser tests take about nine minutes on a developer machine since the width, headline, and page-database tests
-    # were added (2026-11-13). The limit leaves room for a slower machine; a run that hangs still ends.
     timeout-minutes: 25
+    outputs:
+      browser-files: ${{ steps.browser-files.outputs.files }}
     steps:
-      # Actions are pinned by commit hash so that a moved tag cannot change what runs.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -35,9 +34,44 @@ jobs:
         run: npm test
       - name: Licence notices are current
         run: node scripts/make-notices.mjs --check
-      - name: Install the test browser
-        run: npx playwright install --with-deps chromium
-      - name: End-to-end tests (builds the page, checks its size, drives it in a browser)
-        run: npm run e2e
       - name: Dependency audit
         run: npm run audit:deps
+      - name: Find every browser test file
+        id: browser-files
+        run: echo "files=$(node scripts/e2e-files.mjs)" >> "$GITHUB_OUTPUT"
+
+  browser:
+    needs: quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        file: ${{ fromJSON(needs.quality.outputs.browser-files) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install (exact versions, no install scripts)
+        run: npm ci --ignore-scripts
+      - name: Install the test browser
+        run: npx playwright install --with-deps chromium
+      - name: Build the page and check its size
+        run: npm run build:page && npm run size
+      - name: Run this browser test file
+        env:
+          E2E_FILE: ${{ matrix.file }}
+        run: npx vitest run --config vitest.e2e.config.ts "$E2E_FILE"
+
+  check:
+    if: always()
+    needs: [quality, browser]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Every quality check and browser shard succeeded
+        run: test "${{ needs.quality.result }}" = success && test "${{ needs.browser.result }}" = success

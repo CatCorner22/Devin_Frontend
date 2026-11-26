@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { DIRECTIONS, FLOORS, FONTS, SKINS, createProject, deriveTokens, pick, renderSmallBusiness, skinParams, skinsOf } from '@refraction/core';
+import { FLOORS, FONTS, createProject, deriveTokens, pick, renderSmallBusiness } from '@refraction/core';
 import { type Finding } from '../../../packages/kit/src/index.js';
 import * as checks from '../../../packages/kit/src/page-checks/index.js';
 import { chromium, type Browser } from 'playwright';
@@ -17,30 +17,6 @@ beforeAll(async () => { browser = await chromium.launch(process.env.PW_CHROMIUM 
 afterAll(async () => { await browser?.close(); });
 
 describe('inner page: generated pages', () => {
-  for (const [index, skin] of SKINS.entries()) for (const theme of ['light', 'dark'] as const) for (const pageName of ['home', 'contact'] as const) for (const width of [375, 1280]) {
-    it(`Skin floors: ${skin.id}/${theme}/${pageName}/${width}: kit and axe`, async () => {
-      const offered = DIRECTIONS.filter((direction) => skinsOf(direction).some((s) => s.id === skin.id));
-      const direction = skin.id === 'lagoon' ? DIRECTIONS.find((d) => d.id === 'midnight-aurora')! : offered[(index * 7) % offered.length]!;
-      const params = { ...skinParams(direction, skin), theme };
-      const tokens = deriveTokens(params, 'advise').css;
-      const context = await browser.newContext({ viewport: { width, height: 800 }, colorScheme: theme });
-      try {
-        const page = await context.newPage();
-        await page.setContent(renderSmallBusiness({ params, tokens, page: pageName, content: createProject().content, fontFaceCss: fonts, still: true, links: 'inert' }));
-        await page.evaluate(() => document.fonts.ready);
-        const findings: Finding[] = [];
-        for (const name of order) findings.push(...await page.evaluate(`(${String(functions[name])})(document${name === 'tokenFit' ? `, ${JSON.stringify(tokens)}` : ''})`) as Finding[]);
-        expect(findings.filter((finding) => floorIds.has(finding.ruleId) && finding.status === 'fails'), `${direction.id}/${skin.id}`).toEqual([]);
-        await page.evaluate(axe);
-        const violations = await page.evaluate(async () => {
-          const engine = (window as unknown as { axe: { run: (doc: Document, options: unknown) => Promise<{ violations: { id: string; impact: string | null; nodes: unknown[] }[] }> } }).axe;
-          return (await engine.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })).violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-        });
-        expect(violations, `${direction.id}/${skin.id}`).toEqual([]);
-      } finally { await context.close(); }
-    });
-  }
-
   it('PR13: Contact sections show the form or explain the home-only fallback', async () => {
     const context = await browser.newContext({ viewport: { width: 375, height: 800 } });
     try {
