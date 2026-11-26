@@ -617,7 +617,7 @@ export function renderSmallBusiness(input: MockupInput): string {
   const errorStyle = p.errorState ?? 'inline';
   const summaryError = showError && errorStyle !== 'inline';
   const inlineError = showError && errorStyle !== 'summary';
-  const nav = c.nav.map((n, i) => `<li><a ${link('#main')}${i === 0 ? ' aria-current="page"' : ''}>${t(n)}</a></li>`).join('');
+  const nav = c.nav.map((n) => `<li><a ${link('#main')}>${t(n)}</a></li>`).join('');
 
   return `<!doctype html>
 <html lang="en">
