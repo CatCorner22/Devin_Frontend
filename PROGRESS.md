@@ -1,5 +1,14 @@
 # Progress
 
+## CI repair (2026-11-26; M5 remains open)
+
+- The former sequential 25-minute job cancelled; it did not complete the browser suite or dependency audit. The integration called this skipped, which was not a pass.
+- Quality checks now run the dependency audit before a complete, recursively discovered browser-file matrix. All files still run; each job keeps the 25-minute limit, and the required aggregate check fails on any quality or shard failure. Skin floor cases are split across four page/theme files without dropping cases.
+- The fixed-floor/profile unit check now runs per design with full-visit and repair-count guards; its original five-second limit and assertions remain.
+- Local `npm run check`: exit 0; 18 files, 1,341 tests, unit phase 24.93s. Final GitHub check states are reported in the CI-loop handoff; this entry records the configuration and local result, not an assumed CI pass.
+
+
+
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
 ## M5 unit 5: in-project Skin changes (2026-11-25)
