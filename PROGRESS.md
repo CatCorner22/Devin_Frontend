@@ -1,5 +1,15 @@
 # Progress
 
+## PR #16 combined review round: local verification (2026-11-26)
+
+- Separate fixes: landscape Brief picture (`879f913`), anchored viewing help (`e3ca42f`), bounded unit matrix cases (`0b32773`), verbatim project names (`1ccee25`), and Summary sample wording (`05b208c`). Each reported behavior reproduced before repair; each has regression coverage. D81 now names Devin Review on every PR and links its 14 findings on PR #14, including a concrete reset example.
+- Final `npm run check`: 26 files passed; 2,384 tests passed; unit duration 25.73s; exit 0. Log: `/home/ubuntu/m5-pr16-check-final.log`.
+- Final pinned-Chromium `npm run e2e`: 27 files passed; 727 tests passed; 2,657.79s; exit 0. Log: `/home/ubuntu/m5-pr16-final-e2e.log`. Bundle 1,310 KB is below the unchanged 1,600 KB budget; the existing Vite single-chunk warning remains, not an environment-loading error.
+- Concurrent-load acceptance: full check passed all 2,384 tests while the complete 112-case catalog walk remained active (both exit 0). The two repaired matrix sweeps also passed 1,034 selected cases under the exact single-CPU diagnostic contention. The full single-CPU diagnostic had five other timeout failures; no claim is made that every aggregate sweep is robust under arbitrary CPU starvation.
+- Visually inspected the two Brief repairs: `/home/ubuntu/m5-brief-landscape-after.png`, `/home/ubuntu/m5-brief-help-after.png`. Other re-check UI changes have browser assertions but no new manual visual inspection.
+- One combined branch push follows; the PR #16 CI loop must inspect every job, including any skipped/cancelled result, and its final state is reported in the handoff. No timeout, coverage, rule or job limit was weakened. M5 remains open for independent re-review and person-only checks; no WAYPOINTS row, M6 or M7 work.
+
+
 ## M5 gate re-check: Summary sample wording (2026-11-26)
 
 - M5R-2 reproduced and repaired: Summary now repeats Directions’ full sample-field disclosure, with a pointer to the Brief. It sits in the main text, preserving preview height. The browser regression waits for each destination screen and checks the full wording on both; existing helper tests cover complete sample text, mixed fields, empty drafts and unrelated equal words.
