@@ -724,7 +724,7 @@ function StepsView(): React.JSX.Element {
             <span className="hint-keys">Click a card to see it large. Keys 1 to {Math.min(cards.length, 9)} do the same{cards.length > 9 ? '; the arrow keys reach every card' : ''}. Enter picks the card on show.</span>
             <span className="hint-touch">Tap a card to see it large. Then tap the main button to pick it.</span>
           </p>
-          <section className="about" aria-live="polite">
+          <section className="about" aria-label="About the selected Option" aria-live="polite" tabIndex={0}>
             <h2>{shown.label}</h2>
             <p>{shown.what}</p>
             {shown.chooseWhen && <p><strong>Pick it when:</strong> {shown.chooseWhen}</p>}

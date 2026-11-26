@@ -5,11 +5,19 @@
 - The former sequential 25-minute job cancelled; it did not complete the browser suite or dependency audit. The integration called this skipped, which was not a pass.
 - Quality checks now run the dependency audit before a complete, recursively discovered browser-file matrix. All files still run; each job keeps the 25-minute limit, and the required aggregate check fails on any quality or shard failure. Skin floor cases are split across four page/theme files without dropping cases.
 - The fixed-floor/profile unit check now runs per design with full-visit and repair-count guards; its original five-second limit and assertions remain.
-- Local `npm run check`: exit 0; 18 files, 1,341 tests, unit phase 24.93s. Final GitHub check states are reported in the CI-loop handoff; this entry records the configuration and local result, not an assumed CI pass.
-
-
+- Carried the PR #14 fixes into this branch. The Catalog walk also runs 112 single-Step/single-page-theme cases under the existing 90-second limit, with exact guards for all 528 Mockup and 28 Studio audits.
+- Local `npm run check`: exit 0; 19 files, 1,343 tests, unit phase 25.43s. PR #14's corresponding local check passes 18 files/1,341 tests in 24.93s.
+- Merged the updated PR #14 base without rewriting history. The conflict was only this progress entry; code and verification inputs are unchanged. Final GitHub check states on the merged head are reported in the CI-loop handoff, not assumed from local checks.
 
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
+
+## M5 unit 6: Catalog exit walk (2026-11-25)
+
+- `3f987a3` adds one browser test derived from the Catalog: **28 Steps, 132 Options, 528 Mockup audits and 28 Studio-screen audits**. Four contexts walk every Step in the rail's order, explicitly pick every Option through native owner controls, and inspect the resulting iframe document on Home/Contact and light/dark starts. The Theme Step's Options set their own rendered theme, which the test verifies and includes in failure details. Every other Step uses the scenario's theme. Each Studio Step screen is audited once, distributed across the contexts. Failure labels include Step, Option, page and theme. A unit guard checks exact Catalog coverage, unique entries, all four scenarios, empty input and synthetic future records.
+- Before repair the completed walk found **two serious `scrollable-region-focusable` findings**, on the Neutral colors and Corner shape Studio screens; no serious/critical Mockup finding appeared across the 528 audits. The shared cause was `.about`: fixed-height Option notes could overflow, but had no keyboard focus target. The same commit names the region and makes it focusable, preserving its stable height. The final walk passes with **zero serious or critical findings**. No rule, Option, threshold or timeout was excluded or relaxed.
+- Early attempts exceeded the existing 90-second limit. The final test uses browser Back after Pick instead of repeating a rail lookup, and audits each Studio screen once rather than duplicating it by theme. It keeps all 528 Mockup audits. The passing file took **83.05 seconds**, recorded by Vitest's results cache. Production Mockups remain script-free and sandboxed; only the test copy of the large iframe receives `allow-scripts` for axe's asynchronous checks, with authored sandbox, zero scripts and unchanged `srcdoc` checked on every audit.
+- Final `npm run check`: exit 0, 18 files/346 tests, 24.36s. One full pinned-Chromium `npm run e2e` on the repaired head: exit 0, 7 files/600 tests, 2468.17s. App.js is 1307 KB against the unchanged 1600 KB budget. Logs: `/home/ubuntu/m5-exit-{check-final,e2e-final,walk-latest}.log`. Existing build deprecation/chunk-size warnings remain.
+- **M5 is not complete.** Independent security, first-user and drift/truth reviews, manual visual inspection and recorded person-only checks remain open; no reviewer/session-creation tool is available. No WAYPOINTS row, M6 work or M7 work was added.
 
 ## M5 unit 5: in-project Skin changes (2026-11-25)
 
