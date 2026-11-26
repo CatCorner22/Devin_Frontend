@@ -889,8 +889,7 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     setContent(content, field) {
-      const note = content.footerNote === SAMPLE_CONTENT.footerNote && !isSampleContent(content) ? '' : content.footerNote;
-      commit({ ...get().project, content: { ...content, footerNote: note } }, field === undefined ? undefined : `content:${field}`);
+      commit({ ...get().project, content }, field === undefined ? undefined : `content:${field}`);
     },
 
     setBrief(brief, field) {

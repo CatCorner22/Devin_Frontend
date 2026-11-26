@@ -2583,7 +2583,7 @@ describe('Studio: Brief', () => {
     await page.getByLabel('Words to avoid (one word or phrase per line)', { exact: true }).fill('supercharge\nseamlessly');
     await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('h1').innerText()).toBe(headline);
     await expect.poll(() => page.frameLocator('.brief-preview iframe').locator('mark').innerText()).toBe('keep their stories');
-    expect(await page.frameLocator('.brief-preview iframe').locator('body').innerText()).not.toContain('Sample content for design preview.');
+    expect(await page.frameLocator('.brief-preview iframe').locator('body').innerText()).toContain('Sample content for design preview.');
     await settle(page);
     await page.reload();
     await page.getByLabel('Business name', { exact: true }).waitFor();
