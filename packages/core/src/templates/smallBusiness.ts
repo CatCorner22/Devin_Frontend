@@ -139,13 +139,19 @@ export function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+function isolatedText(text: string): string {
+  const html = escapeHtml(text);
+  return /\p{Bidi_Control}/u.test(text) ? `<bdi class="bidi-field">${html}</bdi>` : html;
+}
+
 function headlineHtml(content: SiteContent): string {
   const { headline, headlineEmphasis } = content;
   const at = headlineEmphasis ? headline.indexOf(headlineEmphasis) : -1;
-  if (at < 0) return escapeHtml(headline);
+  if (at < 0) return isolatedText(headline);
   const before = headline.slice(0, at);
   const after = headline.slice(at + headlineEmphasis.length);
-  return `${escapeHtml(before)}<mark>${escapeHtml(headlineEmphasis)}</mark>${escapeHtml(after)}`;
+  const html = `${escapeHtml(before)}<mark>${escapeHtml(headlineEmphasis)}</mark>${escapeHtml(after)}`;
+  return /\p{Bidi_Control}/u.test(headline) ? `<bdi class="bidi-field">${html}</bdi>` : html;
 }
 
 const pad2 = (n: number): string => String(n).padStart(2, '0');
@@ -155,6 +161,7 @@ const GRAIN = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'
 
 export const SMALL_BUSINESS_CSS = `
 *, *::before, *::after { box-sizing: border-box; }
+.bidi-field { display: inline-block; max-width: 100%; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--text);
@@ -559,6 +566,7 @@ export function renderSmallBusiness(input: MockupInput): string {
   if (asked.some((id) => !(MOCKUP_OVERLAYS as readonly string[]).includes(id))) throw new Error('An Overlay is not in its list.');
   const overlays = MOCKUP_OVERLAYS.filter((id) => asked.includes(id));
   const e = escapeHtml;
+  const t = isolatedText;
   const inert = input.links === 'inert';
   /** The attributes of a link. An inert link keeps the look and the keyboard focus of a link and leads nowhere. */
   const link = (target: string): string => (inert ? 'role="link" tabindex="0"' : `href="${e(target)}"`);
@@ -587,18 +595,18 @@ export function renderSmallBusiness(input: MockupInput): string {
 
   const overlayDemo = overlays.length === 0
     ? '<p class="ov-none">No Overlay is switched on.</p>'
-    : overlays.map((id) => `<div class="ov"><p class="ov-name">${OVERLAY_NAMES[id]}</p><div class="ov-stage">${OVERLAY_PICTURES[id](e(c.primaryAction))}</div></div>`).join('');
-  const facts = c.facts.map((f) => `<div><dt>${e(f.value)}</dt><dd>${e(f.label)}</dd></div>`).join('');
+    : overlays.map((id) => `<div class="ov"><p class="ov-name">${OVERLAY_NAMES[id]}</p><div class="ov-stage">${OVERLAY_PICTURES[id](t(c.primaryAction))}</div></div>`).join('');
+  const facts = c.facts.map((f) => `<div><dt>${t(f.value)}</dt><dd>${t(f.label)}</dd></div>`).join('');
   const services = c.services
     .map(
       (s, i) => `<li class="service">
         <div class="service-media media" role="img" aria-label="Photo placeholder"><span>Your photo</span></div>
         <span class="num" aria-hidden="true">${pad2(i + 1)}</span>
-        <div class="service-body"><h3>${e(s.title)}</h3><p>${e(s.body)}</p><a class="more" ${link('#contact')}>About ${e(s.title.toLowerCase())}</a></div>
+        <div class="service-body"><h3>${t(s.title)}</h3><p>${t(s.body)}</p><a class="more" ${link('#contact')}>About ${t(s.title.toLowerCase())}</a></div>
       </li>`,
     )
     .join('');
-  const fees = c.fees.map((f) => `<tr><th scope="row">${e(f.item)}</th><td>${e(f.price)}</td></tr>`).join('');
+  const fees = c.fees.map((f) => `<tr><th scope="row">${t(f.item)}</th><td>${t(f.price)}</td></tr>`).join('');
   const v = input.voice;
   const nameLabel = v?.tone === 'formal' ? 'Full name' : 'Your name';
   const sendLabel = v?.tone === 'formal' ? 'Submit enquiry' : v?.stance === 'confident' ? 'Send your request now' : 'Send my request';
@@ -609,7 +617,7 @@ export function renderSmallBusiness(input: MockupInput): string {
   const errorStyle = p.errorState ?? 'inline';
   const summaryError = showError && errorStyle !== 'inline';
   const inlineError = showError && errorStyle !== 'summary';
-  const nav = c.nav.map((n, i) => `<li><a ${link('#main')}${i === 0 ? ' aria-current="page"' : ''}>${e(n)}</a></li>`).join('');
+  const nav = c.nav.map((n, i) => `<li><a ${link('#main')}${i === 0 ? ' aria-current="page"' : ''}>${t(n)}</a></li>`).join('');
 
   return `<!doctype html>
 <html lang="en">
@@ -618,7 +626,7 @@ export function renderSmallBusiness(input: MockupInput): string {
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; base-uri 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="${e(p.theme)}">
-<title>${input.page === 'contact' ? `${e(contactPageContent(c).title)} · ` : ''}${e(c.business)}</title>
+<title>${((input.page === 'contact' ? `${e(contactPageContent(c).title)} · ` : '') + e(c.business)).replace(/\p{Bidi_Control}/gu, '')}</title>
 <style>
 ${fontFaceCss}
 ${tokensToCss(tokens)}
@@ -629,26 +637,26 @@ ${SMALL_BUSINESS_CSS}
 <a class="skip" ${link('#main')}>Skip to content</a>
 <header class="site-header">
   <div class="wrap nav">
-    <a class="brand" ${link('#main')}>${e(c.business)}</a>
+    <a class="brand" ${link('#main')}>${t(c.business)}</a>
     <nav aria-label="Main"><ul>${nav}</ul></nav>
-    <div class="nav-actions"><a class="phone" ${link('#contact')}>${e(c.phone)}</a><a class="btn btn-primary" ${link('#contact')}>${e(c.primaryAction)}</a></div>
+    <div class="nav-actions"><a class="phone" ${link('#contact')}>${t(c.phone)}</a><a class="btn btn-primary" ${link('#contact')}>${t(c.primaryAction)}</a></div>
   </div>
 </header>
 <main id="main">
 ${contactFallback ? '<p class="wrap preview-fallback">That section appears only on the home page. Showing the top of the contact page instead.</p>' : ''}
 ${behavior}
-${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1>${headlineHtml({ ...c, headline: contactPageContent(c).title })}</h1><p>${e(contactPageContent(c).intro)}</p><h2>Plan your visit</h2><p>${e(contactPageContent(c).directions)}</p></div></section>` : `
+${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1>${headlineHtml({ ...c, headline: contactPageContent(c).title })}</h1><p>${t(contactPageContent(c).intro)}</p><h2>Plan your visit</h2><p>${t(contactPageContent(c).directions)}</p></div></section>` : `
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <p class="tag">${e(c.tag)}</p>
+        <p class="tag">${t(c.tag)}</p>
         <h1>${headlineHtml(c)}</h1>
         <div class="hero-sub">
-          <p class="lede">${e(c.lede)}</p>
+          <p class="lede">${t(c.lede)}</p>
           <div class="actions">
-            <a class="btn btn-primary" ${link('#contact')}>${e(c.primaryAction)}</a>
-            <a class="phone phone-big" ${link('#contact')}>Call ${e(c.phone)}</a>
-            <a class="link" ${link('#services')}>${e(c.secondaryAction)}</a>
+            <a class="btn btn-primary" ${link('#contact')}>${t(c.primaryAction)}</a>
+            <a class="phone phone-big" ${link('#contact')}>Call ${t(c.phone)}</a>
+            <a class="link" ${link('#services')}>${t(c.secondaryAction)}</a>
           </div>
         </div>
         <dl class="fact-list hero-facts">${facts}</dl>
@@ -659,24 +667,24 @@ ${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1
   <section class="facts" aria-label="At a glance"><div class="wrap"><dl class="fact-list">${facts}</dl></div></section>
   <section class="block services" id="services">
     <div class="wrap">
-      <div class="section-head"><h2>${e(c.servicesTitle)}</h2><p>${e(c.servicesIntro)}</p></div>
+      <div class="section-head"><h2>${t(c.servicesTitle)}</h2><p>${t(c.servicesIntro)}</p></div>
       <ol class="service-list">${services}</ol>
-      ${c.fees.length > 0 ? `<div class="fees"><h3>${e(c.feesTitle)}</h3><table><tbody>${fees}</tbody></table></div>` : ''}
+      ${c.fees.length > 0 ? `<div class="fees"><h3>${t(c.feesTitle)}</h3><table><tbody>${fees}</tbody></table></div>` : ''}
     </div>
   </section>
   <section class="block about">
     <div class="wrap about-grid">
-      <div><h2>${e(c.aboutTitle)}</h2><p>${e(c.aboutBody)}</p></div>
-      <figure class="promise card"><p>${e(c.promise)}</p><span>${e(c.business)}</span></figure>
+      <div><h2>${t(c.aboutTitle)}</h2><p>${t(c.aboutBody)}</p></div>
+      <figure class="promise card"><p>${t(c.promise)}</p><span>${t(c.business)}</span></figure>
     </div>
   </section>
   `}
   <section class="block contact" id="contact">
     <div class="wrap contact-grid">
       <div>
-        <h2>${e(c.contactTitle)}</h2>
-        <p>${e(c.contactBody)}</p>
-        <address><strong>${e(c.business)}</strong><span>${e(c.address)}</span><span>${e(c.hours)}</span><a class="phone" ${link('#contact')}>${e(c.phone)}</a></address>
+        <h2>${t(c.contactTitle)}</h2>
+        <p>${t(c.contactBody)}</p>
+        <address><strong>${t(c.business)}</strong><span>${t(c.address)}</span><span>${t(c.hours)}</span><a class="phone" ${link('#contact')}>${t(c.phone)}</a></address>
       </div>
       <form class="form card"${inert ? '' : ' action="#contact" method="post"'}>
         ${showError ? '<p>Form error example. These field values are made up; no request is sent.</p>' : ''}
@@ -692,8 +700,8 @@ ${input.page === 'contact' ? `<section class="inner-intro"><div class="wrap"><h1
   </section>
   <section class="block overlay-demo" aria-label="Overlays, each shown open"><div class="wrap overlay-grid">${overlayDemo}</div></section>
 </main>
-<div class="sticky-call"><a class="btn btn-primary" ${link('#contact')}>${e(c.primaryAction)}</a></div>
-<footer class="site-footer"><div class="wrap"><span>${e(c.business)} · ${e(c.address)}</span><span>${e(c.footerNote)}</span></div></footer>
+<div class="sticky-call"><a class="btn btn-primary" ${link('#contact')}>${t(c.primaryAction)}</a></div>
+<footer class="site-footer"><div class="wrap"><span>${t(c.business)} · ${t(c.address)}</span><span>${t(c.footerNote)}</span></div></footer>
 </body>
 </html>`;
 }
