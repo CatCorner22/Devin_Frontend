@@ -1,5 +1,10 @@
 # Red-team findings
 
+## PR #16 follow-up review
+
+- PR16-R1 — reproduced at `15a48d0` in touch Chromium, 640×360: picture height 0. Repair mobile intrinsic sizing and reserve picture space; short screens scroll normally. Regression: `brief-landscape.e2e.ts`. Quality and all five affected browser files pass (1,352 unit tests; 149 browser tests).
+
+
 Three adversarial reviewers examine the project: the security attacker, the confused first-time user, and the drift and truth auditor. They receive the code and the running app, not the builder's conclusions. Their full reports are in `redteam/reports/`; each row below points to its report by identifier.
 
 **What actually happened (stated plainly).** Hard rule 12 requires a review at each unit of work and at each milestone gate. The builder did not run any review at the M0, M1, M2, or M3 gates. The first review ran on 2026-11-13 against the M4 Studio. Finding R-12 records this breach. From this row forward, a review runs at every gate, and every finding is logged here, including findings that are already fixed.

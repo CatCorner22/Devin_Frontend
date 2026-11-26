@@ -165,8 +165,11 @@ select, .name, .project-text {
 }
 @media (max-width: 699px) {
   .brief-main { grid-template-columns: minmax(0, 1fr); }
-  .brief-preview { grid-row: 1; top: 0; z-index: 2; height: min(24rem, 40dvh); background: var(--bg); }
-  .brief-preview .large-preview { min-height: 0; }
+  .brief-preview { grid-row: 1; top: 0; z-index: 2; height: auto; min-height: min(24rem, 40dvh); background: var(--bg); }
+  .brief-preview .large-preview { flex: none; height: clamp(8rem, 20dvh, 16rem); min-height: 0; }
+}
+@media (max-width: 699px) and (max-height: 499px) {
+  .brief-preview { position: static; }
 }
 /* The preview takes the height that is left over. Its own content never sets its height (the frame inside is out of the layout). */
 .stage > .preview-wrap { position: relative; display: flex; flex: 1 1 0; min-height: 12rem; }

@@ -1,5 +1,11 @@
 # Progress
 
+## PR #16 review: landscape Brief (2026-11-26)
+
+- Reproduced on the reviewed head `15a48d0`: the live picture measured zero pixels high at 640×360 with touch. Mobile Brief sizing now reserves at least eight rem for the picture rather than allocating the whole pane a viewport fraction; short screens use normal scrolling instead of a sticky obstruction. Browser regression checks live owner text and visible picture geometry.
+- `npm run check`: 26 files/1,352 tests, 23.73s, exit 0. Affected browser files: 5 files/149 tests, 332.43s, exit 0. Screenshot: `/home/ubuntu/m5-brief-landscape-after.png`. M5 remains open.
+
+
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
 ## M5 gate repairs (2026-11-25–26; local checks complete, milestone open)
