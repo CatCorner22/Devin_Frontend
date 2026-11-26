@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { FLOORS, createProject, deriveTokens, pick, renderSmallBusiness } from '@refraction/core';
+import { FLOORS, FONTS, createProject, deriveTokens, pick, renderSmallBusiness } from '@refraction/core';
 import { type Finding } from '../../../packages/kit/src/index.js';
 import * as checks from '../../../packages/kit/src/page-checks/index.js';
 import { chromium, type Browser } from 'playwright';
@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 const require = createRequire(import.meta.url);
 const axe = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
-const fonts = [['DM Sans', 'dm-sans'], ['Outfit', 'outfit']].map(([family, name]) => `@font-face{font-family:"${family}";src:url("data:font/woff2;base64,${readFileSync(require.resolve(`@fontsource-variable/${name}/files/${name}-latin-wght-normal.woff2`)).toString('base64')}") format("woff2");font-weight:100 900;font-style:normal}`).join('\n');
+const fonts = Object.entries(FONTS).filter(([id]) => !id.startsWith('system-')).map(([name, font]) => `@font-face{font-family:${font.stack.split(',')[0]};src:url("data:font/woff2;base64,${readFileSync(require.resolve(`@fontsource-variable/${name}/files/${name}-latin-wght-normal.woff2`)).toString('base64')}") format("woff2");font-weight:100 900;font-style:normal}`).join('\n');
 const functions = checks as unknown as Record<string, (...args: never[]) => unknown>;
 const order = [...Object.keys(functions).filter((name) => name !== 'focusIsVisible'), 'focusIsVisible'];
 const floorIds = new Set(FLOORS.map((entry) => entry.rule.id));

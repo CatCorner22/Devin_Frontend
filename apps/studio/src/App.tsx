@@ -1,14 +1,15 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinParams, skinsOf, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { BriefView } from './Brief';
+import { SkinControl } from './SkinControl';
 import { CraftFloors } from './CraftFloors';
 import { LICENSE_TEXTS, MIT_COPYRIGHT_PLACEHOLDER, NOTICES } from './notices.generated';
 import { copyText, fileNameFor, probePreviews, readBackups, removeBackup, saveFile, storedProjectText, type KeptCopy } from './platform';
 import { LargePreview, PreviewPageControl, Thumbnail, mockupHtml, tokensFor } from './preview';
-import { CURRENT, DEVICE_WIDTH, appliedCardId, directionName, paramsForCard, stepOf, useStudio, type Device, type StudioState } from './store';
+import { CURRENT, DEVICE_WIDTH, appliedCardId, directionName, paramsForCard, selectionCardId, stepOf, useStudio, type Device, type StudioState } from './store';
 import { STUDIO_PARAMS, applyStudioTheme, installSpecimenFonts } from './theme';
 
 // ───────── Words. One word for one thing, everywhere on screen. ─────────
@@ -52,7 +53,7 @@ const SAVE_LABEL: Record<StudioState['saved'], string> = {
 };
 const PROFILE_MEANING: Record<A11yProfile, string> = {
   off: 'Off: no contrast notes are shown.',
-  advise: 'Warn me: the Studio notes colors that are hard to tell apart, and changes nothing.',
+  advise: 'Warn me: the Studio reports extra contrast notes. Fixed floors always apply.',
   enforce: 'Fix for me: the Studio adjusts colors that are hard to tell apart, and lists each change.',
 };
 const HUE_NAMES: [number, string][] = [[25, 'red'], [55, 'orange'], [95, 'yellow'], [140, 'green'], [195, 'teal'], [258, 'blue'], [298, 'violet'], [345, 'pink']];
@@ -118,6 +119,7 @@ function movedFrom(t: Tunable, value: number, optionValue: unknown): string | nu
 
 /** The current value of a Step, in words: the matching Option's name, or the hand-set values. */
 function valueLabel(project: Project, step: Step): string {
+  project = { ...project, params: effectiveParams(project) };
   const match = matchingOptionId(project.params, step, project.brief?.voice);
   if (match) return step.options.find((o) => o.id === match)!.label;
   if (step.briefVoice) return Object.values(project.brief!.voice).join(', ');
@@ -194,6 +196,7 @@ function TopBar(): React.JSX.Element {
           <option value="enforce">Fix for me</option>
         </select>
         <span id="a11y-meaning" className="profile-meaning">{PROFILE_MEANING[s.project.a11y]}</span>
+        <span className="hint">Fixed contrast floors always apply, including when notes are off. They adjust derived colors, not your saved choices.</span>
       </div>
       <button type="button" className="btn small" disabled={s.history.length === 0} onClick={s.undo}>Undo</button>
       <span className="save-state" role="status">{SAVE_LABEL[s.saved]}</span>
@@ -358,14 +361,14 @@ function DirectionCard({ direction }: { direction: Direction }): React.JSX.Eleme
               })}
             </div>
             <p className="hint">{skin ? skin.what : 'The colors this Direction was composed with.'}</p>
-            <p className="hint">A Skin sets which color. How light and how vivid the color is stays as this Direction has it, and the color shows most in buttons, links, and bands.{twoColors ? ' A chip with two colors: this Direction has a second color, and it moves around the color wheel together with the first.' : ''} You choose a Skin here, at the start; later you change colors on the color Steps.</p>
+            <p className="hint">A Skin sets which color. How light and how vivid the color is stays as this Direction has it, and the color shows most in buttons, links, and bands.{twoColors ? ' A chip with two colors: this Direction has a second color, and it moves around the color wheel together with the first.' : ''} You can also change the Skin on Summary. Later color choices take priority for their own Step.</p>
           </fieldset>
         )}
         <dl>
           <div><dt>Best for</dt><dd>{direction.bestFor}</dd></div>
           <div><dt>Watch for</dt><dd>{direction.risk}</dd></div>
         </dl>
-        <button type="button" className="btn primary" onClick={() => request(skin ? { ...direction, params } : direction, skin)}>Start from {direction.name}</button>
+        <button type="button" className="btn primary" onClick={() => request(direction, skin)}>Start from {direction.name}</button>
       </div>
     </article>
   );
@@ -539,13 +542,15 @@ function StepsView(): React.JSX.Element {
   const wire = step.stage === 'structure' && s.wireframe;
   const applied = appliedCardId(s.project, step);
   const decision = s.project.decisions[step.id];
+  const variations = s.selection.kind === 'variation' ? s.selection : null;
+  const shownId = selectionCardId(s.project, step, s.selection);
   const [replay, setReplay] = useState(0);
 
   const cards: Card[] = useMemo(() => {
-    if (s.variations) {
+    if (variations) {
       return [
         { id: 'as-it-was', label: 'Starting point', what: 'The values these small variations start from.' },
-        ...s.variations.options.map((o) => ({ id: o.id, label: o.label, what: 'One small step away from the starting point.' })),
+        ...variations.options.map((o) => ({ id: o.id, label: o.label, what: 'One small step away from the starting point.' })),
       ];
     }
     const out: Card[] = step.options.map((o) => ({ id: o.id, label: o.label, what: o.what, chooseWhen: o.chooseWhen, risk: o.risk, exemplar: o.exemplar?.text, warn: o.warn?.text, focus: o.focus }));
@@ -554,9 +559,9 @@ function StepsView(): React.JSX.Element {
       out.unshift({ id: CURRENT, label: 'Your design now', what: `${valueLabel(s.project, step)}. ${origin} They match none of the standard Options, so they have a card of their own.` });
     }
     return out;
-  }, [s.variations, step, applied, decision, s.project, s.generated]);
+  }, [variations, step, applied, decision, s.project, s.generated]);
 
-  const shown = cards.find((c) => c.id === s.shownId) ?? cards[0]!;
+  const shown = cards.find((c) => c.id === shownId) ?? cards[0]!;
   const shownParams = paramsForCard(s, shown.id);
   const focus: MockupFocus = s.region === 'auto' ? (shown.focus ?? step.focus) : s.region;
   const width = DEVICE_WIDTH[s.device];
@@ -566,10 +571,10 @@ function StepsView(): React.JSX.Element {
   const cardsDevice = useDeferredValue(s.device);
   const thumbWidth = step.thumb?.width ?? DEVICE_WIDTH[cardsDevice];
   const thumbRatio = step.thumb?.focus ? 0.7 : step.thumb?.width ? (step.thumb.width < 600 ? 0.9 : 0.6) : THUMB_RATIO[cardsDevice];
-  const lookingAtApplied = !s.variations && shown.id === applied;
-  const sliders = activeTunables(step, s.project.params);
+  const lookingAtApplied = !variations && shown.id === applied;
+  const sliders = activeTunables(step, effectiveParams(s.project));
 
-  const stateKey = JSON.stringify([s.project.params, s.project.content, s.project.brief?.voice, s.project.a11y, step.id, s.variations?.round ?? -1, s.variations?.origin ?? null, wire, s.region]);
+  const stateKey = JSON.stringify([effectiveParams(s.project), s.project.content, s.project.brief?.voice, s.project.a11y, step.id, variations?.round ?? -1, variations?.originValues ?? null, wire, s.region]);
   const thumbs = useMemo(() => {
     const out: Record<string, string> = {};
     // A Step may give its small pictures a close-up of their own (the buttons, one box), so that the change can be seen at card size.
@@ -577,7 +582,7 @@ function StepsView(): React.JSX.Element {
     return out;
   }, [stateKey, cards.length]);
   // The two motion Steps play their examples; other comparisons stand still.
-  const large = useMemo(() => mockupHtml(s.project, shownParams, { page: s.previewPage, wireframe: wire, focus, still: step.id !== 'motion' && step.id !== 'motion-timing', voice: step.options.find((o) => o.id === shown.id)?.voice }), [stateKey, shown.id, focus, s.previewPage]);
+  const large = useMemo(() => mockupHtml(s.project, shownParams, { page: s.previewPage, wireframe: wire, focus, still: step.id !== 'motion' && step.id !== 'motion-timing', voice: step.options.find((o) => o.id === shown.id)?.voice }), [stateKey, shown.id, focus, s.previewPage, s.selection]);
   // The pictures follow at lower priority. A slider step first moves the knob and its number; the browser then draws the
   // pictures when it is free, and skips the steps in between while a key is held or the knob is dragged.
   const shownThumbs = useDeferredValue(thumbs);
@@ -619,15 +624,15 @@ function StepsView(): React.JSX.Element {
     if (s.focusTick > 0) document.querySelector<HTMLElement>('.cards input[type="radio"]:checked')?.focus();
   }, [s.focusTick, step.id]);
   useEffect(() => {
-    document.getElementById(`option-${s.shownId}`)?.closest('.option')?.scrollIntoView({ block: 'nearest' });
-  }, [s.shownId]);
+    document.getElementById(`option-${shownId}`)?.closest('.option')?.scrollIntoView({ block: 'nearest' });
+  }, [shownId]);
 
-  const mainLabel = s.variations
+  const mainLabel = variations
     ? shown.id === 'as-it-was' ? 'Keep the starting point and continue' : `Pick “${shown.label}” and continue`
-    : lookingAtApplied
+    : lookingAtApplied && s.selection.kind !== 'named'
       ? decision ? 'Continue to the next Step' : applied === CURRENT ? 'Keep “Your design now” and continue' : `Keep “${shown.label}” and continue`
       : `Pick “${shown.label}” and continue`;
-  const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => s.project.params[key] !== s.project.base[key]);
+  const canPutBack = Boolean(decision) || (step.briefVoice && applied !== step.defaultOptionId) || step.owns.some((key) => effectiveParams(s.project)[key] !== startingParams(s.project)[key]);
 
   return (
     <div className="work">
@@ -637,6 +642,7 @@ function StepsView(): React.JSX.Element {
           <p className="eyebrow">{STAGE_NAME[step.stage]} · Step {index + 1} of {STEPS.length} · {step.name}</p>
           <h1 id="step-title">{step.title}</h1>
           <p className="teach">{step.teach}</p>
+          {skinCoversStep(s.project, step.id) && <p className="hint">The Skin covers this Step’s saved colors. Continue leaves the saved Decision untouched. Select an Option and pick it to make that choice take priority.</p>}
           <details className="source">
             <summary>What changes on this Step, and where this guidance comes from</summary>
             <p><strong>The one thing that changes:</strong> {step.variable.toLowerCase()}. Everything else stays as it is.</p>
@@ -711,7 +717,7 @@ function StepsView(): React.JSX.Element {
           }}
         >
           <legend>
-            {s.variations ? `${step.name}: small variations${s.variations.round > 0 ? `, finer (round ${s.variations.round + 1})` : ''}` : step.name}
+            {variations ? `${step.name}: small variations${variations.round > 0 ? `, finer (round ${variations.round + 1})` : ''}` : step.name}
           </legend>
           <p id="cards-hint" className="hint">
             <span className="hint-count">This Step has {cards.length} cards; scroll down if you do not see them all. </span>
@@ -731,9 +737,9 @@ function StepsView(): React.JSX.Element {
             {cards.map((card, i) => {
               const isShown = shown.id === card.id;
               const params = paramsForCard(s, card.id);
-              const inUse = !s.variations && card.id === applied;
+              const inUse = !variations && card.id === applied;
               return (
-                <label key={card.id} className="option" data-shown={isShown || undefined} data-in-use={inUse || undefined}>
+                <label key={card.id} className="option" data-shown={isShown || undefined} data-in-use={inUse || undefined} onClick={() => s.show(card.id)}>
                   <input id={`option-${card.id}`} type="radio" name="option" value={card.id} checked={isShown} onChange={() => s.show(card.id)} />
                   <Thumbnail html={shownThumbs[card.id] ?? thumbs[card.id] ?? ''} width={thumbWidth} ratio={thumbRatio} />
                   <span className="option-title">
@@ -749,7 +755,7 @@ function StepsView(): React.JSX.Element {
                   )}
                   <span className="badges">
                     {inUse && <em className="badge in-use">In use ✓</em>}
-                    {!s.variations && card.warn && <em className="badge warn">Overused look</em>}
+                    {!variations && card.warn && <em className="badge warn">Overused look</em>}
                   </span>
                 </label>
               );
@@ -762,7 +768,7 @@ function StepsView(): React.JSX.Element {
           <button type="button" className="btn primary" onClick={s.decideAndContinue}>{mainLabel}</button>
         </div>
         <div className="actions">
-          {s.variations ? (
+          {variations ? (
             <>
               <button type="button" className="btn" onClick={s.startVariations}>Show finer variations of “{shown.label}”</button>
               <button type="button" className="btn quiet" onClick={s.endVariations}>Back to the standard Options</button>
@@ -776,13 +782,13 @@ function StepsView(): React.JSX.Element {
             </>
           )}
         </div>
-        {!s.variations && <ReasonField key={step.id} stepId={step.id} />}
-        {!s.variations && sliders.length > 0 && (
+        {!variations && <ReasonField key={step.id} stepId={step.id} />}
+        {!variations && sliders.length > 0 && (
           <details className="tune">
             <summary>Adjust with sliders</summary>
             <p className="hint">Each slider changes your design as it stands, one value at a time. The large preview follows. To go back, press Undo in the top bar.</p>
             {sliders.map((t) => {
-              const value = s.project.params[t.key] as number;
+              const value = effectiveParams(s.project)[t.key] as number;
               const aroundTheWheel = String(t.key).toLowerCase().includes('hue');
               const ends = t.directions ?? ['less', 'more'];
               return (
@@ -838,7 +844,7 @@ function OverlaysView(): React.JSX.Element {
   const s = useStudio();
   const heading = useHeadingFocus();
   const on = useMemo(() => overlaysOf(s.project), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on]);
+  const html = useMemo(() => mockupHtml(s.project, effectiveParams(s.project), { wireframe: false, focus: 'overlays', still: true, overlays: on }), [s.project, on]);
   return (
     <div className="work">
       <Rail />
@@ -926,9 +932,9 @@ function SummaryView(): React.JSX.Element {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const text = useMemo(() => JSON.stringify(s.project, null, 2), [s.project]);
   const overlaysOn = useMemo(() => overlaysOf(s.project), [s.project]);
-  const html = useMemo(() => mockupHtml(s.project, s.project.params, { page: s.previewPage, wireframe: false, focus: 'top', still: true, overlays: overlaysOn }), [s.project, overlaysOn, s.previewPage]);
+  const html = useMemo(() => mockupHtml(s.project, effectiveParams(s.project), { page: s.previewPage, wireframe: false, focus: 'top', still: true, overlays: overlaysOn }), [s.project, overlaysOn, s.previewPage]);
   const clashes = useMemo(() => conflicts(s.project), [s.project]);
-  const research = useMemo(() => researchReport(s.project.params, tokensFor(s.project.params, s.project.a11y).css), [s.project.params, s.project.a11y]);
+  const research = useMemo(() => researchReport(effectiveParams(s.project), tokensFor(effectiveParams(s.project), s.project.a11y).css), [s.project]);
   const decided = STEPS.filter((st) => s.project.decisions[st.id]).length;
   const [keptTick, setKeptTick] = useState(0);
   // The kept copy that the owner is about to remove, by a name that stays the same when the list is read again. Holding the
@@ -996,6 +1002,7 @@ function SummaryView(): React.JSX.Element {
         <p className="teach">
           <strong>What works today:</strong> you can download the project file and open it here later. <strong>What does not exist yet:</strong> the instructions for an AI coding tool, the files of exact design values, and the reference page. They arrive in a later version of the Studio.
         </p>
+        <SkinControl />
         <section aria-labelledby="file-heading">
           <h2 id="file-heading">Project file</h2>
           <div className="actions">
@@ -1191,7 +1198,8 @@ export function App(): React.JSX.Element {
   const ready = useStudio((s) => s.ready);
   const view = useStudio((s) => s.view);
   const look = useStudio((s) => s.studioLook);
-  const params = useStudio((s) => s.project.params);
+  const project = useStudio((s) => s.project);
+  const params = effectiveParams(project);
   const [previewsWork, setPreviewsWork] = useState<boolean | null>(null);
 
   useEffect(() => {

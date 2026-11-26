@@ -111,6 +111,36 @@ The optional `content.contactPage` holds its heading, introduction and visit dir
 | Switching preview pages | Change no Decision or project content; keep the view across Studio screens in this tab, return to Home on reload | "inner page: switch pages without changing the project" |
 | Restoring the sample | The existing confirmation clears the optional contact text too; Undo restores it | "inner page: owner words survive reload and a file" |
 
+## In-project Skins (M5, unit 5)
+
+`skinLayer` optionally holds six color values and the Steps chosen after the Skin. `params`, `base`, content and earlier Decisions stay underneath it. No Skin removes the layer without rewriting that recipe. Older files add no layer on opening. The named browser tests below live in `apps/studio/e2e/studio.e2e.ts`.
+
+| Situation and event | What must happen | Test |
+|---|---|---|
+| Opening: the owner tries to change Skin | Do not show an editable placeholder control or write anything | "Skin: opening records nothing and pending changes flush on background" |
+| Saved: choose a Skin | Save the layer to both stores without changing earlier Decisions | "Skin: changes save to both stores" |
+| Saved: reload or project-file round trip | Keep the effective colors on both pages and every color preview | "Skin: colors reach both pages and every preview, persist through reload and a file, and leave Decisions alone" |
+| Saved/change pending: another Skin or Undo | Each Skin change is one history entry; later color choices win for their Step | "Skin: each change is one Undo step and later color choices win for their Step"; "Skin: a variation can choose a covered underlying color"; "Skin: variation controls use the visible second color, not the covered one-color recipe" |
+| Covered color Step: Continue without choosing a card | Preserve the underlying Decision and reason; No Skin restores its saved colors | "Skin review: Continue preserves the covered Decision and reason, including after No Skin" |
+| New starting Skin / old file's starting Skin | New starts have a removable layer after reload; older baked-in colors stay, with a plain explanation before and after No Skin | "Skin review: a Skin chosen on Directions is removable after saving and reloading"; "Skin review: old starting-Skin files explain why No Skin cannot remove saved colors" |
+| Starting Skin: change a color Step, then Put this Step back | Restore the starting appearance, Skin included, and remove that Step's Decision | "Skin review: Put this Step back restores the colors shown by the starting Skin" |
+| No Skin, then Put a color Step back | Keep the underlying recipe unchanged; store the starting-color reset in the Skin layer, name that state plainly, and allow No Skin to clear it again | "Skin review: reset after No Skin keeps starting colors removable without changing the underlying recipe"; "Skin transition contracts" |
+| Move one color slider while a Skin covers other values of that Step | Save only the moved raw value; keep unmoved Skin values on the layer. No Skin reveals the independently saved raw recipe | "Skin review: a slider changes only its raw value and leaves unmoved Skin controls on the layer"; "Skin transition contracts" |
+| Pick a named Option after a hand-set second-color choice | Do not transfer its reason merely because a numeric matching hint names that Option; show the removal notice and let the owner restore the reason explicitly | "does not carry a Skin-added second-color adjustment reason into a one-color pick"; "Skin review: choosing one color after a second-color adjustment removes the earlier reason with a recovery action" |
+| Compare a small variation, return to standard Options without picking, then Continue | No new color adoption, saved value, Decision or Skin exception | "Skin review: returning from unpicked variations restores the untouched standard-card selection" |
+| Change pending: background | Flush the current layer at once, not the old colors | "Skin: opening records nothing and pending changes flush on background" |
+| Save failed: continue, then retry | Keep the selected Skin on screen and save it once storage has room | "Skin: failed saves keep the choice and retry" |
+| Not saving: another tab saved; owner changes Skin and backgrounds | Preserve the other tab's saved copy, keep this tab's new layer in a kept copy | "Skin: another tab stops saving and preserves the unsaved choice in a kept copy" |
+| Replace Direction with one not offering the Skin | Explain the loss and clear its name and layer | "Skin: a Direction that does not offer the current Skin says so and unsets it" |
+| Open old file, malformed layer or unavailable Skin | Old files add nothing; reject invalid colors; retain valid anonymous colors and explain unavailable names | Unit tests in `skin-change.test.ts`: "validates color layers and normalizes only invalid exception references, not Decisions" and "rejects unknown or unoffered Skins and handles a plain start and empty no-Skin change" |
+
+| Restore a saved Option's colors through a small variation after a slider adjustment | Save hand-set intent and retain the reason; numeric equality alone never records a named pick | "Skin review: a variation that restores a saved Option keeps its hand-set intent and reason"; seeded `skin-transitions.test.ts` restoration actions |
+| Continue on an untouched numerically matching card | Keep the current choice, not a new following relationship | "Skin review: Continue does not infer a named relationship from a numeric match" |
+
+| Change Contrast checks while a named card is pending | Keep the same pending selection and save it when Pick is pressed | "Skin review: changing Contrast checks preserves a pending named selection"; seeded `selection.e2e.ts` sequences |
+| Keep a variation deck's starting point after selecting a named pairing | Save that named pairing, not a fixed numeric copy; it keeps following later main-color changes | "Skin review: the starting point of variations retains a pending named pairing" |
+| Compare generated variations, use finer rounds, return to standard Options, move sliders, change profile, then Pick | Save the selection whose tokens were visible immediately before Pick, retaining its kind, values and reason policy | Four seeded UI sequences in `selection.e2e.ts`, for bare and layered starts |
+
 ## What no test covers (stated plainly)
 
 - The browser's own "leave this page?" question. The Studio can only ask the browser to put it; the test browser answers it by itself.
