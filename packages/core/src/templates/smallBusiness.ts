@@ -112,6 +112,10 @@ export const MOCKUP_OVERLAYS = ['tooltip', 'confirm', 'notice', 'field-error', '
 export const MOCKUP_CLOSE_UPS = ['buttons', 'box'] as const;
 export type MockupFocus = (typeof MOCKUP_FOCUSES)[number];
 
+export function availableMockupFocus(page: MockupPage, focus: MockupFocus): MockupFocus {
+  return page === 'contact' && (['facts', 'services', 'fees', 'about', 'buttons', 'box'] as MockupFocus[]).includes(focus) ? 'top' : focus;
+}
+
 export interface MockupInput {
   page?: MockupPage;
   params: DesignParams;
@@ -571,7 +575,7 @@ export function renderSmallBusiness(input: MockupInput): string {
   /** The attributes of a link. An inert link keeps the look and the keyboard focus of a link and leads nowhere. */
   const link = (target: string): string => (inert ? 'role="link" tabindex="0"' : `href="${e(target)}"`);
   // The facts band moves into the first screen when facts are the emphasis, so that region opens at the top instead.
-  const contactFallback = input.page === 'contact' && input.focus !== undefined && (['facts', 'services', 'fees', 'about', 'buttons', 'box'] as MockupFocus[]).includes(input.focus);
+  const contactFallback = availableMockupFocus(input.page ?? 'home', input.focus ?? 'top') !== (input.focus ?? 'top');
   const focus: MockupFocus = contactFallback || (input.focus === 'facts' && p.emphasis === 'proof') ? 'top' : (input.focus ?? 'top');
   const attrs = [
     `data-nav="${e(p.nav)}"`,

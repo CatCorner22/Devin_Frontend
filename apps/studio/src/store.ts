@@ -1,6 +1,6 @@
 // The Studio's state. Every change to the design goes through the engine in @refraction/core.
 import {
-  DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent,
+  DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, STEPS, activeTunables, applyDirection, availableMockupFocus, closerOptions, createProject, effectiveParams, findDirection, findSkin, findStep, firstOpenStepId, generateDirections, isSampleContent,
   nextStepId, overlaysOf, ownedValues, parseProject, prevStepId, projectNameText, revert, setOverlay, setReason, setSkin, skinsOf, startPlain, tune,
   type A11yProfile, type BriefNotes, type DesignParams, type Direction, type MockupFocus, type MockupPage, type Project, type SiteContent, type Skin, type Step,
 } from '@refraction/core';
@@ -929,7 +929,8 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     setPreviewPage(previewPage) {
-      set({ previewPage });
+      const region = get().region;
+      set({ previewPage, region: region === 'auto' ? region : availableMockupFocus(previewPage, region) });
     },
     setDevice(device) {
       set({ device });

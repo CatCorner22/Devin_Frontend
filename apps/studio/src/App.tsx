@@ -1,5 +1,5 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, conflicts, effectiveParams, findOverlay, findSkin, findStep, hasSampleWords, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, availableMockupFocus, conflicts, effectiveParams, findOverlay, findSkin, findStep, hasSampleWords, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -662,7 +662,7 @@ function StepsView(): React.JSX.Element {
           <label className="inline-field">
             <span>Show this part of the page</span>
             <select id="preview-region" value={s.region} onChange={(e) => s.setRegion(e.target.value as MockupFocus | 'auto')}>
-              {REGIONS.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
+              {REGIONS.filter((r) => r.id === 'auto' || availableMockupFocus(s.previewPage, r.id) === r.id).map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
           </label>
           {step.stage === 'structure' && (
