@@ -1,5 +1,8 @@
 # Red-team findings
 
+- M5R-3 — reproduced both reported five-second timeouts during a catalog browser walk: the project-file reachability/preservation test took 5,311ms and the Advise/Off equivalence test 6,247ms. This deliberately stricter diagnostic pinned both commands to one CPU and also timed out five other aggregate sweeps; it is not a claim about ordinary-concurrency failures. Split the 5,016 sequential Direction/Option round trips into 38 Direction cases and the 995 Advise/Off designs into per-design cases, retaining every assertion and exact visited-set guards. The repaired sweeps pass all 1,034 selected cases under that same single-CPU browser contention (15.34s; other tests excluded only by this diagnostic filter). Full `npm run check`, with normal CPU scheduling while the same catalog browser process remained active, passes all 2,384 tests in 26 files (24.65s unit phase), exit 0. The background walk also completed all 112 cases, exit 0, in 712.56s. Limits and coverage are unchanged.
+
+
 - PR16-R2 — reproduced at `15a48d0`: the desktop Brief help panel extended to y=765.5 in a 720px viewport. Anchor it with the shared `.preview-bar` wrapper. Regression: `brief-view-help.e2e.ts` checks opening, viewport bounds and closing; quality and all five affected browser files pass.
 
 

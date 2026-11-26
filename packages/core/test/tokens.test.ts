@@ -49,14 +49,17 @@ describe('contrast profiles', () => {
     for (const d of designs) expect(deriveTokens(d.params, 'off').issues, d.label).toEqual([]);
   });
 
-  it('Advise reports exactly the pairs that fall short, and changes no additional color beyond fixed floors', () => {
-    for (const d of designs) {
+  describe('Advise reports exactly the pairs that fall short, and changes no additional color beyond fixed floors', () => {
+    const visited = new Set<string>();
+    afterAll(() => { expect([...visited].sort()).toEqual(designs.map((d) => d.label).sort()); });
+    it.each(designs)('$label', (d) => {
       const off = deriveTokens(d.params, 'off');
       const advise = deriveTokens(d.params, 'advise');
       expect(advise.css, d.label).toEqual(off.css);
       expect(advise.issues.every((i) => i.outcome === 'warning' && i.after === undefined), d.label).toBe(true);
       expect(advise.issues.map((i) => i.id).sort(), d.label).toEqual(advise.pairs.filter((p) => !p.passes).map((p) => p.id).sort());
-    }
+      visited.add(d.label);
+    });
   });
 
   it('Enforce brings every pair that the Mockup draws up to its requirement, measured again from the emitted colors', () => {

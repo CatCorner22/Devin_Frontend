@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
   DEFAULT_PARAMS, DIRECTIONS, EMPTY_BRIEF, SAMPLE_CONTENT, SCHEMA_VERSION, STEPS,
   OVERLAYS, effectiveParams, findSkin, skinParams, skinsOf, startPlain, applyDirection, createProject, findStep, keep, matchingOptionId, overlaysOf, ownedValues, parseProject, pick, setOverlay, setReason, tune,
@@ -193,8 +193,14 @@ describe('saved projects: references to the Catalog are recomputed, never truste
     // A corner value above the slider's top means "fully round", so it becomes the value of that Option.
     expect(result.project.params.radius).toBe(999);
     expect(result.notes).toEqual(['5 design values in the file lay outside what the Studio can set. The Studio brought each to the nearest value that it can set, and the design changed with them.']);
-    // Every Direction, and a project picked through every Option, is within reach already: opening changes nothing.
-    for (const direction of DIRECTIONS) {
+  });
+
+  describe('every Direction and Option recipe is already within reach', () => {
+    const visited = new Set<string>();
+    afterAll(() => {
+      expect([...visited].sort()).toEqual(DIRECTIONS.flatMap((d) => STEPS.flatMap((s) => s.options.map((o) => `${d.id}/${s.id}/${o.id}`))).sort());
+    });
+    it.each(DIRECTIONS)('preserves every successive Option on $name', (direction) => {
       let project = applyDirection(createProject('P'), direction);
       expect(ok(roundTrip(project)).notes, direction.name).toEqual([]);
       for (const step of STEPS) for (const option of step.options) {
@@ -202,8 +208,9 @@ describe('saved projects: references to the Catalog are recomputed, never truste
         const back = ok(roundTrip(project));
         expect(back.notes, `${direction.name} / ${step.id} / ${option.id}`).toEqual([]);
         expect(back.project.params).toEqual(project.params);
+        visited.add(`${direction.id}/${step.id}/${option.id}`);
       }
-    }
+    });
   });
 
   it('says that an old file named a Direction it does not know, as it does for a new file (campaign 4, round 3)', () => {

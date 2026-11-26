@@ -1,5 +1,12 @@
 # Progress
 
+## M5 gate re-check: unit budgets under load (2026-11-26)
+
+- M5R-3 reproduces for both named aggregate tests: project-file reachability/preservation (5,311ms), and Advise versus Off (6,247ms), under single-CPU contention with the Catalog browser walk. That deliberately stronger diagnostic also timed out five other aggregate sweeps; it is not the ordinary-concurrency acceptance run.
+- Bound timed work by Direction (all 5,016 successive Option round trips) and by design (all 995 Off/Advise comparisons). Exact visited-set guards retain the full matrices and all assertions. The two repaired sweeps pass 1,034 selected cases under the same one-CPU contention in 15.34s. No limit increased.
+- Full `npm run check` passes while the catalog browser workload is still running: 26 files, 2,384 tests, unit phase 24.65s, exit 0. The background walk passes 112/112 in 712.56s, exit 0. The fixture-only source-reference failure from renamed preservation tests was corrected in the saving table, not bypassed. Full e2e verification of the combined round follows before the single push; M5 remains open.
+
+
 ## PR #16 review: Brief viewing help (2026-11-26)
 
 - Reproduced at `15a48d0`: the desktop help paragraph ended at y=765.5 beyond the 720px viewport. Brief now uses the same positioned preview-control bar as other screens, so the absolute help panel anchors to its own controls. Browser regression opens and closes it and checks every viewport edge.
