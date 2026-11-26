@@ -5,9 +5,9 @@
 - The former sequential 25-minute job cancelled; it did not complete the browser suite or dependency audit. The integration called this skipped, which was not a pass.
 - Quality checks now run the dependency audit before a complete, recursively discovered browser-file matrix. All files still run; each job keeps the 25-minute limit, and the required aggregate check fails on any quality or shard failure. Skin floor cases are split across four page/theme files without dropping cases.
 - The fixed-floor/profile unit check now runs per design with full-visit and repair-count guards; its original five-second limit and assertions remain.
-- Carried the PR #14 fixes into this branch. The Catalog walk also runs 112 single-Step/single-page-theme cases under the existing 90-second limit, with exact guards for all 528 Mockup and 28 Studio audits.\n- Local `npm run check`: exit 0; 19 files, 1,343 tests, unit phase 25.43s. Final GitHub check states are reported in the CI-loop handoff; this entry records the configuration and local result, not an assumed CI pass.
-
-
+- Carried the PR #14 fixes into this branch. The Catalog walk also runs 112 single-Step/single-page-theme cases under the existing 90-second limit, with exact guards for all 528 Mockup and 28 Studio audits.
+- Local `npm run check`: exit 0; 19 files, 1,343 tests, unit phase 25.43s. PR #14's corresponding local check passes 18 files/1,341 tests in 24.93s.
+- Merged the updated PR #14 base without rewriting history. The conflict was only this progress entry; code and verification inputs are unchanged. Final GitHub check states on the merged head are reported in the CI-loop handoff, not assumed from local checks.
 
 A fresh session reads this file to learn where the project stands. Update it after every unit of work.
 
