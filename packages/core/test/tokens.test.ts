@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { DEFAULT_PARAMS, DIRECTIONS, NOT_CHECKED, PAIRS, RADIUS_SLIDER_TOP, SMALL_BUSINESS_CSS, STEPS, TOKEN_OF, activeTunables, deriveTokens, resolvePatch, skinParams, skinsOf, tokensToCss, type DesignParams } from '../src/index.js';
 import { contrastHex, everyDesign, remeasure } from './helpers.js';
 
@@ -182,23 +182,28 @@ describe('contrast profiles', () => {
     expect(fills).toBeGreaterThan(200);
   });
 
-  it('fixed floors hold in every profile and disclose the ratio before and after repair', () => {
+  describe('fixed floors hold in every profile and disclose the ratio before and after repair', () => {
     let repairs = 0;
-    for (const d of designs) {
+    const visited = new Set<string>();
+    afterAll(() => {
+      expect([...visited].sort()).toEqual(designs.map((design) => design.label).sort());
+      expect(repairs).toBeGreaterThan(200);
+    });
+    it.each(designs)('$label', (d) => {
       for (const profile of ['off', 'advise', 'enforce'] as const) {
-      const t = deriveTokens(d.params, profile);
-      const after = new Map(t.pairs.map((p) => [p.id, p]));
-      for (const pair of t.pairs) expect(remeasure(pair, t.hex), `${d.label}/${profile}/${pair.id}`).toBeGreaterThanOrEqual(pair.required);
-      for (const issue of t.floorRepairs) {
-        expect(issue.outcome, `${d.label}: ${issue.id}`).toBe('repaired');
-        expect(issue.after!, `${d.label}: ${issue.id}`).toBeGreaterThanOrEqual(issue.required);
-        expect(issue.ratio, `${d.label}: ${issue.id}`).toBeLessThan(issue.required);
-        expect(after.get(issue.id)!.passes, `${d.label}: ${issue.id}`).toBe(true);
-        repairs++;
+        const t = deriveTokens(d.params, profile);
+        const after = new Map(t.pairs.map((p) => [p.id, p]));
+        for (const pair of t.pairs) expect(remeasure(pair, t.hex), `${d.label}/${profile}/${pair.id}`).toBeGreaterThanOrEqual(pair.required);
+        for (const issue of t.floorRepairs) {
+          expect(issue.outcome, `${d.label}: ${issue.id}`).toBe('repaired');
+          expect(issue.after!, `${d.label}: ${issue.id}`).toBeGreaterThanOrEqual(issue.required);
+          expect(issue.ratio, `${d.label}: ${issue.id}`).toBeLessThan(issue.required);
+          expect(after.get(issue.id)!.passes, `${d.label}: ${issue.id}`).toBe(true);
+          repairs++;
+        }
       }
-      }
-    }
-    expect(repairs).toBeGreaterThan(200);
+      visited.add(d.label);
+    });
   });
 
   it('never lowers the contrast of a pair that Enforce reports on', () => {
