@@ -1005,7 +1005,10 @@ export const useStudio = create<StudioState>((set, get) => {
         ? now.name !== previous.name ? `Undone: the project’s name is “${plainName(previous.name)}” again.`
           : now.a11y !== previous.a11y ? 'Undone: the Contrast checks setting is back to how it was.'
             : differs(overlaysOf(now), overlaysOf(previous)) ? 'Undone: the Overlays are back to how they were.'
-              : null
+              : differs(now.content, previous.content) ? 'Undone: your page text is back to how it was.'
+                : differs(now.brief, previous.brief) ? 'Undone: your Brief notes are back to how they were.'
+                  : now.skin !== previous.skin || differs(now.skinLayer, previous.skinLayer) ? `Undone: the Skin is back to ${previous.skin ? `“${findSkin(previous.skin)?.name ?? 'the previous Skin'}”` : 'No Skin'}.`
+                    : null
         : null;
       const text = small
         ?? (wholeProject || !first
