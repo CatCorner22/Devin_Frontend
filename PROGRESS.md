@@ -1,5 +1,11 @@
 # Progress
 
+## M5 gate re-check: preserve project names (2026-11-26)
+
+- M5R-1 reproduced: importing a name with a direction-control character changed the saved name. Imported and typed names now stay verbatim in project state and saving; only presentation strips the controls, and the disclosure states that storage is unchanged. Updated the saving table and its exact test links.
+- Regression coverage checks repeated core JSON opening, ordinary RTL letters, blank and malformed names, typed-name saving, file import, safe input display, and reload. Full combined checks pass: 26 unit files / 2,384 tests; pinned-Chromium e2e 27 files / 727 tests / 2,657.79s; exit 0 for both. M5 remains open.
+
+
 ## M5 gate re-check: unit budgets under load (2026-11-26)
 
 - M5R-3 reproduces for both named aggregate tests: project-file reachability/preservation (5,311ms), and Advise versus Off (6,247ms), under single-CPU contention with the Catalog browser walk. That deliberately stronger diagnostic also timed out five other aggregate sweeps; it is not the ordinary-concurrency acceptance run.

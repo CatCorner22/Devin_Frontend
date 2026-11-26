@@ -1,5 +1,5 @@
 import {
-  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, availableMockupFocus, conflicts, effectiveParams, findOverlay, findSkin, findStep, hasSampleWords, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
+  DIRECTION_GROUPS, DIRECTIONS, FONTS, NOT_CHECKED, OVERLAYS, STEPS, activeTunables, availableMockupFocus, conflicts, effectiveParams, findOverlay, findSkin, findStep, hasSampleWords, isSampleContent, matchingOptionId, nearestSliderValue, nextSliderValue, overlaysOf, projectNameText, researchReport, resolvePatch, skinCoversStep, skinParams, skinsOf, startingParams, toCss,
   type A11yProfile, type DesignParams, type Direction, type MockupFocus, type Project, type SourceRef, type Step, type TokenIssue, type Tunable,
 } from '@refraction/core';
 import { Component, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
@@ -179,7 +179,7 @@ function TopBar(): React.JSX.Element {
       <label className="name-field">
         <span className="visually-hidden">Project name</span>
         {/* Until the saved project is open, the field shows a placeholder project; typing into it then would be typing into nothing. */}
-        <input id="project-name" className="name" value={s.project.name} placeholder="Name this project" disabled={!s.ready} onChange={(e) => s.rename(e.target.value)} spellCheck={false} autoComplete="off" maxLength={120} />
+        <input id="project-name" className="name" value={projectNameText(s.project.name)} placeholder="Name this project" disabled={!s.ready} onChange={(e) => s.rename(e.target.value)} spellCheck={false} autoComplete="off" maxLength={120} />
       </label>
       <nav className="top-nav" aria-label="Parts of the Studio">
         <a href="#brief" aria-current={s.view === 'brief' ? 'page' : undefined}>Brief</a>

@@ -885,9 +885,9 @@ export const useStudio = create<StudioState>((set, get) => {
     },
 
     rename(name) {
-      const text = projectNameText(name).slice(0, 120);
+      const text = name.slice(0, 120);
       commit({ ...get().project, name: text }, 'name');
-      if (text !== name) set({ notice: { text: 'Direction-changing formatting marks were removed from the project name. Its letters are unchanged.' } });
+      if (projectNameText(text) !== text) set({ notice: { text: 'Direction-changing formatting marks are hidden when the Studio displays the project name. The saved name is unchanged.' } });
     },
 
     setContent(content, field) {
