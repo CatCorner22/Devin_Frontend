@@ -206,14 +206,18 @@ describe('contrast profiles', () => {
     });
   });
 
-  it('never lowers the contrast of a pair that Enforce reports on', () => {
+  it('Enforce improves every reported fixed-floor repair, measured from its emitted colors', () => {
+    let comparisons = 0;
     for (const d of designs) {
-      const off = new Map(deriveTokens(d.params, 'off').pairs.map((p) => [p.id, p.ratio]));
-      for (const pair of deriveTokens(d.params, 'enforce').pairs) {
-        const was = off.get(pair.id);
-        if (was !== undefined && was < pair.required) expect(pair.ratio, `${d.label}: ${pair.id}`).toBeGreaterThan(was);
+      const enforced = deriveTokens(d.params, 'enforce');
+      const pairs = new Map(enforced.pairs.map((pair) => [pair.id, pair]));
+      for (const repair of enforced.floorRepairs) {
+        const pair = pairs.get(repair.id)!;
+        expect(remeasure(pair, enforced.hex), `${d.label}: ${repair.id}`).toBeGreaterThan(repair.ratio);
+        comparisons++;
       }
     }
+    expect(comparisons, 'The fixtures must exercise real repairs, not an empty loop').toBeGreaterThan(0);
   });
 
   it('keeps the focus ring visible on a painted first screen in every profile (finding P-01)', () => {
